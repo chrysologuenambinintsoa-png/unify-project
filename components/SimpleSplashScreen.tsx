@@ -1,0 +1,150 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface SimpleSplashScreenProps {
+  duration?: number;
+  onComplete?: () => void;
+  variant?: 'modern' | 'minimal' | 'colorful';
+}
+
+export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
+  duration = 3000,
+  onComplete,
+  variant = 'modern',
+}) => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+      onComplete?.();
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [duration, onComplete]);
+
+  const variants = {
+    modern: {
+      bg: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
+      accentColors: 'from-blue-500 via-purple-500 to-pink-500',
+    },
+    minimal: {
+      bg: 'bg-white',
+      accentColors: 'from-gray-400 to-gray-600',
+    },
+    colorful: {
+      bg: 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600',
+      accentColors: 'from-yellow-300 via-pink-300 to-white',
+    },
+  };
+
+  const currentVariant = variants[variant];
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          className={`fixed inset-0 z-50 flex items-center justify-center ${currentVariant.bg}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Fond animé */}
+          <div className="absolute inset-0 overflow-hidden">
+            <motion.div
+              className="absolute w-80 h-80 rounded-full opacity-20 blur-3xl bg-blue-500"
+              animate={{
+                x: [0, 100, 0],
+                y: [0, 50, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+              }}
+              style={{ top: '10%', left: '5%' }}
+            />
+            <motion.div
+              className="absolute w-80 h-80 rounded-full opacity-20 blur-3xl bg-purple-500"
+              animate={{
+                x: [0, -100, 0],
+                y: [0, -50, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+              }}
+              style={{ bottom: '10%', right: '5%' }}
+            />
+          </div>
+
+          {/* Contenu */}
+          <motion.div
+            className="relative z-10 text-center"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+          >
+            {/* Cercle animé */}
+            <motion.div className="mb-8 flex justify-center">
+              <motion.div
+                className={`w-24 h-24 rounded-full bg-gradient-to-br ${currentVariant.accentColors} p-1 shadow-2xl`}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+              >
+                <div className={`w-full h-full rounded-full ${currentVariant.bg} flex items-center justify-center text-4xl`}>
+                  📱
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Texte */}
+            <motion.h1
+              className="text-5xl font-bold mb-4"
+              style={{
+                color: variant === 'minimal' ? '#000' : '#fff',
+              }}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Unify
+            </motion.h1>
+
+            {/* Sous-titre avec animation */}
+            <motion.p
+              className="text-lg mb-8"
+              style={{
+                color: variant === 'minimal' ? '#666' : '#fff',
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
+              Bienvenue
+            </motion.p>
+
+            {/* Indicateur de chargement */}
+            <motion.div className="flex justify-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className={`w-3 h-3 rounded-full ${
+                    variant === 'minimal' ? 'bg-gray-400' : 'bg-white'
+                  }`}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};

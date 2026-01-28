@@ -1,0 +1,52 @@
+{
+  "name": "unify",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:clean": "tsx prisma/clean.ts",
+    "db:push": "prisma db push",
+    "security-check": "npm audit --audit-level=moderate",
+    "check-secrets": "git log -p | grep -i 'password\\|secret\\|api.key' | head || true"
+  },
+  "dependencies": {
+    "@next-auth/prisma-adapter": "^1.0.7",
+    "bcryptjs": "^2.4.3",
+    "class-variance-authority": "^0.7.1",
+    "cloudinary": "^1.41.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "emoji-picker-react": "^4.12.0",
+    "framer-motion": "^11.11.17",
+    "helmet": "^7.1.0",
+    "isomorphic-dompurify": "^2.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.462.0",
+    "next": "^15.0.3",
+    "next-auth": "^4.24.11",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.9.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "9.39.2",
+    "eslint-config-next": "16.1.5",
+    "postcss": "^8.4.49",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.3"
+  }
+}

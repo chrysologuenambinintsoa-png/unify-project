@@ -4,20 +4,26 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { Settings, User, Bell, Shield, Palette, Globe, Loader2, CheckCircle } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, Globe, Loader2, CheckCircle, Lock, Smartphone } from 'lucide-react';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { CoverImageUpload } from '@/components/CoverImageUpload';
 import { useSession } from 'next-auth/react';
+import LoginHistoryView from '@/components/LoginHistoryView';
+import SavedDevicesView from '@/components/SavedDevicesView';
 
 export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession();
   const { translation, language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'general' | 'privacy' | 'notifications' | 'appearance'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'privacy' | 'notifications' | 'appearance' | 'login-history' | 'saved-devices'>('general');
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     bio: '',
     coverImage: '',
+    dateOfBirth: '',
+    originCity: '',
+    currentCity: '',
   });
   const [privacySettings, setPrivacySettings] = useState({
     allowMessages: 'everyone',
@@ -41,6 +47,9 @@ export default function SettingsPage() {
             fullName: data.fullName || '',
             bio: data.bio || '',
             coverImage: data.coverImage || '',
+            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '',
+            originCity: data.originCity || '',
+            currentCity: data.currentCity || '',
           });
         }
       } catch (error) {
@@ -58,6 +67,8 @@ export default function SettingsPage() {
     { key: 'privacy', icon: Shield, label: translation.settings.privacy },
     { key: 'notifications', icon: Bell, label: translation.settings.notifications },
     { key: 'appearance', icon: Palette, label: translation.settings.appearance },
+    { key: 'login-history', icon: Lock, label: translation.tabLabels.loginHistory },
+    { key: 'saved-devices', icon: Lock, label: translation.tabLabels.savedDevices },
   ];
 
   const languages = [
@@ -120,6 +131,12 @@ export default function SettingsPage() {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
+  const handleCoverChange = (newCover: string | null) => {
+    // Cover is already updated via session in CoverImageUpload component
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+  };
+
   return (
     <MainLayout>
       <motion.div
@@ -133,7 +150,7 @@ export default function SettingsPage() {
             {translation.settings.settings}
           </h1>
           <p className="text-gray-600">
-            Gérez vos préférences et paramètres de compte
+            {translation.settingsPage.managePreferences}
           </p>
         </div>
 
@@ -177,7 +194,7 @@ export default function SettingsPage() {
                   {/* Avatar Section */}
                   <div className="bg-gray-50 rounded-lg p-6">
                     <h3 className="text-md font-medium text-gray-900 mb-4">
-                      Photo de profil
+                      {translation.settingsPage.profilePhoto}
                     </h3>
                     <div className="flex justify-center">
                       <AvatarUpload
@@ -186,6 +203,17 @@ export default function SettingsPage() {
                         size="xl"
                       />
                     </div>
+                  </div>
+
+                  {/* Cover Image Section */}
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <h3 className="text-md font-medium text-gray-900 mb-4">
+                      {translation.settingsPage.coverPhoto}
+                    </h3>
+                    <CoverImageUpload
+                      currentCover={(session?.user as any)?.coverImage}
+                      onCoverChange={handleCoverChange}
+                    />
                   </div>
 
                   <div className="space-y-4">
@@ -226,6 +254,42 @@ export default function SettingsPage() {
                         rows={3}
                         value={formData.bio}
                         onChange={(e) => handleInputChange('bio', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date de naissance
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dateOfBirth ?? ''}
+                        onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ville d'origine
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.originCity ?? ''}
+                        onChange={(e) => handleInputChange('originCity', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ville actuelle
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.currentCity ?? ''}
+                        onChange={(e) => handleInputChange('currentCity', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
                     </div>
@@ -460,6 +524,36 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
+                </motion.div>
+              )}
+
+              {/* Login History Tab */}
+              {activeTab === 'login-history' && (
+                <motion.div
+                  key="login-history"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-6"
+                >
+                  {session?.user?.id && (
+                    <LoginHistoryView userId={session.user.id} />
+                  )}
+                </motion.div>
+              )}
+
+              {/* Saved Devices Tab */}
+              {activeTab === 'saved-devices' && (
+                <motion.div
+                  key="saved-devices"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-6"
+                >
+                  {session?.user?.id && (
+                    <SavedDevicesView userId={session.user.id} />
+                  )}
                 </motion.div>
               )}
             </div>

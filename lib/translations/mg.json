@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "loading": "Mikatraho...",
     "error": "Nisy olana",
@@ -24,8 +24,7 @@
     "forgotPassword": "Adino ny teny miafina ?",
     "resetPassword": "Ovay ny teny miafina",
     "resetLinkSent": "Ny rohy ovana dia nalefa",
-    "loginWithGoogle": "Ampitaharina amin'ny Google",
-    "loginWithFacebook": "Ampitaharina amin'ny Facebook",
+    
     "noAccount": "Tsy misy kaonty ?",
     "hasAccount": "Efa misy kaonty ?",
     "createAccount": "Hamorona kaonty",
@@ -172,5 +171,49 @@
     "nextSlide": "Manaraka",
     "prevSlide": "Taloha",
     "skipIntro": "Lampasan"
+  },
+  "login": {
+    "recentConnections": "Fifandraisan-dalana vao haingana",
+    "orLogin": "Na hiditra amin'ny kaonty hafa eto ambany",
+    "deleteLoginEntry": "Fafana",
+    "noLoginHistory": "Tsy misy fifandraisan-dalana voarakitra"
+  },
+  "validation": {
+    "selectImage": "Aoka iho ny fisafidy ny rakitra sary.",
+    "fileSizeTooLarge": "Ny haben'ny rakitra dia tsy tokony hangotra",
+    "mb": "MB",
+    "fileTypeError": "Ny rakitra ay mila sary",
+    "invalidEmail": "Email tsy mitovy",
+    "passwordTooShort": "Ny teny miafina ay mila misy",
+    "characters": "karako",
+    "confirmPasswordMatch": "Ny teny miafina ay tsy mitovy"
+  },
+  "errors": {
+    "uploadError": "Hadisoana rehefa namlaza",
+    "deleteError": "Hadisoana rehefa nafafa",
+    "saveError": "Hadisoana rehefa naraiketo",
+    "loadError": "Hadisoana rehefa naloha",
+    "unauthorized": "Tsy azo famaliana",
+    "notFound": "Tsy hita",
+    "serverError": "Hadisoana serivera"
+  },
+  "success": {
+    "saved": "Naraiketo tsara",
+    "deleted": "Nafafa tsara",
+    "uploaded": "Namlaza tsara",
+    "updated": "Navaovao tsara"
+  },
+  "tabLabels": {
+    "loginHistory": "Historiky hiditra",
+    "savedDevices": "Fitaovana raikitra",
+    "general": "Ankapobe",
+    "privacy": "Fiarovana",
+    "notifications": "Fampitandremana",
+    "appearance": "Endrika"
+  },
+  "settingsPage": {
+    "managePreferences": "Mandrindra ny iyong paramètres at akawonty",
+    "profilePhoto": "Sarin'ny olona",
+    "coverPhoto": "Sary afara"
   }
 }

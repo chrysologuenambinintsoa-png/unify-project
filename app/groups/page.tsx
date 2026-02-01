@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Plus, Users, Lock, Globe, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import CreateGroupModal from '@/components/CreateGroupModal';
 
 interface Group {
   id: string;
@@ -30,6 +31,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-groups' | 'discover'>('my-groups');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -38,7 +40,7 @@ export default function GroupsPage() {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const endpoint = activeTab === 'my-groups' ? '/api/groups/my' : '/api/groups/discover';
+      const endpoint = activeTab === 'my-groups' ? '/api/groups?type=my' : '/api/groups?type=discover';
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
@@ -49,6 +51,16 @@ export default function GroupsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateGroup = async (data: { name: string; description: string; image?: string; isPrivate: boolean }) => {
+    const response = await fetch('/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create group');
+    fetchGroups();
   };
 
   const mockGroups: Group[] = [
@@ -99,7 +111,7 @@ export default function GroupsPage() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Groupes</h1>
               <p className="text-gray-600">Rejoignez des communautés qui vous intéressent</p>
             </div>
-            <Button className="flex items-center space-x-2">
+            <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
               <Plus className="w-5 h-5" />
               <span>Créer un groupe</span>
             </Button>
@@ -238,6 +250,8 @@ export default function GroupsPage() {
           )}
         </div>
       </motion.div>
+
+      <CreateGroupModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateGroup} />
     </MainLayout>
   );
 }

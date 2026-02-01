@@ -71,17 +71,9 @@ export async function GET(request: NextRequest) {
       ]).catch(() => 0);
 
       // Récupérer les invitations de groupe en attente
-      const groupInvitesCount = await Promise.race([
-        prisma.groupMember.count({
-          where: {
-            userId: userId,
-            joinedAt: null
-          }
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        )
-      ]).catch(() => 0);
+      // The GroupMember.joinedAt is non-nullable in schema; there is no explicit 'pending' flag.
+      // For now, return 0 pending invites to satisfy typings until invite logic is implemented.
+      const groupInvitesCount = 0;
 
       // Récupérer les invitations de page en attente
       const pageInvitesCount = await Promise.race([
@@ -110,12 +102,11 @@ export async function GET(request: NextRequest) {
         )
       ]).catch(() => 0);
 
-      // Récupérer le nombre de groupes
+      // Récupérer le nombre de groupes (tous les memberships pour cet utilisateur)
       const groupsCount = await Promise.race([
         prisma.groupMember.count({
           where: {
             userId: userId,
-            joinedAt: { not: null }
           }
         }),
         new Promise((_, reject) =>

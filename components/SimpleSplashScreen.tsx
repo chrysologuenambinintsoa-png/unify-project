@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SimpleSplashScreenProps {
@@ -25,35 +25,38 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
     return () => clearTimeout(timer);
   }, [duration, onComplete]);
 
-  const variants = {
-    modern: {
-      bg: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
-      accentColors: 'from-blue-500 via-purple-500 to-pink-500',
-    },
-    minimal: {
-      bg: 'bg-white',
-      accentColors: 'from-gray-400 to-gray-600',
-    },
-    colorful: {
-      bg: 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600',
-      accentColors: 'from-yellow-300 via-pink-300 to-white',
-    },
-  };
+  const variants = useMemo(
+    () => ({
+      modern: {
+        bg: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
+        accentColors: 'from-blue-500 via-purple-500 to-pink-500',
+      },
+      minimal: {
+        bg: 'bg-white',
+        accentColors: 'from-gray-400 to-gray-600',
+      },
+      colorful: {
+        bg: 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600',
+        accentColors: 'from-yellow-300 via-pink-300 to-white',
+      },
+    }),
+    []
+  );
 
   const currentVariant = variants[variant];
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isVisible && (
         <motion.div
           className={`fixed inset-0 z-50 flex items-center justify-center ${currentVariant.bg}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
         >
-          {/* Fond animé */}
-          <div className="absolute inset-0 overflow-hidden">
+          {/* Fond animé optimisé */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <motion.div
               className="absolute w-80 h-80 rounded-full opacity-20 blur-3xl bg-blue-500"
               animate={{
@@ -63,6 +66,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
               transition={{
                 duration: 8,
                 repeat: Infinity,
+                ease: 'easeInOut',
               }}
               style={{ top: '10%', left: '5%' }}
             />
@@ -75,6 +79,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
               transition={{
                 duration: 8,
                 repeat: Infinity,
+                ease: 'easeInOut',
               }}
               style={{ bottom: '10%', right: '5%' }}
             />
@@ -85,7 +90,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
             className="relative z-10 text-center"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 100, damping: 15 }}
+            transition={{ type: 'spring', stiffness: 80, damping: 18 }}
           >
             {/* Cercle animé */}
             <motion.div className="mb-8 flex justify-center">
@@ -94,7 +99,9 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
                 animate={{ rotate: 360 }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
               >
-                <div className={`w-full h-full rounded-full ${currentVariant.bg} flex items-center justify-center text-4xl`}>
+                <div
+                  className={`w-full h-full rounded-full ${currentVariant.bg} flex items-center justify-center text-4xl`}
+                >
                   📱
                 </div>
               </motion.div>
@@ -107,7 +114,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
                 color: variant === 'minimal' ? '#000' : '#fff',
               }}
               animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             >
               Unify
             </motion.h1>
@@ -125,7 +132,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
               Bienvenue
             </motion.p>
 
-            {/* Indicateur de chargement */}
+            {/* Indicateur de chargement optimisé */}
             <motion.div className="flex justify-center gap-2">
               {[0, 1, 2].map((i) => (
                 <motion.div
@@ -133,11 +140,12 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
                   className={`w-3 h-3 rounded-full ${
                     variant === 'minimal' ? 'bg-gray-400' : 'bg-white'
                   }`}
-                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
                   transition={{
                     duration: 1.5,
                     repeat: Infinity,
                     delay: i * 0.2,
+                    ease: 'easeInOut',
                   }}
                 />
               ))}

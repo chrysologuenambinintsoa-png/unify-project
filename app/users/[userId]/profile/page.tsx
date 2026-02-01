@@ -9,9 +9,10 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { About } from '@/components/profile/About';
 import { PhotoGallery } from '@/components/profile/PhotoGallery';
-import { Mail, Calendar } from 'lucide-react';
+import { About } from '@/components/profile/About';
+import Post from '@/components/Post';
+import { Mail, Calendar, Image, FileText, Users } from 'lucide-react';
 
 interface Photo {
   id: string;
@@ -53,6 +54,21 @@ interface FriendshipStatus {
   status: 'self' | 'accepted' | 'pending' | 'sent' | 'none';
 }
 
+interface PostData {
+  id: string;
+  content: string;
+  images?: string[];
+  media?: Array<{ url: string }>;
+  createdAt: string;
+  author?: any;
+  user?: any;
+  likes?: number | any[];
+  comments?: number | any[];
+  shares?: number;
+  liked?: boolean;
+  _count?: { likes: number; comments: number };
+}
+
 export default function UserProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -65,7 +81,9 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<'about' | 'gallery' | 'posts' | 'friends'>('about');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -99,6 +117,52 @@ export default function UserProfilePage() {
       fetchProfile();
     }
   }, [userId]);
+
+  // Fetch user posts
+  useEffect(() => {
+    const fetchUserPosts = async () => {
+      try {
+        setPostsLoading(true);
+        const response = await fetch(`/api/users/${userId}/posts`);
+        
+        if (!response.ok) {
+          console.error('Error fetching posts');
+          setPosts([]);
+          return;
+        }
+
+        const data = await response.json();
+        setPosts(Array.isArray(data) ? data : data.posts || []);
+      } catch (err) {
+        console.error('Error fetching user posts:', err);
+        setPosts([]);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchUserPosts();
+    }
+  }, [userId]);
+
+  // Refresh photos when gallery section is opened
+  const handleSectionChange = async (section: 'about' | 'gallery' | 'posts' | 'friends') => {
+    setSelectedSection(section);
+    
+    // Refresh gallery photos if gallery section is selected
+    if (section === 'gallery') {
+      try {
+        const response = await fetch(`/api/users/${userId}/photos`);
+        if (response.ok) {
+          const data = await response.json();
+          setPhotos(data.photos || []);
+        }
+      } catch (err) {
+        console.error('Error refreshing photos:', err);
+      }
+    }
+  };
 
   const handleAddFriend = async () => {
     try {
@@ -146,13 +210,13 @@ export default function UserProfilePage() {
     }
   };
 
-  const handlePhotoUpload = (newPhoto: Photo) => {
-    setPhotos([newPhoto, ...photos]);
-  };
+    const handlePhotoUpload = (newPhoto: Photo) => {
+      setPhotos(prev => [newPhoto, ...prev]);
+    };
 
-  const handlePhotoDelete = (photoId: string) => {
-    setPhotos(photos.filter(p => p.id !== photoId));
-  };
+    const handlePhotoDelete = (photoId: string) => {
+      setPhotos(prev => prev.filter(p => p.id !== photoId));
+    };
 
   if (loading) {
     return (
@@ -324,25 +388,124 @@ export default function UserProfilePage() {
           </div>
         )}
 
-        {/* About Section */}
-        {profile.about && (
-          <About 
-            about={profile.about}
-            isOwnProfile={isOwnProfile}
-            onEdit={() => router.push('/settings')}
-          />
-        )}
+        {/* Top navigation for profile sections (About / Gallery / Posts / Friends) */}
+        <Card className="p-2 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 flex items-center justify-around">
+              <button
+                onClick={() => handleSectionChange('about')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  selectedSection === 'about'
+                    ? 'bg-primary-dark text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-sm font-medium">À propos</span>
+              </button>
 
-        {/* Photo Gallery Section */}
-        <PhotoGallery
-          userId={profile.id}
-          photos={photos}
-          isOwnProfile={isOwnProfile}
-          profilePhoto={profile.avatar || undefined}
-          coverPhoto={profile.coverImage || undefined}
-          onPhotoUpload={handlePhotoUpload}
-          onPhotoDelete={handlePhotoDelete}
-        />
+              <button
+                onClick={() => handleSectionChange('gallery')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  selectedSection === 'gallery'
+                    ? 'bg-primary-dark text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Image className="w-5 h-5" />
+                <span className="text-sm font-medium">Galerie</span>
+              </button>
+
+              <button
+                onClick={() => handleSectionChange('posts')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  selectedSection === 'posts'
+                    ? 'bg-primary-dark text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-sm font-medium">Publications</span>
+              </button>
+
+              <button
+                onClick={() => handleSectionChange('friends')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                  selectedSection === 'friends'
+                    ? 'bg-primary-dark text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Users className="w-5 h-5" />
+                <span className="text-sm font-medium">Amis</span>
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Section content */}
+        <div className="mb-6">
+          {selectedSection === 'about' && (
+            <About
+              about={{
+                dateOfBirth: profile.about?.dateOfBirth,
+                originCity: profile.about?.originCity,
+                currentCity: profile.about?.currentCity,
+                college: profile.about?.collegeName ? { name: profile.about.collegeName } : undefined,
+                highSchool: profile.about?.highSchoolName ? { name: profile.about.highSchoolName } : undefined,
+                university: profile.about?.universityName ? { name: profile.about.universityName } : undefined,
+                pseudonym: profile.about?.pseudonym,
+                skills: profile.about?.skills,
+              }}
+              isOwnProfile={isOwnProfile}
+              onEdit={() => router.push('/settings')}
+            />
+          )}
+
+          {selectedSection === 'gallery' && (
+            <PhotoGallery
+              userId={profile.id}
+              photos={photos}
+              isOwnProfile={isOwnProfile}
+              profilePhoto={profile.avatar || undefined}
+              coverPhoto={profile.coverImage || undefined}
+              onPhotoUpload={handlePhotoUpload}
+              onPhotoDelete={handlePhotoDelete}
+            />
+          )}
+
+          {selectedSection === 'posts' && (
+            <div>
+              {postsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark"></div>
+                </div>
+              ) : posts.length > 0 ? (
+                <div className="space-y-4">
+                  {posts.map((post) => (
+                    <Post key={post.id} post={post} />
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-6 text-center">
+                  <p className="text-gray-600">Aucune publication pour le moment</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {selectedSection === 'friends' && (
+            <Card className="p-6">
+              <h3 className="text-lg font-bold mb-2">Amis</h3>
+              <p className="text-sm text-gray-600">Voir la liste d'amis et les suggestions.</p>
+              <div className="mt-4">
+                <Link href={`/users/${profile.id}/friends`}>
+                  <Button>Voir les amis</Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+        </div>
       </motion.div>
     </MainLayout>
   );

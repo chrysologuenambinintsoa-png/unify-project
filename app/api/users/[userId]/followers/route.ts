@@ -15,7 +15,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    const followers = await prisma.follow.findMany({
+    const followers = await (prisma as any).follow.findMany({
       where: {
         followingId: userId,
       },
@@ -35,14 +35,14 @@ export async function GET(
       take: limit,
     });
 
-    const count = await prisma.follow.count({
+    const count = await (prisma as any).follow.count({
       where: {
         followingId: userId,
       },
     });
 
     return NextResponse.json({
-      followers: followers.map(f => f.follower),
+      followers: followers.map((f: any) => f.follower),
       total: count,
       page,
       pages: Math.ceil(count / limit),

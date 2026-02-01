@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface BadgesData {
+  home: number;
   friends: number;
   messages: number;
   notifications: number;
@@ -14,6 +15,7 @@ export interface BadgesData {
 
 export const useBadges = () => {
   const [badges, setBadges] = useState<BadgesData>({
+    home: 0,
     friends: 0,
     messages: 0,
     notifications: 0,
@@ -94,7 +96,9 @@ export const useBadges = () => {
     badges,
     loading,
     error,
-    refetch: fetchBadges
+    refetch: fetchBadges,
+    incrementHomeBadge: () => setBadges(prev => ({ ...prev, home: prev.home + 1 })),
+    clearHomeBadge: () => setBadges(prev => ({ ...prev, home: 0 }))
   };
 };
 

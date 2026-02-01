@@ -82,7 +82,7 @@ export function UserMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999]"
+            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50"
             style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
           >
             {/* User Info Header */}
@@ -98,34 +98,34 @@ export function UserMenu() {
             {/* Menu Items */}
             <nav className="py-2">
               {/* Profile Link */}
-              <Link href={`/users/${session.user.id}/profile`}>
+              <Link href={`/users/${session.user.id}/profile`} className="block">
                 <motion.button
                   onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors w-full text-left"
                 >
-                  <User className="w-4 h-4" />
-                  <span>Profile</span>
+                  <User className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">Profile</span>
                 </motion.button>
               </Link>
 
               {/* Settings Link */}
-              <Link href="/settings">
+              <Link href="/settings" className="block">
                 <motion.button
                   onClick={() => setIsOpen(false)}
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors w-full text-left"
                 >
-                  <Settings className="w-4 h-4" />
-                  <span>Settings</span>
+                  <Settings className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">Settings</span>
                 </motion.button>
               </Link>
 
               {/* Logout Button */}
               <motion.button
                 onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 mt-2 pt-2"
+                className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100 mt-2 pt-2 w-full"
               >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+                <LogOut className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">Logout</span>
               </motion.button>
             </nav>
           </motion.div>

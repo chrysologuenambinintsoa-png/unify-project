@@ -25,6 +25,16 @@ export async function GET(request: NextRequest) {
         isVerified: true,
         createdAt: true,
         updatedAt: true,
+        dateOfBirth: true,
+        originCity: true,
+        currentCity: true,
+        collegeInfo: true,
+        highSchoolInfo: true,
+        universityInfo: true,
+        skills: true,
+        pseudonym: true,
+        mobileContact: true,
+        familyRelations: true,
       },
     });
 
@@ -61,12 +71,24 @@ export async function PATCH(request: NextRequest) {
       coverImage,
     } = body;
 
+    // optional about fields
+    const { dateOfBirth, originCity, currentCity, college, highSchool, university, skills, pseudonym, mobileContact, familyRelations } = body;
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         fullName,
         bio,
         coverImage,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        originCity,
+        currentCity,
+        collegeInfo: college ? college : undefined,
+        highSchoolInfo: highSchool ? highSchool : undefined,
+        universityInfo: university ? university : undefined,
+        mobileContact,
+        familyRelations,
+        skills: skills ? JSON.stringify(skills) : undefined,
       },
       select: {
         id: true,
@@ -79,6 +101,16 @@ export async function PATCH(request: NextRequest) {
         isVerified: true,
         createdAt: true,
         updatedAt: true,
+        dateOfBirth: true,
+        originCity: true,
+        currentCity: true,
+        collegeInfo: true,
+        highSchoolInfo: true,
+        universityInfo: true,
+        skills: true,
+        pseudonym: true,
+        mobileContact: true,
+        familyRelations: true,
       },
     });
 

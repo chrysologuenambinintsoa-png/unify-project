@@ -12,7 +12,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    let body: any = {};
+    try {
+      const contentType = request.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const text = await request.text();
+        if (text) {
+          body = JSON.parse(text);
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
     const { userId } = body;
     if (!userId) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });

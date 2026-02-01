@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "loading": "Cargando...",
     "error": "Ocurrió un error",
@@ -24,8 +24,7 @@
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "resetPassword": "Restablecer contraseña",
     "resetLinkSent": "Enlace de restablecimiento enviado",
-    "loginWithGoogle": "Continuar con Google",
-    "loginWithFacebook": "Continuar con Facebook",
+    
     "noAccount": "¿No tienes cuenta?",
     "hasAccount": "¿Ya tienes cuenta?",
     "createAccount": "Crear cuenta",
@@ -172,5 +171,49 @@
     "nextSlide": "Siguiente",
     "prevSlide": "Anterior",
     "skipIntro": "Omitir"
+  },
+  "login": {
+    "recentConnections": "Conexiones recientes",
+    "orLogin": "O inicia sesión con otra cuenta a continuación",
+    "deleteLoginEntry": "Eliminar",
+    "noLoginHistory": "Sin conexiones registradas"
+  },
+  "validation": {
+    "selectImage": "Por favor selecciona un archivo de imagen.",
+    "fileSizeTooLarge": "El tamaño del archivo no debe exceder",
+    "mb": "MB",
+    "fileTypeError": "El archivo debe ser una imagen",
+    "invalidEmail": "Email inválido",
+    "passwordTooShort": "La contraseña debe contener al menos",
+    "characters": "caracteres",
+    "confirmPasswordMatch": "Las contraseñas no coinciden"
+  },
+  "errors": {
+    "uploadError": "Error de carga",
+    "deleteError": "Error de eliminación",
+    "saveError": "Error al guardar",
+    "loadError": "Error al cargar",
+    "unauthorized": "No autorizado",
+    "notFound": "No encontrado",
+    "serverError": "Error del servidor"
+  },
+  "success": {
+    "saved": "Guardado correctamente",
+    "deleted": "Eliminado correctamente",
+    "uploaded": "Cargado correctamente",
+    "updated": "Actualizado correctamente"
+  },
+  "tabLabels": {
+    "loginHistory": "Historial de conexión",
+    "savedDevices": "Dispositivos guardados",
+    "general": "General",
+    "privacy": "Privacidad",
+    "notifications": "Notificaciones",
+    "appearance": "Apariencia"
+  },
+  "settingsPage": {
+    "managePreferences": "Administra tus preferencias y configuración de cuenta",
+    "profilePhoto": "Foto de perfil",
+    "coverPhoto": "Foto de portada"
   }
 }

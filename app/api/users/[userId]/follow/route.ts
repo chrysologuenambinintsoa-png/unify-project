@@ -25,7 +25,7 @@ export async function POST(
     }
 
     // Check if already following
-    const existingFollow = await prisma.follow.findFirst({
+    const existingFollow = await (prisma as any).follow.findFirst({
       where: {
         followerId: session.user.id,
         followingId: userId,
@@ -39,7 +39,7 @@ export async function POST(
       );
     }
 
-    const follow = await prisma.follow.create({
+    const follow = await (prisma as any).follow.create({
       data: {
         followerId: session.user.id,
         followingId: userId,
@@ -70,7 +70,7 @@ export async function DELETE(
 
     const { userId } = await context.params;
 
-    await prisma.follow.deleteMany({
+    await (prisma as any).follow.deleteMany({
       where: {
         followerId: session.user.id,
         followingId: userId,

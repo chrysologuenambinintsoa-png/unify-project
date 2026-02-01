@@ -6,7 +6,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Eye, Heart } from 'lucide-react';
+import { X, Eye, Heart, Plus } from 'lucide-react';
+import CreateStoryModal from '@/components/CreateStoryModal';
+import { Button } from '@/components/ui/Button';
 
 interface Story {
   id: string;
@@ -51,6 +53,7 @@ export default function PublishedStoriesPage() {
     hasMore: false
   });
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchPublishedStories();
@@ -62,7 +65,7 @@ export default function PublishedStoriesPage() {
       setError(null);
 
       const response = await fetch(
-        `/api/stories/published?limit=20&skip=${skip}`
+        `/api/stories?limit=20&skip=${skip}`
       );
 
       if (!response.ok) {
@@ -82,6 +85,16 @@ export default function PublishedStoriesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateStory = async (data: { text?: string; imageUrl?: string; videoUrl?: string }) => {
+    const response = await fetch('/api/stories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create story');
+    fetchPublishedStories();
   };
 
   const formatDate = (dateString: string) => {
@@ -129,16 +142,22 @@ export default function PublishedStoriesPage() {
         className="max-w-7xl mx-auto"
       >
         {/* En-tête */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Stories Publiées
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Découvrez les stories publiées par la communauté
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-            Total: {pagination.total} stories
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              Stories Publiées
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Découvrez les stories publiées par la communauté
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+              Total: {pagination.total} stories
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
+            <Plus className="w-5 h-5" />
+            <span>Créer une story</span>
+          </Button>
         </div>
 
         {/* Erreur */}
@@ -397,6 +416,8 @@ export default function PublishedStoriesPage() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <CreateStoryModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateStory} />
     </MainLayout>
   );
 }

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, category, coverImage, avatar } = body;
+    const { name, description, image } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -123,9 +123,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        category,
-        coverImage,
-        image: avatar ?? null,
+        image,
         admins: {
           create: {
             userId: session.user.id,

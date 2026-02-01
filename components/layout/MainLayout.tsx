@@ -12,29 +12,31 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 pt-16 w-full overflow-hidden">
       <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       
-      <div className="flex flex-1 overflow-visible">
-        {/* Desktop Sidebar - Always visible on large screens, fixed position */}
-        <div className="hidden lg:block w-64 fixed left-0 top-16 bottom-0 z-40">
+      <div className="flex flex-1 w-full overflow-hidden">
+        {/* Desktop Sidebar - Fixed */}
+        <nav className="hidden lg:flex lg:flex-col w-64 flex-shrink-0 bg-primary-dark text-white fixed left-0 top-16 bottom-0 overflow-y-auto">
           <Sidebar />
-        </div>
+        </nav>
         
-        {/* Mobile Sidebar - Full screen overlay */}
+        {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" 
                onClick={() => setSidebarOpen(false)} />
         )}
-        <div className={`fixed left-0 top-16 bottom-0 w-64 z-40 lg:hidden transition-transform duration-300 ${
+        <nav className={`fixed left-0 top-16 bottom-0 w-3/4 max-w-xs bg-primary-dark z-40 lg:hidden transition-transform duration-300 overflow-y-auto ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <Sidebar onClose={() => setSidebarOpen(false)} />
-        </div>
+        </nav>
 
-        {/* Main Content - Adjust margin only on desktop */}
-        <main className="flex-1 lg:ml-64 p-3 sm:p-4 lg:p-6 w-full overflow-y-auto overflow-x-visible">
-          <div className="max-w-4xl mx-auto">{children}</div>
+        {/* Main Content - Offset by sidebar on desktop */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full lg:ml-64">
+          <div className="p-3 sm:p-4 lg:p-6">
+            <div className="max-w-4xl mx-auto w-full">{children}</div>
+          </div>
         </main>
       </div>
     </div>

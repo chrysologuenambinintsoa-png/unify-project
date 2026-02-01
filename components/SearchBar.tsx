@@ -92,7 +92,7 @@ export function SearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setIsOpen(true)}
-            className="w-full pl-10 pr-10 py-2 text-sm bg-gray-100 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-dark focus:border-transparent"
+            className="w-full pl-10 pr-10 py-2 text-sm bg-gray-100 border border-gray-200 rounded-full focus:outline-none focus:bg-white"
           />
           {query && (
             <button
@@ -118,7 +118,7 @@ export function SearchBar() {
           >
             {loading ? (
               <div className="p-4 text-center text-gray-500">
-                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-primary-dark"></div>
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
               </div>
             ) : totalResults === 0 ? (
               <div className="p-4 text-center text-gray-500 text-sm">

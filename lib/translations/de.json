@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "loading": "Wird geladen...",
     "error": "Ein Fehler ist aufgetreten",
@@ -24,8 +24,7 @@
     "forgotPassword": "Passwort vergessen?",
     "resetPassword": "Passwort zurücksetzen",
     "resetLinkSent": "Reset-Link gesendet",
-    "loginWithGoogle": "Mit Google fortfahren",
-    "loginWithFacebook": "Mit Facebook fortfahren",
+    
     "noAccount": "Haben Sie kein Konto?",
     "hasAccount": "Haben Sie bereits ein Konto?",
     "createAccount": "Konto erstellen",
@@ -172,5 +171,49 @@
     "nextSlide": "Weiter",
     "prevSlide": "Zurück",
     "skipIntro": "Überspringen"
+  },
+  "login": {
+    "recentConnections": "Aktuelle Verbindungen",
+    "orLogin": "Oder melden Sie sich unten mit einem anderen Konto an",
+    "deleteLoginEntry": "Löschen",
+    "noLoginHistory": "Keine Verbindungen aufgezeichnet"
+  },
+  "validation": {
+    "selectImage": "Bitte wählen Sie eine Bilddatei.",
+    "fileSizeTooLarge": "Die Dateigröße darf nicht überschreiten",
+    "mb": "MB",
+    "fileTypeError": "Die Datei muss ein Bild sein",
+    "invalidEmail": "Ungültige E-Mail",
+    "passwordTooShort": "Passwort muss mindestens enthalten",
+    "characters": "Zeichen",
+    "confirmPasswordMatch": "Passwörter stimmen nicht überein"
+  },
+  "errors": {
+    "uploadError": "Upload-Fehler",
+    "deleteError": "Fehler beim Löschen",
+    "saveError": "Fehler beim Speichern",
+    "loadError": "Fehler beim Laden",
+    "unauthorized": "Nicht autorisiert",
+    "notFound": "Nicht gefunden",
+    "serverError": "Serverfehler"
+  },
+  "success": {
+    "saved": "Erfolgreich gespeichert",
+    "deleted": "Erfolgreich gelöscht",
+    "uploaded": "Erfolgreich hochgeladen",
+    "updated": "Erfolgreich aktualisiert"
+  },
+  "tabLabels": {
+    "loginHistory": "Anmeldeverlauf",
+    "savedDevices": "Gespeicherte Geräte",
+    "general": "Allgemein",
+    "privacy": "Datenschutz",
+    "notifications": "Benachrichtigungen",
+    "appearance": "Darstellung"
+  },
+  "settingsPage": {
+    "managePreferences": "Verwalten Sie Ihre Einstellungen und Kontoeinstellungen",
+    "profilePhoto": "Profilbild",
+    "coverPhoto": "Titelbild"
   }
 }

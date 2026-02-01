@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Bell, Heart, MessageCircle, UserPlus, AtSign } from 'lucide-react';
+import { Bell, MessageCircle, UserPlus, AtSign } from 'lucide-react';
+import { HeartIcon } from '@/components/HeartIcon';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -41,7 +42,7 @@ export function NotificationItem({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'like':
-        return <Heart className="w-5 h-5 text-red-500" />;
+        return <HeartIcon className="w-5 h-5" fill={true} />;
       case 'comment':
         return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case 'follow':

@@ -17,25 +17,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Get posts from users that the current user follows
+    // Get posts (currently returns user's own posts; follow-logic can be reintroduced when Prisma schema aligns)
     const posts = await prisma.post.findMany({
       where: {
-        user: {
-          OR: [
-            // Posts from followed users
-            {
-              followers: {
-                some: {
-                  followerId: session.user.id,
-                },
-              },
-            },
-            // User's own posts
-            {
-              id: session.user.id,
-            },
-          ],
-        },
+        OR: [
+          // User's own posts
+          { userId: session.user.id },
+        ],
         isDeleted: false,
       },
       include: {

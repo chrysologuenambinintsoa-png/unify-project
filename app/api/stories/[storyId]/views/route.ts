@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { publish } from '@/app/api/realtime/broadcast';
 
 // GET /api/stories/[storyId]/views - Get all views of a story
 export async function GET(
@@ -125,6 +126,11 @@ export async function POST(
         },
       },
     });
+
+    // Broadcast view event to realtime subscribers
+    try {
+      publish('story-view', { storyId, view });
+    } catch (e) {}
 
     return NextResponse.json(
       {

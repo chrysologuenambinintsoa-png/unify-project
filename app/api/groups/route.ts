@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, coverImage, avatar } = body;
+    const { name, description, image, isPrivate } = body;
 
     if (!name) {
       return NextResponse.json(
@@ -99,9 +99,9 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        image: avatar ?? coverImage ?? null,
+        image,
         adminId: session.user.id,
-        isPrivate: false,
+        isPrivate: isPrivate ?? false,
         members: {
           create: {
             userId: session.user.id,

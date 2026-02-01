@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    // Fetch user profile with new fields
+    // Fetch user profile (request only core fields to avoid missing-column DB errors)
     const user = await (prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -32,7 +32,6 @@ export async function GET(
         coverImage: true,
         isVerified: true,
         createdAt: true,
-        // About section
         dateOfBirth: true,
         originCity: true,
         currentCity: true,
@@ -40,19 +39,13 @@ export async function GET(
         collegeName: true,
         highSchoolName: true,
         universityName: true,
-        skills: true,
+        collegeInfo: true,
+        highSchoolInfo: true,
+        universityInfo: true,
         pseudonym: true,
-        // Photo gallery
-        photoGallery: {
-          select: {
-            id: true,
-            url: true,
-            type: true,
-            caption: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
+        mobileContact: true,
+        familyRelations: true,
+        skills: true,
         _count: {
           select: {
             posts: true,
@@ -60,7 +53,7 @@ export async function GET(
             friends2: true,
           },
         },
-      } as any,
+      },
     }) as any);
 
     if (!user) {
@@ -133,8 +126,14 @@ export async function GET(
           collegeName: user.collegeName,
           highSchoolName: user.highSchoolName,
           universityName: user.universityName,
+          // prefer structured info if present
+          college: user.collegeInfo || (user.collegeName ? { name: user.collegeName } : null),
+          highSchool: user.highSchoolInfo || (user.highSchoolName ? { name: user.highSchoolName } : null),
+          university: user.universityInfo || (user.universityName ? { name: user.universityName } : null),
           skills: parsedSkills,
           pseudonym: user.pseudonym,
+          mobileContact: user.mobileContact,
+          familyRelations: user.familyRelations,
         },
         // Photo gallery
         photoGallery: user.photoGallery,
@@ -181,6 +180,11 @@ export async function PUT(
         collegeName: body.collegeName,
         highSchoolName: body.highSchoolName,
         universityName: body.universityName,
+        collegeInfo: body.college ? body.college : undefined,
+        highSchoolInfo: body.highSchool ? body.highSchool : undefined,
+        universityInfo: body.university ? body.university : undefined,
+        mobileContact: body.mobileContact,
+        familyRelations: body.familyRelations,
         skills: body.skills ? JSON.stringify(body.skills) : undefined,
       } as any,
       select: {
@@ -189,13 +193,7 @@ export async function PUT(
         fullName: true,
         bio: true,
         pseudonym: true,
-        dateOfBirth: true,
-        originCity: true,
-        currentCity: true,
-        schoolName: true,
-        collegeName: true,
-        highSchoolName: true,
-        universityName: true,
+        mobileContact: true,
         skills: true,
       } as any,
     }) as any);

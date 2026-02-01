@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getNotificationMessage, getNotificationTitle } from '@/lib/translations';
+import { publishNotificationToUsers } from '@/app/api/realtime/broadcast';
 
 export async function GET(request: NextRequest) {
   try {
@@ -155,6 +157,56 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Notify friends about new story
+    try {
+      const friendships = await prisma.friendship.findMany({
+        where: {
+          OR: [
+            { user1Id: session.user.id, status: 'accepted' },
+            { user2Id: session.user.id, status: 'accepted' }
+          ]
+        },
+        select: {
+          user1Id: true,
+          user2Id: true
+        }
+      });
+
+      const friendIds = friendships.map(f => f.user1Id === session.user.id ? f.user2Id : f.user1Id);
+
+      if (friendIds.length > 0) {
+        const actorName = story.user.fullName || story.user.username || 'Utilisateur';
+        const notificationTitle = getNotificationTitle('storyCreated', 'fr');
+        const notificationContent = getNotificationMessage('storyCreated', actorName, 'fr');
+        
+        const notifData = friendIds.map((fid) => ({
+          type: 'story',
+          title: notificationTitle,
+          content: notificationContent,
+          url: `/stories/${story.id}`,
+          userId: fid,
+          actorId: session.user.id,
+        }));
+
+        await prisma.notification.createMany({ data: notifData, skipDuplicates: true });
+        
+        // Publish via SSE to connected clients
+        friendIds.forEach(friendId => {
+          publishNotificationToUsers([friendId], {
+            id: `notif_${story.id}_${Date.now()}`,
+            type: 'story',
+            title: notificationTitle,
+            content: notificationContent,
+            url: `/stories/${story.id}`,
+            actorId: session.user.id,
+            createdAt: new Date(),
+          });
+        });
+      }
+    } catch (notifErr) {
+      console.error('Failed to create story notifications:', notifErr);
+    }
 
     return NextResponse.json(story);
   } catch (error) {

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { Search, TrendingUp, Users, Hash } from 'lucide-react';
+import { Search, TrendingUp, Users, Hash, Heart, MessageCircle, Loader } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface TrendingPost {
   id: string;
@@ -37,8 +38,10 @@ export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<'trending' | 'people' | 'topics'>('trending');
   const [trendingPosts, setTrendingPosts] = useState<TrendingPost[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([]);
+  const [trendingTopics, setTrendingTopics] = useState<Array<{ name: string; posts: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchExploreData();
@@ -47,13 +50,23 @@ export default function ExplorePage() {
   const fetchExploreData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/explore');
-      if (!response.ok) {
+      const [exploreRes, trendsRes] = await Promise.all([
+        fetch('/api/explore'),
+        fetch('/api/explore/trends'),
+      ]);
+      
+      if (!exploreRes.ok) {
         throw new Error('Erreur lors du chargement des données d\'exploration');
       }
-      const data = await response.json();
-      setTrendingPosts(data.trendingPosts);
-      setSuggestedUsers(data.suggestedUsers);
+      
+      const data = await exploreRes.json();
+      setTrendingPosts(data.trendingPosts || []);
+      setSuggestedUsers(data.suggestedUsers || []);
+      
+      if (trendsRes.ok) {
+        const trendsData = await trendsRes.json();
+        setTrendingTopics(Array.isArray(trendsData) ? trendsData : []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
@@ -61,50 +74,21 @@ export default function ExplorePage() {
     }
   };
 
-  const trendingPostsMock = [
-    {
-      id: '1',
-      content: '🚀 Nouvelle fonctionnalité incroyable sur Unify !',
-      author: 'Unify Team',
-      likes: 1247,
-      comments: 89,
-      shares: 23,
-    },
-    {
-      id: '2',
-      content: 'Le futur du développement web avec Next.js 15',
-      author: 'Tech Guru',
-      likes: 892,
-      comments: 156,
-      shares: 45,
-    },
-  ];
+  const handleFollowUser = async (userId: string) => {
+    try {
+      const response = await fetch('/api/friends/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientId: userId }),
+      });
 
-  const suggestedPeople = [
-    {
-      id: '1',
-      name: 'Alice Johnson',
-      username: 'alice_dev',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
-      bio: 'Full-stack developer | React enthusiast',
-      followers: 1234,
-    },
-    {
-      id: '2',
-      name: 'Bob Smith',
-      username: 'bob_design',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',
-      bio: 'UI/UX Designer | Creative mind',
-      followers: 987,
-    },
-  ];
-
-  const trendingTopics = [
-    { name: '#Unify', posts: 15420 },
-    { name: '#NextJS', posts: 8920 },
-    { name: '#React', posts: 12450 },
-    { name: '#TypeScript', posts: 6780 },
-  ];
+      if (response.ok) {
+        setFollowingIds(new Set([...followingIds, userId]));
+      }
+    } catch (err) {
+      console.error('Error following user:', err);
+    }
+  };
 
   return (
     <MainLayout>
@@ -123,10 +107,10 @@ export default function ExplorePage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder={translation.common.search}
+              placeholder={translation.common.search || 'Rechercher...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-dark focus:border-transparent bg-white"
             />
           </div>
 
@@ -140,13 +124,13 @@ export default function ExplorePage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === tab.key
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-primary-dark text-white shadow-lg'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-5 h-5" />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -158,12 +142,15 @@ export default function ExplorePage() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Publications populaires</h2>
               {loading ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-4 text-gray-500">Chargement des publications...</p>
+                  <Loader size={32} className="animate-spin text-primary-dark mx-auto mb-3" />
+                  <p className="text-gray-500">Chargement des publications...</p>
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
-                  <p className="text-red-500">{error}</p>
+                  <p className="text-red-500 font-semibold">{error}</p>
+                  <Button variant="outline" onClick={fetchExploreData} className="mt-4">
+                    Réessayer
+                  </Button>
                 </div>
               ) : trendingPosts.length === 0 ? (
                 <div className="text-center py-12">
@@ -175,14 +162,30 @@ export default function ExplorePage() {
                     key={post.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
+                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition"
                   >
-                    <p className="text-gray-900 mb-2">{post.content}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>Par {post.user.fullName || post.user.username}</span>
-                      <div className="flex space-x-4">
-                        <span>{post._count.likes} likes</span>
-                        <span>{post._count.comments} commentaires</span>
+                    <div className="flex items-start space-x-4 mb-4">
+                      <img
+                        src={post.user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
+                        alt={post.user.fullName || post.user.username}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">{post.user.fullName || post.user.username}</h3>
+                        <p className="text-sm text-gray-500">@{post.user.username}</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-900 mb-4 line-clamp-3">{post.content}</p>
+                    <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+                      <div className="flex space-x-6">
+                        <span className="flex items-center space-x-1 hover:text-red-500 cursor-pointer transition">
+                          <Heart size={16} />
+                          <span>{post._count.likes}</span>
+                        </span>
+                        <span className="flex items-center space-x-1 hover:text-blue-500 cursor-pointer transition">
+                          <MessageCircle size={16} />
+                          <span>{post._count.comments}</span>
+                        </span>
                       </div>
                     </div>
                   </motion.div>
@@ -192,16 +195,19 @@ export default function ExplorePage() {
           )}
 
           {activeTab === 'people' && (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Personnes suggérées</h2>
               {loading ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-4 text-gray-500">Chargement des suggestions...</p>
+                  <Loader size={32} className="animate-spin text-primary-dark mx-auto mb-3" />
+                  <p className="text-gray-500">Chargement des suggestions...</p>
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
-                  <p className="text-red-500">{error}</p>
+                  <p className="text-red-500 font-semibold">{error}</p>
+                  <Button variant="outline" onClick={fetchExploreData} className="mt-4">
+                    Réessayer
+                  </Button>
                 </div>
               ) : suggestedUsers.length === 0 ? (
                 <div className="text-center py-12">
@@ -213,26 +219,29 @@ export default function ExplorePage() {
                     key={user.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between"
+                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition flex items-center justify-between"
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-4 flex-1">
                       <img
                         src={user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
                         alt={user.fullName || user.username}
-                        className="w-12 h-12 rounded-full"
+                        className="w-14 h-14 rounded-full object-cover"
                       />
                       <div>
-                        <h3 className="font-medium text-gray-900">{user.fullName || user.username}</h3>
+                        <h3 className="font-semibold text-gray-900">{user.fullName || user.username}</h3>
                         <p className="text-sm text-gray-500">@{user.username}</p>
-                        {user.bio && <p className="text-sm text-gray-600">{user.bio}</p>}
+                        {user.bio && <p className="text-sm text-gray-600 line-clamp-1">{user.bio}</p>}
+                        <p className="text-xs text-gray-400 mt-1">{user._count.followers} amis</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">{user._count.followers} abonnés</p>
-                      <button className="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-light transition-colors">
-                        Suivre
-                      </button>
-                    </div>
+                    <Button
+                      variant={followingIds.has(user.id) ? 'outline' : 'primary'}
+                      size="sm"
+                      onClick={() => handleFollowUser(user.id)}
+                      disabled={followingIds.has(user.id)}
+                    >
+                      {followingIds.has(user.id) ? 'Demande envoyée' : 'Ajouter'}
+                    </Button>
                   </motion.div>
                 ))
               )}
@@ -242,23 +251,50 @@ export default function ExplorePage() {
           {activeTab === 'topics' && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Sujets tendance</h2>
-              {trendingTopics.map((topic, index) => (
-                <motion.div
-                  key={topic.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">{topic.name}</h3>
-                    <p className="text-sm text-gray-500">{topic.posts.toLocaleString()} publications</p>
-                  </div>
-                  <button className="px-4 py-2 text-primary border border-primary rounded-lg text-sm font-medium hover:bg-primary hover:text-white transition-colors">
-                    Voir plus
-                  </button>
-                </motion.div>
-              ))}
+              <p className="text-sm text-gray-500 mb-6">Découvrez les conversations populaires</p>
+              {loading ? (
+                <div className="text-center py-12">
+                  <Loader size={32} className="animate-spin text-primary-dark mx-auto mb-3" />
+                  <p className="text-gray-500">Chargement des sujets...</p>
+                </div>
+              ) : trendingTopics.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Aucun sujet tendance pour le moment.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {trendingTopics.map((topic, index) => {
+                    // Generate colors based on topic name hash for consistency
+                    const colors = [
+                      'from-blue-400 to-blue-600',
+                      'from-red-400 to-red-600',
+                      'from-cyan-400 to-blue-500',
+                      'from-blue-500 to-blue-700',
+                      'from-purple-400 to-purple-600',
+                      'from-green-400 to-green-600',
+                      'from-yellow-400 to-yellow-600',
+                      'from-pink-400 to-pink-600',
+                    ];
+                    const color = colors[index % colors.length];
+                    const icons = ['💬', '⚛️', '🔵', '📘', '🚀', '✨', '🎯', '💡'];
+                    const icon = icons[index % icons.length];
+
+                    return (
+                      <motion.div
+                        key={topic.name}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: (index % 4) * 0.1 }}
+                        className={`bg-gradient-to-br ${color} p-6 rounded-lg shadow-sm text-white cursor-pointer hover:shadow-lg transition transform hover:scale-105`}
+                      >
+                        <div className="text-3xl mb-3">{icon}</div>
+                        <h3 className="font-bold text-lg">{topic.name}</h3>
+                        <p className="text-white/80 text-sm">{topic.posts} publications</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

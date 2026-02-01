@@ -1,17 +1,22 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MoreVertical, X } from 'lucide-react';
+import { MessageCircle, Share2, Bookmark, MoreVertical, X } from 'lucide-react';
+import { HeartIcon } from '@/components/HeartIcon';
+import { useHomeActivity } from '@/contexts/HomeActivityContext';
+import ShareModal from '@/components/post/ShareModal';
 
 interface PostProps {
   post: any;
   onEdit?: (post: any) => void;
   onDelete?: (postId: string) => void;
   onLike?: (postId: string) => void;
+  onCommentAdded?: () => void | Promise<void>;
 }
 
 export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
   const [liked, setLiked] = useState(!!post.liked);
+  const { incrementHomeActivity } = useHomeActivity();
   const initialLikeCount: number = Array.isArray(post.likes)
     ? post.likes.length
     : typeof post.likes === 'number'
@@ -32,6 +37,7 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalImage, setModalImage] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLike = () => {
@@ -40,6 +46,10 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
     if (onLike) {
       onLike(post.id);
+    }
+    // Increment home activity badge if user is not on home page
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      incrementHomeActivity();
     }
   };
 
@@ -173,14 +183,11 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
           onClick={handleLike}
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
             liked
-              ? 'text-accent bg-accent/10'
+              ? 'text-primary'
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <Heart
-            size={18}
-            className={liked ? 'fill-current' : ''}
-          />
+          <HeartIcon className={`w-5 h-5 ${liked ? 'fill-primary' : ''}`} fill={liked} />
           <span>Like</span>
         </button>
 
@@ -193,7 +200,7 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
         </button>
 
         <button
-          onClick={() => alert('Share feature coming soon!')}
+          onClick={() => setShowShareModal(true)}
           className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200"
         >
           <Share2 size={18} />
@@ -215,6 +222,42 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
           <span>Save</span>
         </button>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        postId={post.id}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={async (shareType, recipientId, message) => {
+          try {
+            const response = await fetch(`/api/posts/${post.id}/share`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                shareType,
+                recipientId: shareType === 'message' ? recipientId : undefined,
+                groupId: shareType === 'group' ? recipientId : undefined,
+                message,
+              }),
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.error || 'Failed to share post');
+            }
+
+            setShareCount(prev => prev + 1);
+            if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+              incrementHomeActivity();
+            }
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Error sharing post';
+            console.error('Share error:', errorMsg);
+            throw err;
+          }
+        }}
+        postContent={post.content}
+      />
 
       {/* Image Modal */}
       {showModal && modalImage && (

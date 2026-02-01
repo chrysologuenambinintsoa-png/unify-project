@@ -7,20 +7,28 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import PostCreator from '@/components/post/PostCreator';
 import Stories from '@/components/Stories';
 import Post from '@/components/Post';
+import SponsoredPostCard from '@/components/SponsoredPostCard';
 import { FriendSuggestions } from '@/components/FriendSuggestions';
 import { PageSuggestions } from '@/components/PageSuggestions';
 import { GroupSuggestions } from '@/components/GroupSuggestions';
 import { PostWithDetails } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useHomeActivity } from '@/contexts/HomeActivityContext';
+import { usePublishedStories } from '@/hooks/usePublishedStories';
 import { motion } from 'framer-motion';
 
 export default function HomePage() {
   const { translation } = useLanguage();
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { clearHomeActivity } = useHomeActivity();
   const [posts, setPosts] = useState<PostWithDetails[]>([]);
+  const [sponsoredPosts, setSponsoredPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Utiliser le hook pour récupérer les stories publiées
+  const { stories, loading: storiesLoading, refresh: refreshStories } = usePublishedStories({ limit: 50 });
 
   // Rediriger vers la page de login si pas d'utilisateur connecté
   useEffect(() => {
@@ -29,10 +37,16 @@ export default function HomePage() {
     }
   }, [status, router]);
 
+  // Réinitialiser le badge home quand on ouvre la page d'accueil
+  useEffect(() => {
+    clearHomeActivity();
+  }, [clearHomeActivity]);
+
   // Charger les posts
   useEffect(() => {
     if (session) {
       fetchPosts();
+      fetchSponsoredPosts();
     }
   }, [session]);
 
@@ -49,6 +63,18 @@ export default function HomePage() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSponsoredPosts = async () => {
+    try {
+      const response = await fetch('/api/sponsored?limit=5');
+      if (response.ok) {
+        const data = await response.json();
+        setSponsoredPosts(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching sponsored posts:', err);
     }
   };
 
@@ -95,7 +121,7 @@ export default function HomePage() {
 
   const handleCreatePost = async (newPost: any) => {
     try {
-      const media = [];
+      const media: any[] = [];
       
       // Ajouter les images (ce sont maintenant des URLs)
       if (newPost.images && newPost.images.length > 0) {
@@ -122,6 +148,26 @@ export default function HomePage() {
         }),
       });
       if (response.ok) {
+        // Also add images to user's photo gallery
+        if (newPost.images && newPost.images.length > 0 && session?.user?.id) {
+          for (const imageUrl of newPost.images) {
+            try {
+              await fetch(`/api/users/${session.user.id}/photos`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  url: imageUrl,
+                  type: 'gallery',
+                  caption: '',
+                }),
+              });
+            } catch (err) {
+              console.error('Error adding photo to gallery:', err);
+            }
+          }
+        }
         await fetchPosts();
       } else {
         const error = await response.json();
@@ -153,7 +199,20 @@ export default function HomePage() {
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Stories</h2>
               </div>
-              <Stories stories={[]} currentUser={session?.user as any} />
+              <Stories 
+                stories={stories.map(story => ({
+                  id: story.id,
+                  user: {
+                    name: story.user.fullName || story.user.username,
+                    avatar: story.user.avatar || 'https://via.placeholder.com/40'
+                  },
+                  image: story.imageUrl || 'https://via.placeholder.com/300x500',
+                  timestamp: new Date(story.createdAt),
+                  viewed: false
+                }))} 
+                currentUser={session?.user as any}
+                onCreated={refreshStories}
+              />
             </div>
             {loading ? (
               <div className="text-center py-12">
@@ -170,14 +229,24 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {posts.map((post) => (
-                  <Post
-                    key={post.id}
-                    post={post}
-                    onLike={handleLike}
-                    onDelete={handleDelete}
-                    onCommentAdded={fetchPosts}
-                  />
+                {/* Afficher les annonces sponsorisées tous les 3 posts */}
+                {posts.map((post, index) => (
+                  <div key={post.id}>
+                    <Post
+                      key={post.id}
+                      post={post}
+                      onLike={handleLike}
+                      onDelete={handleDelete}
+                      onCommentAdded={fetchPosts}
+                    />
+                    {/* Afficher une annonce tous les 3 posts */}
+                    {sponsoredPosts.length > 0 && index > 0 && (index + 1) % 3 === 0 && (
+                      <SponsoredPostCard
+                        key={`sponsored-${index}`}
+                        {...sponsoredPosts[Math.floor(index / 3) % sponsoredPosts.length]}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             )}

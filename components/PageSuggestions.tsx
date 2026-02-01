@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Heart, Users, ExternalLink } from 'lucide-react';
+import { Users, ExternalLink } from 'lucide-react';
+import { HeartIcon } from '@/components/HeartIcon';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 
@@ -144,7 +145,7 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
                     size="sm"
                     className="flex items-center space-x-1"
                   >
-                    <Heart className="w-3 h-3" />
+                    <HeartIcon className="w-3 h-3" fill={false} />
                     <span>J'aime</span>
                   </Button>
                   <Button

@@ -1,7 +1,5 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
-import FacebookProvider from 'next-auth/providers/facebook';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -17,24 +15,7 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            allowDangerousEmailAccountLinking: true,
-          }),
-        ]
-      : []),
-    ...(process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET
-      ? [
-          FacebookProvider({
-            clientId: process.env.FACEBOOK_CLIENT_ID,
-            clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-            allowDangerousEmailAccountLinking: true,
-          }),
-        ]
-      : []),
+    // Google and Facebook OAuth providers removed
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -69,8 +50,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           username: user.username,
-          fullName: user.fullName || undefined,
-          avatar: user.avatar || undefined,
+          name: user.fullName || undefined,
+          image: user.avatar || undefined,
         };
       },
     }),
@@ -103,7 +84,7 @@ export const authOptions: NextAuthOptions = {
           session.user.email = dbUser.email || undefined;
           session.user.username = dbUser.username || undefined;
           session.user.fullName = dbUser.fullName || undefined;
-          session.user.avatar = dbUser.avatar || undefined;
+          session.user.image = dbUser.avatar || undefined;
         }
       }
       return session;

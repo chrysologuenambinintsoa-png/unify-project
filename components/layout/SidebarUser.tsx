@@ -21,15 +21,15 @@ export function SidebarUser() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.7 }}
-      className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 border-t border-blue-800"
+      className="p-3 sm:p-4 border-t border-primary-light mt-4 w-full"
     >
       <Link
         href="/settings"
-        className="relative flex items-center space-x-3 p-3 rounded-lg hover:bg-primary-light transition-all duration-200 group"
+        className="flex items-center space-x-3 p-2 sm:p-3 rounded-lg hover:bg-primary-light transition-all duration-200 group w-full"
       >
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-400 group-hover:border-accent-dark transition-colors">
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-accent-dark group-hover:border-accent-light transition-colors">
             {session.user.image ? (
               <Image
                 src={session.user.image}
@@ -57,17 +57,17 @@ export function SidebarUser() {
         </div>
 
         {/* User Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm truncate group-hover:text-blue-300 transition-colors">
+        <div className="flex-1 min-w-0 truncate">
+          <p className="text-white font-bold text-sm truncate group-hover:text-accent-light transition-colors">
             {session.user.name || 'User'}
           </p>
-          <p className="text-blue-200 text-xs truncate group-hover:text-blue-100 transition-colors">
-            Voir le profil
+          <p className="text-blue-200 text-xs truncate group-hover:text-accent-light transition-colors">
+            @{session.user.email?.split('@')[0] || 'user'}
           </p>
         </div>
 
         {/* Indicator */}
-        <div className="flex-shrink-0 text-blue-300 group-hover:text-blue-100 transition-colors">
+        <div className="flex-shrink-0 text-gray-400 group-hover:text-accent-dark transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>

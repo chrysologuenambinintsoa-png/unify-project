@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 interface PostCreatorProps {
   onCreatePost: (post: Post) => void;
@@ -68,14 +69,38 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
           body: formData,
         });
         if (response.ok) {
-          const { urls } = await response.json();
-          setImages(prev => [...prev, ...urls]);
+          const data = await response.json();
+          const { urls } = data;
+          if (urls && urls.length > 0) {
+            setImages(prev => [...prev, ...urls]);
+          }
+          if (data.warnings && data.warnings.length > 0) {
+            console.warn('Image upload warnings:', data.warnings);
+          }
         } else {
-          const error = await response.json();
-          console.error('Error uploading images:', error);
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch {
+            errorData = { error: 'Failed to parse error response', status: response.status };
+          }
+          
+          const errorMessage = errorData?.message || errorData?.error || 'Failed to upload images';
+          const errorCode = errorData?.errorCode || 'UNKNOWN_ERROR';
+          
+          console.error('Error uploading images:', {
+            message: errorMessage,
+            errorCode,
+            status: response.status,
+            fullError: errorData
+          });
         }
       } catch (err) {
-        console.error('Error uploading images:', err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('Error uploading images:', {
+          message: errorMessage,
+          type: 'NetworkError'
+        });
       }
     }
   };
@@ -95,14 +120,38 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
           body: formData,
         });
         if (response.ok) {
-          const { urls } = await response.json();
-          setVideos(prev => [...prev, ...urls]);
+          const data = await response.json();
+          const { urls } = data;
+          if (urls && urls.length > 0) {
+            setVideos(prev => [...prev, ...urls]);
+          }
+          if (data.warnings && data.warnings.length > 0) {
+            console.warn('Video upload warnings:', data.warnings);
+          }
         } else {
-          const error = await response.json();
-          console.error('Error uploading videos:', error);
+          let errorData;
+          try {
+            errorData = await response.json();
+          } catch {
+            errorData = { error: 'Failed to parse error response', status: response.status };
+          }
+          
+          const errorMessage = errorData?.message || errorData?.error || 'Failed to upload videos';
+          const errorCode = errorData?.errorCode || 'UNKNOWN_ERROR';
+          
+          console.error('Error uploading videos:', {
+            message: errorMessage,
+            errorCode,
+            status: response.status,
+            fullError: errorData
+          });
         }
       } catch (err) {
-        console.error('Error uploading videos:', err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('Error uploading videos:', {
+          message: errorMessage,
+          type: 'NetworkError'
+        });
       }
     }
   };
@@ -136,16 +185,31 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-4">
       {/* User Info */}
-      <div className="flex items-center mb-4">
-        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold mr-3">
-          {getUserInitial()}
+      <div className="flex items-center mb-4 space-x-3">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 bg-primary-dark rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-accent-dark overflow-hidden flex-shrink-0">
+            {session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt={session?.user?.name || 'User'}
+                width={48}
+                height={48}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{session?.user?.name?.[0]?.toUpperCase() || 'U'}</span>
+            )}
+          </div>
+          <p className="text-xs font-semibold text-gray-700 mt-1 truncate w-12 text-center">
+            {session?.user?.name?.split(' ')[0] || 'User'}
+          </p>
         </div>
         <textarea
           placeholder="What's on your mind?"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
-          className="flex-1 bg-gray-100 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="flex-1 bg-gray-100 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none"
         />
       </div>
 

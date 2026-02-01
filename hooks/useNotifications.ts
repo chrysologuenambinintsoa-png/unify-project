@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface NotificationData {
   id: string;
@@ -19,6 +19,7 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -106,12 +107,58 @@ export const useNotifications = () => {
     }
   }, []);
 
+  // Setup SSE connection for real-time notifications
+  useEffect(() => {
+    const setupSSE = () => {
+      try {
+        // Close existing connection if any
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+        }
+
+        eventSourceRef.current = new EventSource('/api/realtime/notifications');
+
+        eventSourceRef.current.addEventListener('notification', (event: any) => {
+          try {
+            const newNotification = JSON.parse(event.data);
+            // Add new notification to the top
+            setNotifications(prev => [newNotification, ...prev]);
+            // Increment unread count
+            setUnreadCount(prev => prev + 1);
+          } catch (err) {
+            console.error('Error parsing notification event:', err);
+          }
+        });
+
+        eventSourceRef.current.onerror = () => {
+          console.warn('SSE connection error, will retry on next interval');
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+          // Retry after 5 seconds
+          setTimeout(setupSSE, 5000);
+        };
+      } catch (err) {
+        console.error('Error setting up SSE:', err);
+      }
+    };
+
+    setupSSE();
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
   // Fetch on mount
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds (as fallback if SSE fails)
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);

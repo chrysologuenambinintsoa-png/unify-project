@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
@@ -24,8 +24,7 @@
     "forgotPassword": "Forgot password?",
     "resetPassword": "Reset Password",
     "resetLinkSent": "Reset link sent",
-    "loginWithGoogle": "Continue with Google",
-    "loginWithFacebook": "Continue with Facebook",
+    
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "createAccount": "Create account",
@@ -172,5 +171,49 @@
     "nextSlide": "Next",
     "prevSlide": "Previous",
     "skipIntro": "Skip"
+  },
+  "login": {
+    "recentConnections": "Recent Connections",
+    "orLogin": "Or login with another account below",
+    "deleteLoginEntry": "Delete",
+    "noLoginHistory": "No connections recorded"
+  },
+  "validation": {
+    "selectImage": "Please select an image file.",
+    "fileSizeTooLarge": "File size must not exceed",
+    "mb": "MB",
+    "fileTypeError": "File must be an image",
+    "invalidEmail": "Invalid email",
+    "passwordTooShort": "Password must contain at least",
+    "characters": "characters",
+    "confirmPasswordMatch": "Passwords do not match"
+  },
+  "errors": {
+    "uploadError": "Upload error",
+    "deleteError": "Delete error",
+    "saveError": "Save error",
+    "loadError": "Load error",
+    "unauthorized": "Unauthorized",
+    "notFound": "Not found",
+    "serverError": "Server error"
+  },
+  "success": {
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "uploaded": "Uploaded successfully",
+    "updated": "Updated successfully"
+  },
+  "tabLabels": {
+    "loginHistory": "Login History",
+    "savedDevices": "Saved Devices",
+    "general": "General",
+    "privacy": "Privacy",
+    "notifications": "Notifications",
+    "appearance": "Appearance"
+  },
+  "settingsPage": {
+    "managePreferences": "Manage your preferences and account settings",
+    "profilePhoto": "Profile Photo",
+    "coverPhoto": "Cover Photo"
   }
 }

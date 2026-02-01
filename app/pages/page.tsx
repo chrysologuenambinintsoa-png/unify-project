@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Plus, Flag, Users, Star, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import CreatePageModal from '@/components/CreatePageModal';
 
 interface Page {
   id: string;
@@ -31,6 +32,7 @@ export default function PagesPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-pages' | 'discover'>('my-pages');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchPages();
@@ -39,7 +41,7 @@ export default function PagesPage() {
   const fetchPages = async () => {
     try {
       setLoading(true);
-      const endpoint = activeTab === 'my-pages' ? '/api/pages/my' : '/api/pages/discover';
+      const endpoint = activeTab === 'my-pages' ? '/api/pages?type=my' : '/api/pages?type=discover';
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
@@ -50,6 +52,16 @@ export default function PagesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreatePage = async (data: { name: string; description: string; image?: string }) => {
+    const response = await fetch('/api/pages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create page');
+    fetchPages();
   };
 
   const mockPages: Page[] = [
@@ -102,7 +114,7 @@ export default function PagesPage() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Pages</h1>
               <p className="text-gray-600">Découvrez et suivez vos pages préférées</p>
             </div>
-            <Button className="flex items-center space-x-2">
+            <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
               <Plus className="w-5 h-5" />
               <span>Créer une page</span>
             </Button>
@@ -240,6 +252,8 @@ export default function PagesPage() {
           )}
         </div>
       </motion.div>
+
+      <CreatePageModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreatePage} />
     </MainLayout>
   );
 }

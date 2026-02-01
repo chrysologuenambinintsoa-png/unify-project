@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AvatarUploadProps {
   currentAvatar?: string | null;
@@ -15,6 +16,7 @@ interface AvatarUploadProps {
 
 export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: AvatarUploadProps) {
   const { data: session, update } = useSession();
+  const { translation } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,13 +27,13 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner un fichier image.');
+        alert(translation.validation.selectImage);
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('La taille du fichier ne doit pas dépasser 5MB.');
+        alert(`${translation.validation.fileSizeTooLarge} 5MB.`);
         return;
       }
 
@@ -76,18 +78,18 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
         setPreview(null);
       } else {
         const error = await response.json();
-        alert(error.error || 'Erreur lors du téléchargement');
+        alert(error.error || translation.errors.uploadError);
       }
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      alert('Erreur lors du téléchargement de l\'avatar');
+      alert(translation.errors.uploadError);
     } finally {
       setIsUploading(false);
     }
   };
 
   const removeAvatar = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer votre avatar ?')) return;
+    if (!confirm(translation.profile.deleteCoverConfirm)) return;
 
     try {
       setIsUploading(true);
@@ -108,11 +110,11 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
           },
         });
       } else {
-        alert('Erreur lors de la suppression');
+        alert(translation.errors.deleteError);
       }
     } catch (error) {
       console.error('Error removing avatar:', error);
-      alert('Erreur lors de la suppression de l\'avatar');
+      alert(translation.errors.deleteError);
     } finally {
       setIsUploading(false);
     }
@@ -151,7 +153,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="p-2 bg-white rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-                  title="Changer d'avatar"
+                  title={translation.profile.changeCover}
                 >
                   <Camera className="w-4 h-4" />
                 </button>
@@ -159,7 +161,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
                   <button
                     onClick={removeAvatar}
                     className="p-2 bg-white rounded-full text-red-600 hover:bg-red-100 transition-colors"
-                    title="Supprimer l'avatar"
+                    title={translation.common.delete}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -202,7 +204,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
           disabled={isUploading}
         >
           <Upload className="w-4 h-4 mr-2" />
-          Télécharger
+          {translation.settings.uploadPhoto}
         </Button>
         <Button
           variant="secondary"
@@ -210,7 +212,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
           onClick={generateRandomAvatar}
           disabled={isUploading}
         >
-          Avatar aléatoire
+          {translation.settings.randomAvatar}
         </Button>
       </div>
     </div>

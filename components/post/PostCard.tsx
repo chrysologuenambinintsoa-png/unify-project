@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { HeartIcon } from '@/components/HeartIcon';
+import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import ReactionPicker from './ReactionPicker';
+import ShareModal from './ShareModal';
 
 interface PostCardProps {
   post: Post;
@@ -28,6 +31,7 @@ interface Comment {
 
 export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
   const [liked, setLiked] = useState(false);
+  const { incrementHomeActivity } = useHomeActivity();
   const [currentReaction, setCurrentReaction] = useState<string>('');
   const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 100));
   const [commentCount, setCommentCount] = useState(Math.floor(Math.random() * 20));
@@ -53,6 +57,10 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
       setCurrentReaction('');
       setLikeCount(prev => prev - 1);
     }
+    // Increment home activity badge if user is not on home page
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      incrementHomeActivity();
+    }
   };
 
   const handleAddComment = () => {
@@ -74,10 +82,33 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
     setShowShareModal(true);
   };
 
-  const handleSharePost = (option: string) => {
-    setShareCount(prev => prev + 1);
-    setShowShareModal(false);
-    alert(`Shared to: ${option}`);
+  const handleSharePost = async (shareType: 'message' | 'group', recipientId: string, message?: string) => {
+    try {
+      const response = await fetch(`/api/posts/${post.id}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shareType,
+          recipientId: shareType === 'message' ? recipientId : undefined,
+          groupId: shareType === 'group' ? recipientId : undefined,
+          message,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to share post');
+      }
+
+      setShareCount(prev => prev + 1);
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        incrementHomeActivity();
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Error sharing post';
+      console.error('Share error:', errorMsg);
+      throw err;
+    }
   };
 
   const handleSave = () => {
@@ -269,12 +300,12 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           onClick={() => handleLike()}
           onMouseEnter={handleLikeButtonLongPress}
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-            liked ? 'text-primary bg-primary/10' : 'text-gray-600 hover:bg-gray-100'
+            liked ? 'text-primary' : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <span className="text-xl">
-            {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : liked ? '👍' : '🤍'}
-          </span>
+          <div className="text-xl">
+            {currentReaction === 'Love' ? <HeartIcon className="w-5 h-5" fill={true} /> : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : liked ? <HeartIcon className="w-5 h-5" fill={true} /> : <HeartIcon className="w-5 h-5" fill={false} />}
+          </div>
           <span>{currentReaction || 'Like'}</span>
         </button>
 
@@ -305,34 +336,13 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
       </div>
 
       {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onClick={() => setShowShareModal(false)}>
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4">Share to</h3>
-            <div className="space-y-2">
-              <button onClick={() => handleSharePost('News Feed')} className="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
-                <span className="text-2xl">📰</span>
-                <span className="font-semibold">Share to News Feed</span>
-              </button>
-              <button onClick={() => handleSharePost('Story')} className="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
-                <span className="text-2xl">📖</span>
-                <span className="font-semibold">Share to Story</span>
-              </button>
-              <button onClick={() => handleSharePost('Messenger')} className="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
-                <span className="text-2xl">💬</span>
-                <span className="font-semibold">Send in Messenger</span>
-              </button>
-              <button onClick={() => handleSharePost('Copy Link')} className="w-full flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
-                <span className="text-2xl">🔗</span>
-                <span className="font-semibold">Copy Link</span>
-              </button>
-            </div>
-            <button onClick={() => setShowShareModal(false)} className="mt-4 w-full bg-gray-200 text-gray-800 py-2 rounded-lg font-semibold hover:bg-gray-300 transition">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      <ShareModal
+        postId={post.id}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={handleSharePost}
+        postContent={post.content}
+      />
 
       {/* Comments Section */}
       {showComments && (

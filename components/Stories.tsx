@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Story from './Story';
+import { Send, SmilePlus } from 'lucide-react';
 
 interface StoriesProps {
   stories: Story[];
@@ -28,6 +29,7 @@ interface User {
 
 export default function Stories({ stories, currentUser, onCreated }: StoriesProps) {
   const [activeStory, setActiveStory] = useState<Story | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createImage, setCreateImage] = useState('');
   const [createVideo, setCreateVideo] = useState('');
@@ -35,13 +37,218 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
   const [creating, setCreating] = useState(false);
   const [createBackground, setCreateBackground] = useState<string>('gradient-1');
   const [previewType, setPreviewType] = useState<'image'|'video'|null>(null);
+  const [storyMessage, setStoryMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedEmojis, setSelectedEmojis] = useState<string[]>([]);
+  const [sentEmojis, setSentEmojis] = useState<{emoji: string, id: string}[]>([]);
+  // pinnedEmojis: reactions that are displayed on the photo (persisted for the viewer)
+  const [pinnedEmojis, setPinnedEmojis] = useState<{emoji: string, id: string}[]>([]);
+  const [sendingEmojis, setSendingEmojis] = useState(false);
+  const [viewers, setViewers] = useState<any[]>([]);
+  const [viewCount, setViewCount] = useState<number>(0);
+  const [reactionGroups, setReactionGroups] = useState<Array<{emoji: string; count: number; users: any[]}>>([]);
+  const [progress, setProgress] = useState(0); // 0 - 100 for current story
+  const [paused, setPaused] = useState(false);
+  const progressRef = useRef<number | null>(null);
+  const DURATION = 5000; // ms per story
 
-  const handleViewStory = (story: Story) => {
+  // Quick-reaction emojis: love, like, triste, etonné, hahaha
+  const emojis = ['❤️', '👍', '😢', '😮', '😂'];
+
+  const handleViewStory = (story: any) => {
+    const idx = stories.findIndex(s => s.id === story.id);
+    setActiveIndex(idx >= 0 ? idx : 0);
     setActiveStory(story);
   };
 
   const handleCloseStory = () => {
     setActiveStory(null);
+    setActiveIndex(null);
+    setStoryMessage('');
+    setSelectedEmojis([]);
+    setShowEmojiPicker(false);
+    setSentEmojis([]);
+  };
+
+  // Auto-advance progress management
+  useEffect(() => {
+    if (activeIndex === null) return;
+    setProgress(0);
+
+    const start = Date.now();
+    const tick = () => {
+      const interactionPaused = paused || showEmojiPicker || !!storyMessage.trim() || sendingEmojis || selectedEmojis.length > 0;
+      if (interactionPaused) return;
+      const elapsed = Date.now() - start;
+      const pct = Math.min(100, (elapsed / DURATION) * 100 + (progressRef.current ?? 0));
+      setProgress(pct);
+      if (pct >= 100) {
+        goNext();
+      }
+    };
+
+    const interval = setInterval(tick, 100);
+    progressRef.current = 0;
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, paused, showEmojiPicker, storyMessage, sendingEmojis, selectedEmojis.length]);
+
+  // keep activeStory in sync with index
+  useEffect(() => {
+    if (activeIndex === null) return;
+    const s = stories[activeIndex];
+    if (s) setActiveStory(s);
+  }, [activeIndex, stories]);
+
+  const goNext = () => {
+    if (activeIndex === null) return;
+    if (activeIndex + 1 < stories.length) {
+      setActiveIndex(activeIndex + 1);
+    } else {
+      handleCloseStory();
+    }
+  };
+
+  const goPrev = () => {
+    if (activeIndex === null) return;
+    if (activeIndex - 1 >= 0) {
+      setActiveIndex(activeIndex - 1);
+    } else {
+      // if at first, close viewer
+      handleCloseStory();
+    }
+  };
+
+  const handleSendMessage = async () => {
+    // Only send text messages from the input — do not send selected emojis here
+    if (!storyMessage.trim()) return;
+
+    if (!activeStory?.id) {
+      console.error('No active story to send to');
+      return;
+    }
+
+    setSendingEmojis(true);
+    try {
+      // Send the text message only
+      try {
+        const msgResp = await fetch(`/api/stories/${activeStory.id}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ message: storyMessage.trim(), imageUrl: activeStory.image }),
+        });
+
+        if (!msgResp.ok) {
+          let errBody: any = null;
+          try { errBody = await msgResp.json(); } catch { errBody = await msgResp.text().catch(() => null); }
+          console.error('Failed to send story message:', msgResp.status, errBody);
+        }
+      } catch (err) {
+        console.error('Error sending story message:', err);
+      }
+
+      // Close picker and clear input (do not auto-send emojis)
+      setShowEmojiPicker(false);
+      setStoryMessage('');
+      setSelectedEmojis([]);
+    } catch (error) {
+      console.error('Unexpected error sending message:', error);
+    } finally {
+      setSendingEmojis(false);
+    }
+  };
+
+  const toggleEmoji = (emoji: string) => {
+    if (!activeStory?.id) return;
+
+    const already = selectedEmojis.includes(emoji);
+
+    // Optimistically update UI
+    setSelectedEmojis(prev => (already ? prev.filter(e => e !== emoji) : [...prev, emoji]));
+
+    // fermer le picker automatiquement après sélection
+    setShowEmojiPicker(false);
+
+    // optimistic update for reaction groups (so counts appear instantly)
+    try {
+      const me = currentUser ? { id: currentUser.id, username: currentUser.name, fullName: currentUser.name, avatar: currentUser.avatar } : null;
+      setReactionGroups(prev => {
+        const copy = JSON.parse(JSON.stringify(prev || [])) as Array<any>;
+        const idx = copy.findIndex(r => r.emoji === emoji);
+        if (already) {
+          // remove my reaction locally
+          if (idx >= 0) {
+            copy[idx].count = Math.max(0, copy[idx].count - 1);
+            if (me) copy[idx].users = copy[idx].users.filter((u: any) => u.id !== me.id);
+            if (copy[idx].count === 0) copy.splice(idx, 1);
+          }
+        } else {
+          if (idx >= 0) {
+            copy[idx].count = (copy[idx].count || 0) + 1;
+            if (me) copy[idx].users = [me, ...copy[idx].users.filter((u: any) => u.id !== me.id)];
+          } else {
+            copy.unshift({ emoji, count: 1, users: me ? [me] : [] });
+          }
+        }
+        return copy;
+      });
+    } catch (e) {}
+
+    (async () => {
+      try {
+        if (already) {
+          // remove reaction
+          const resp = await fetch(`/api/stories/${activeStory.id}/reactions`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+          });
+          if (resp.ok) {
+            // remove pinned/sent
+            setPinnedEmojis(prev => prev.filter(p => p.emoji !== emoji));
+            setSentEmojis(prev => prev.filter(p => p.emoji !== emoji));
+          } else {
+            console.error('Failed to delete reaction', resp.status);
+          }
+        } else {
+          // create reaction immediately
+          const payload = { emoji };
+          const resp = await fetch(`/api/stories/${activeStory.id}/reactions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+          });
+            if (resp.ok) {
+            const entry = { emoji, id: Math.random().toString(36).slice(2) };
+            // pinned: show as a small badge on the photo
+            setPinnedEmojis(prev => [...prev, entry]);
+            // sent animated emoji
+            setSentEmojis(prev => [...prev, entry]);
+            // cleanup animated emojis after short delay
+            setTimeout(() => setSentEmojis(prev => prev.filter(p => p.id !== entry.id)), 2000);
+
+            // refresh reaction groups so counts update
+            (async () => {
+              try {
+                const r = await fetch(`/api/stories/${activeStory.id}/reactions`);
+                if (r.ok) {
+                  const j = await r.json();
+                  setReactionGroups(j.reactions || []);
+                }
+              } catch (e) {}
+            })();
+          } else {
+            let errBody: any = null;
+            try { errBody = await resp.json(); } catch { errBody = await resp.text().catch(() => null); }
+            console.error('Failed to create reaction', resp.status, errBody);
+          }
+        }
+      } catch (err) {
+        console.error('Error toggling emoji reaction:', err);
+      }
+    })();
   };
 
   const openCreate = () => setShowCreateModal(true);
@@ -60,6 +267,18 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
         const err = await res.json();
         throw new Error(err?.error || 'Failed to create story');
       }
+            // refresh reaction groups after removal
+            if (activeStory?.id) {
+              (async () => {
+                try {
+                  const r = await fetch(`/api/stories/${activeStory.id}/reactions`);
+                  if (r.ok) {
+                    const j = await r.json();
+                    setReactionGroups(j.reactions || []);
+                  }
+                } catch (e) {}
+              })();
+            }
       // optionally refresh the page or call parent callback
       closeCreate();
       if (typeof onCreated === 'function') {
@@ -74,6 +293,120 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       setCreating(false);
     }
   };
+
+  // When opening a story, record view and fetch viewers + reaction groups
+  useEffect(() => {
+    if (!activeStory?.id) return;
+    let mounted = true;
+
+    const fetchStats = async () => {
+      try {
+        // mark as viewed (server will ignore if already viewed)
+        try {
+          await fetch(`/api/stories/${activeStory.id}/views`, { method: 'POST', credentials: 'same-origin' });
+        } catch (e) {}
+
+        const vResp = await fetch(`/api/stories/${activeStory.id}/views`);
+        if (vResp.ok) {
+          const j = await vResp.json();
+          if (mounted) {
+            setViewCount(j.total || 0);
+            setViewers(j.views || []);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch views', err);
+      }
+
+      try {
+        const rResp = await fetch(`/api/stories/${activeStory.id}/reactions`);
+        if (rResp.ok) {
+          const j = await rResp.json();
+          if (mounted) setReactionGroups(j.reactions || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch reactions', err);
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 2000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, [activeStory?.id]);
+
+  // Real-time SSE subscription
+  useEffect(() => {
+    if (!activeStory?.id) return;
+    const es = new EventSource('/api/realtime');
+
+    const onView = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.storyId !== activeStory.id) return;
+        // update views
+        if (data.view) {
+          setViewCount(prev => Math.max(prev, (prev || 0) + 1));
+          setViewers(prev => [data.view, ...(prev || [])].slice(0, 50));
+        }
+      } catch (err) {}
+    };
+
+    const onReaction = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.storyId !== activeStory.id) return;
+        // handle actions: added / updated / removed
+        const { action } = data;
+        if (action === 'added' || action === 'updated') {
+          const r = data.reaction || data.reaction; // normalized
+          setReactionGroups(prev => {
+            const copy = JSON.parse(JSON.stringify(prev || []));
+            const idx = copy.findIndex((g: any) => g.emoji === r.emoji);
+            if (idx >= 0) {
+              copy[idx].count = r.count || (copy[idx].count + 1);
+              // merge users if provided
+              if (r.user) copy[idx].users = [r.user, ...copy[idx].users.filter((u:any)=>u.id!==r.user.id)];
+            } else {
+              copy.unshift({ emoji: r.emoji, count: r.count || 1, users: r.user ? [r.user] : [] });
+            }
+            return copy;
+          });
+        } else if (action === 'removed') {
+          const emoji = data.emoji;
+          setReactionGroups(prev => {
+            const copy = JSON.parse(JSON.stringify(prev || []));
+            const idx = copy.findIndex((g: any) => g.emoji === emoji);
+            if (idx >= 0) {
+              copy[idx].count = Math.max(0, (copy[idx].count || 1) - 1);
+              if (copy[idx].count === 0) copy.splice(idx, 1);
+            }
+            return copy;
+          });
+          setPinnedEmojis(prev => prev.filter(p => p.emoji !== data.emoji));
+        }
+      } catch (err) {}
+    };
+
+    const onMessage = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.storyId !== activeStory.id) return;
+        // insert into notifications or handle message received
+        // For now, we won't alter UI, but could show a toast or increment counters
+      } catch (err) {}
+    };
+
+    es.addEventListener('story-view', onView as EventListener);
+    es.addEventListener('story-reaction', onReaction as EventListener);
+    es.addEventListener('story-message', onMessage as EventListener);
+
+    return () => {
+      es.removeEventListener('story-view', onView as EventListener);
+      es.removeEventListener('story-reaction', onReaction as EventListener);
+      es.removeEventListener('story-message', onMessage as EventListener);
+      es.close();
+    };
+  }, [activeStory?.id]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-4">
@@ -112,11 +445,42 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
           <div
             className="relative w-full max-w-md h-full md:h-[80vh] md:rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={() => setPaused(true)}
+            onMouseUp={() => setPaused(false)}
+            onTouchStart={() => setPaused(true)}
+            onTouchEnd={() => setPaused(false)}
+            onClickCapture={(e: any) => {
+              // prevent navigation when interacting with controls (input/button/etc.)
+              try {
+                const tgt = e.target as HTMLElement;
+                if (tgt && typeof tgt.closest === 'function') {
+                  const interactive = tgt.closest('button, input, textarea, select, label');
+                  if (interactive) return;
+                }
+
+                // handle tap to navigate left/right
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clientX = e.clientX ?? (e.touches?.[0]?.clientX);
+                const x = clientX - rect.left;
+                if (x < rect.width / 2) {
+                  goPrev();
+                } else {
+                  goNext();
+                }
+              } catch (err) {}
+            }}
           >
-            {/* Progress Bar */}
+            {/* Multi-segment Progress (Facebook-like) */}
             <div className="absolute top-0 left-0 right-0 z-10 p-4">
-              <div className="h-1 bg-gray-600 rounded-full overflow-hidden">
-                <div className="h-full bg-accent rounded-full transition-all duration-[5000ms] ease-linear" style={{ width: '0%' }} />
+              <div className="flex gap-2">
+                {stories.map((s, idx) => (
+                  <div key={s.id} className="flex-1 h-1 bg-gray-600 rounded overflow-hidden">
+                    <div
+                      className="h-full bg-white rounded transition-all ease-linear"
+                      style={{ width: idx < (activeIndex ?? -1) ? '100%' : idx === activeIndex ? `${progress}%` : '0%' }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -148,13 +512,140 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
               className="w-full h-full object-cover"
             />
 
+            {/* Animated Sent Emojis */}
+            {/* Reactions summary (emoji counts) */}
+            <div className="absolute top-16 left-6 z-20 pointer-events-none flex items-center gap-2">
+              {reactionGroups.map(r => (
+                <div key={r.emoji} className="flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded">
+                  <span className="text-xl leading-none">{r.emoji}</span>
+                  <span className="text-sm">{r.count}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Viewers (avatars + count) */}
+            <div className="absolute top-16 right-6 z-20 pointer-events-none flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {viewers.slice(0,5).map(u => (
+                  u?.user?.avatar ? (
+                    <img key={u.id} src={u.user.avatar} alt={u.user.fullName || u.user.username} className="w-8 h-8 rounded-full border-2 border-white" />
+                  ) : (
+                    <div key={u.id} className="w-8 h-8 rounded-full bg-gray-300 text-xs flex items-center justify-center border-2 border-white text-black">{(u.user.fullName||u.user.username||'U').charAt(0)}</div>
+                  )
+                ))}
+              </div>
+              <div className="text-white text-sm bg-black/50 px-2 py-1 rounded">{viewCount} vus</div>
+            </div>
+
+            {/* Pinned Emojis (displayed on photo) - small, limited to 3 to avoid clutter */}
+            <div className="absolute top-28 right-6 z-20 pointer-events-none flex flex-col items-end gap-1">
+              {pinnedEmojis.slice(0,3).map(p => (
+                <div key={p.id} className="text-2xl leading-none opacity-90 transform-gpu translate-y-0">
+                  {p.emoji}
+                </div>
+              ))}
+            </div>
+
+            {/* Animated Sent Emojis */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {sentEmojis.map((item) => (
+                <div
+                  key={item.id}
+                  className="absolute text-4xl"
+                  style={{
+                    left: Math.random() * 100 + '%',
+                    bottom: '20%',
+                    transform: `translateY(0) scale(1) rotate(${Math.floor(Math.random()*30)-15}deg)`,
+                    animation: `emojiPop ${1.2 + Math.random() * 0.8}s cubic-bezier(.2,.8,.2,1) forwards`
+                  }}
+                >
+                  {item.emoji}
+                </div>
+              ))}
+            </div>
+
+            <style>{`
+              @keyframes emojiPop {
+                0% {
+                  opacity: 1;
+                  transform: translateY(0) scale(0.9) rotate(0deg);
+                }
+                20% {
+                  transform: translateY(-8px) scale(1.15) rotate(6deg);
+                }
+                60% {
+                  opacity: 1;
+                  transform: translateY(-120px) scale(1) rotate(2deg);
+                }
+                100% {
+                  opacity: 0;
+                  transform: translateY(-260px) scale(0.6) rotate(-6deg);
+                }
+              }
+            `}</style>
+
             {/* Story Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-              <input
-                type="text"
-                placeholder="Send message..."
-                className="w-full bg-transparent text-white placeholder-gray-300 focus:outline-none border-b border-white/30 pb-2"
-              />
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/50 to-transparent">
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <div className="mb-3 bg-gray-900/80 rounded-lg p-2 flex gap-2 overflow-x-auto">
+                  {emojis.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => toggleEmoji(emoji)}
+                      className={`text-xl px-2 py-1 rounded hover:scale-110 transition-transform ${
+                        selectedEmojis.includes(emoji) ? 'ring-2 ring-accent rounded' : ''
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Selected Emojis Display */}
+              {selectedEmojis.length > 0 && (
+                <div className="mb-3 flex gap-2 flex-wrap">
+                  {selectedEmojis.map(emoji => (
+                    <span
+                      key={emoji}
+                      className="text-2xl cursor-pointer"
+                      onClick={() => toggleEmoji(emoji)}
+                    >
+                      {emoji}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Message Input */}
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  disabled={sendingEmojis}
+                  className="flex-shrink-0 p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Ajouter des emojis"
+                >
+                  <SmilePlus size={20} className="text-white" />
+                </button>
+                <input
+                  type="text"
+                  value={storyMessage}
+                  onChange={(e) => setStoryMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !sendingEmojis && handleSendMessage()}
+                  placeholder="Envoyer un message"
+                  disabled={sendingEmojis}
+                  className="flex-1 bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:bg-white/30 border-b border-white/30 pb-2 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!storyMessage.trim() || sendingEmojis}
+                  className="flex-shrink-0 p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Envoyer"
+                >
+                  <Send size={20} className="text-white" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

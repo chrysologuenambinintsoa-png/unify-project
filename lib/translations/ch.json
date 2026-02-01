@@ -1,4 +1,4 @@
-{
+﻿{
   "common": {
     "loading": "加载中...",
     "error": "发生错误",
@@ -24,8 +24,7 @@
     "forgotPassword": "忘记密码？",
     "resetPassword": "重置密码",
     "resetLinkSent": "重置链接已发送",
-    "loginWithGoogle": "使用Google继续",
-    "loginWithFacebook": "使用Facebook继续",
+    
     "noAccount": "没有账号？",
     "hasAccount": "已有账号？",
     "createAccount": "创建账号",
@@ -152,7 +151,8 @@
     "about": "关于",
     "privacy": "隐私政策",
     "terms": "服务条款",
-    "contact": "联系"  },
+    "contact": "联系"
+  },
   "welcomePage": {
     "connectWorld": "连接到世界",
     "connectWorldDesc": "加入全球社区并分享您的时刻",
@@ -170,5 +170,50 @@
     "register": "创建账号",
     "nextSlide": "下一步",
     "prevSlide": "上一步",
-    "skipIntro": "跳过"  }
+    "skipIntro": "跳过"
+  },
+  "login": {
+    "recentConnections": "最近的连接",
+    "orLogin": "或使用下面的另一个账户登录",
+    "deleteLoginEntry": "删除",
+    "noLoginHistory": "没有记录的连接"
+  },
+  "validation": {
+    "selectImage": "请选择图片文件。",
+    "fileSizeTooLarge": "文件大小不应超过",
+    "mb": "MB",
+    "fileTypeError": "文件必须是图片",
+    "invalidEmail": "无效的电子邮件",
+    "passwordTooShort": "密码必须至少包含",
+    "characters": "个字符",
+    "confirmPasswordMatch": "密码不匹配"
+  },
+  "errors": {
+    "uploadError": "上传错误",
+    "deleteError": "删除错误",
+    "saveError": "保存错误",
+    "loadError": "加载错误",
+    "unauthorized": "未授权",
+    "notFound": "未找到",
+    "serverError": "服务器错误"
+  },
+  "success": {
+    "saved": "保存成功",
+    "deleted": "删除成功",
+    "uploaded": "上传成功",
+    "updated": "更新成功"
+  },
+  "tabLabels": {
+    "loginHistory": "登录历史",
+    "savedDevices": "已保存的设备",
+    "general": "常规",
+    "privacy": "隐私",
+    "notifications": "通知",
+    "appearance": "外观"
+  },
+  "settingsPage": {
+    "managePreferences": "管理您的偏好和帐户设置",
+    "profilePhoto": "个人资料照片",
+    "coverPhoto": "封面照片"
+  }
 }

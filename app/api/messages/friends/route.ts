@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
     const filteredFriends = search
       ? friends.filter(
           (friend) =>
-            friend.fullName.toLowerCase().includes(search) ||
-            friend.username.toLowerCase().includes(search)
+            (friend.fullName || '').toLowerCase().includes(search) ||
+            (friend.username || '').toLowerCase().includes(search)
         )
       : friends;
 
@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
       }
       if (a.lastMessageTime) return -1;
       if (b.lastMessageTime) return 1;
-      return a.fullName.localeCompare(b.fullName);
+      return (a.fullName || '').localeCompare(b.fullName || '');
     });
 
     return NextResponse.json({

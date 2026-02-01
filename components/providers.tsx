@@ -2,6 +2,7 @@
 
 import { SessionProvider, useSession } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { HomeActivityProvider } from '@/contexts/HomeActivityContext';
 import { SplashScreen } from './SplashScreen';
 import { useState, useEffect } from 'react';
 
@@ -31,7 +32,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <LanguageProvider>
-        <ProvidersContent>{children}</ProvidersContent>
+        <HomeActivityProvider>
+          <ProvidersContent>{children}</ProvidersContent>
+        </HomeActivityProvider>
       </LanguageProvider>
     </SessionProvider>
   );

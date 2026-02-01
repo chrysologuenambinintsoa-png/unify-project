@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
@@ -15,35 +15,75 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 }) => {
   const [showSplash, setShowSplash] = useState(true);
   const [progress, setProgress] = useState(0);
+  const progressRef = useRef(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!isLoading) {
-      const timer = setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setShowSplash(false);
         onComplete?.();
-      }, 3000);
+      }, 2500);
 
-      return () => clearTimeout(timer);
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
     }
   }, [isLoading, onComplete]);
 
-  // Animation de la barre de progression
+  // Animation de la barre de progression optimisée
   useEffect(() => {
     if (!showSplash) return;
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + Math.random() * 30;
-        return Math.min(newProgress, 90);
-      });
-    }, 300);
+    progressRef.current = 0;
+    setProgress(0);
 
+    // Phase 1: Progression rapide jusqu'à 60%
+    intervalRef.current = setInterval(() => {
+      progressRef.current += Math.random() * 15;
+      if (progressRef.current >= 60) {
+        progressRef.current = 60;
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+      setProgress(Math.min(progressRef.current, 100));
+    }, 250);
+
+    // Phase 2: Progression lente jusqu'à 95%
+    const slowTimer = setTimeout(() => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      intervalRef.current = setInterval(() => {
+        progressRef.current += Math.random() * 8;
+        if (progressRef.current >= 95) {
+          progressRef.current = 95;
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+        }
+        setProgress(Math.min(progressRef.current, 100));
+      }, 300);
+    }, 1500);
+
+    // Phase 3: Complétion finale
     const finalTimer = setTimeout(() => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      progressRef.current = 100;
       setProgress(100);
-    }, 2500);
+    }, 2200);
 
     return () => {
-      clearInterval(interval);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearTimeout(slowTimer);
       clearTimeout(finalTimer);
     };
   }, [showSplash]);
@@ -166,24 +206,23 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           className="space-y-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 0.3 }}
+          transition={{ delay: 0.8, duration: 0.3 }}
         >
           {/* Conteneur de la barre */}
-          <div className="w-full h-2 bg-yellow-200/50 rounded-full overflow-hidden shadow-lg">
+          <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden shadow-lg backdrop-blur-sm">
             <motion.div
-              className="h-full bg-gradient-to-r from-white via-yellow-300 to-white rounded-full shadow-md"
-              initial={{ width: '0%' }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="h-full bg-gradient-to-r from-yellow-300 via-yellow-200 to-amber-200 rounded-full shadow-md"
+              style={{ width: `${progress}%` }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
             />
           </div>
 
           {/* Texte du pourcentage */}
           <motion.p
-            className="text-white/70 text-sm font-medium"
+            className="text-white/80 text-xs font-medium tracking-wider"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 1 }}
           >
             {Math.round(progress)}%
           </motion.p>

@@ -37,15 +37,21 @@ export async function GET(request: NextRequest) {
           select: {
             likes: true,
             comments: true,
+            shares: true,
           },
         },
       },
-      orderBy: {
-        likes: {
-          _count: 'desc',
+      orderBy: [
+        {
+          likes: {
+            _count: 'desc',
+          },
         },
-      },
-      take: 10,
+        {
+          createdAt: 'desc',
+        },
+      ],
+      take: 20,
     });
 
     // Get suggested users (users not friends with current user)
@@ -76,13 +82,30 @@ export async function GET(request: NextRequest) {
         fullName: true,
         avatar: true,
         bio: true,
+        _count: {
+          select: {
+            friends1: true,
+            friends2: true,
+          },
+        },
       },
-      take: 10,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 15,
     });
+
+    // Map suggested users to include follower count
+    const mappedSuggestedUsers = suggestedUsers.map(user => ({
+      ...user,
+      _count: {
+        followers: user._count.friends1 + user._count.friends2,
+      },
+    }));
 
     return NextResponse.json({
       trendingPosts,
-      suggestedUsers,
+      suggestedUsers: mappedSuggestedUsers,
     });
   } catch (error) {
     console.error('Error fetching explore data:', error);

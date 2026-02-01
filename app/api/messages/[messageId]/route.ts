@@ -45,23 +45,34 @@ export async function DELETE(
     }
 
     const { messageId } = await context.params;
+    const url = new URL(request.url);
+    const scope = url.searchParams.get('scope') || 'me';
 
     const message = await prisma.message.findUnique({
       where: { id: messageId },
     });
 
-    if (!message || message.senderId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to delete this message' },
-        { status: 403 }
-      );
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    await prisma.message.delete({
-      where: { id: messageId },
-    });
+    if (scope === 'everyone') {
+      // allow delete for everyone if sender or receiver
+      if (message.senderId !== session.user.id && message.receiverId !== session.user.id) {
+        return NextResponse.json({ error: 'Not authorized to delete for everyone' }, { status: 403 });
+      }
+      await prisma.message.delete({ where: { id: messageId } });
+      return NextResponse.json({ success: true, scope: 'everyone' });
+    }
 
-    return NextResponse.json({ success: true });
+    // default: hide for me (client will remove locally) — store in in-memory hide store
+    try {
+      const { hideForUser } = await import('@/app/api/messages/hideStore');
+      hideForUser(session.user.id, messageId);
+      return NextResponse.json({ success: true, scope: 'me' });
+    } catch (e) {
+      return NextResponse.json({ error: 'Failed to hide message' }, { status: 500 });
+    }
   } catch (error) {
     console.error('Error deleting message:', error);
     return NextResponse.json(

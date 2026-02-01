@@ -7,10 +7,10 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { storyId: string } }
+  context: any
 ) {
   try {
-    const { storyId } = params;
+    const { storyId } = context?.params || {};
 
     const story = await prisma.story.findUnique({
       where: { id: storyId },

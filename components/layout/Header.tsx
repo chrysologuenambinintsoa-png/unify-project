@@ -21,24 +21,24 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { counts } = useUnreadCounts();
 
   return (
-    <header className="sticky top-0 z-[10000] bg-white border-b border-gray-200 shadow-sm overflow-visible">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 overflow-visible">
-        <div className="flex items-center justify-between h-16 gap-2 sm:gap-4 overflow-visible">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-white shadow-sm">
+      <div className="px-3 sm:px-4 lg:px-8 h-16">
+        <div className="flex items-center justify-between h-full gap-2 sm:gap-4">
           {/* Menu Button - Mobile Only */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
           >
             <Menu className="w-6 h-6 text-gray-600" />
           </motion.button>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-1 sm:space-x-2">
+          <Link href="/" className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center flex-shrink-0"
+              className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center"
             >
               <img src="/logo.svg" alt="Unify" className="w-full h-full" />
             </motion.div>
@@ -48,12 +48,12 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Link>
 
           {/* Search Bar - Hidden on small mobile */}
-          <div className="hidden sm:block">
+          <div className="hidden sm:flex flex-1 max-w-sm">
             <SearchBar />
           </div>
 
           {/* Navigation Icons */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <nav className="flex items-center space-x-1 sm:space-x-2">
               <Link href="/messages">
                 <motion.button
@@ -89,7 +89,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             </nav>
 
             {/* User Menu */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <UserMenu />
             </div>
           </div>

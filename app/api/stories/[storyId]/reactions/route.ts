@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { publish } from '@/app/api/realtime/broadcast';
 
 // GET /api/stories/[storyId]/reactions - Get all reactions of a story
 export async function GET(
@@ -86,10 +87,21 @@ export async function POST(
     }
 
     const { storyId } = await params;
-    const body = await request.json();
+    
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Error parsing JSON:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
     const { emoji } = body;
 
-    if (!emoji) {
+    if (!emoji || emoji.trim() === '') {
+      console.error('Emoji is missing or empty:', { emoji });
       return NextResponse.json(
         { error: 'Emoji is required' },
         { status: 400 }
@@ -139,6 +151,9 @@ export async function POST(
           },
         });
 
+        // publish removal
+        try { publish('story-reaction', { storyId, action: 'removed', userId: session.user.id, emoji: existingReaction.emoji }); } catch (e) {}
+
         return NextResponse.json({
           message: 'Reaction removed',
           action: 'removed',
@@ -166,6 +181,25 @@ export async function POST(
             },
           },
         });
+
+        // create notification for story owner about updated reaction
+        try {
+          await prisma.notification.create({
+            data: {
+              type: 'reaction',
+              title: 'Nouvelle réaction',
+              content: `${updatedReaction.user.fullName || updatedReaction.user.username} a réagi ${emoji}`,
+              url: `/stories/${storyId}`,
+              userId: story.userId,
+              actorId: session.user.id,
+            },
+          });
+        } catch (notifErr) {
+          console.error('Failed to create notification for reaction update:', notifErr);
+        }
+
+        // publish update
+        try { publish('story-reaction', { storyId, action: 'updated', reaction: updatedReaction }); } catch (e) {}
 
         return NextResponse.json(
           {
@@ -196,6 +230,25 @@ export async function POST(
         },
       },
     });
+
+    // create notification for story owner about new reaction
+    try {
+      await prisma.notification.create({
+        data: {
+          type: 'reaction',
+          title: 'Nouvelle réaction',
+          content: `${reaction.user.fullName || reaction.user.username} a réagi ${emoji}`,
+          url: `/stories/${storyId}`,
+          userId: story.userId,
+          actorId: session.user.id,
+        },
+      });
+    } catch (notifErr) {
+      console.error('Failed to create notification for reaction create:', notifErr);
+    }
+
+    // publish addition
+    try { publish('story-reaction', { storyId, action: 'added', reaction }); } catch (e) {}
 
     return NextResponse.json(
       {

@@ -97,20 +97,22 @@ export async function POST(request: NextRequest) {
       const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
       const content = getNotificationMessage('coverChange', actorName, 'fr');
 
-      await prisma.post.create({
-        data: {
-          content,
-          userId: updatedUser.id,
-          media: {
-            create: [
-              {
-                type: 'image',
-                url: updatedUser.coverImage,
-              },
-            ],
+      if (updatedUser.coverImage) {
+        await prisma.post.create({
+          data: {
+            content,
+            userId: updatedUser.id,
+            media: {
+              create: [
+                {
+                  type: 'image',
+                  url: updatedUser.coverImage,
+                },
+              ],
+            },
           },
-        },
-      });
+        });
+      }
     } catch (postErr) {
       console.error('Failed to create cover-change post:', postErr);
     }

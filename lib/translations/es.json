@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "loading": "Cargando...",
     "error": "Ocurrió un error",
@@ -38,6 +38,7 @@
     "home": "Inicio",
     "explore": "Explorar",
     "stories": "Historias",
+    "videos": "Videos",
     "notifications": "Notificaciones",
     "messages": "Mensajes",
     "groups": "Grupos",
@@ -78,7 +79,13 @@
     "react": "Reaccionar",
     "comment": "Comentar",
     "expiresIn": "Expira en",
-    "hours": "horas"
+    "hours": "horas",
+    "createStory": "Crear historia",
+    "yourStory": "Tu historia",
+    "text": "Texto",
+    "imageUrl": "URL de imagen",
+    "videoUrl": "URL de video",
+    "atLeastOneRequired": "Se requiere al menos texto o media"
   },
   "group": {
     "groups": "Grupos",
@@ -121,7 +128,15 @@
     "newFollower": "comenzó a seguirte",
     "newMessage": "te envió un mensaje",
     "newStory": "añadió una historia",
-    "mention": "te mencionó"
+    "mention": "te mencionó",
+    "avatarChange": "Foto de perfil",
+    "avatarChangeText": "cambió su foto de perfil",
+    "coverChange": "Foto de portada",
+    "coverChangeText": "cambió su foto de portada",
+    "storyCreated": "Nueva historia",
+    "storyCreatedText": "publicó una historia",
+    "friendRequest": "Solicitud de amistad",
+    "reaction": "Nueva reacción"
   },
   "settings": {
     "settings": "Configuración",
@@ -134,7 +149,19 @@
     "account": "Cuenta",
     "privacy": "Privacidad",
     "security": "Seguridad",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "loginHistory": "Historial de inicio de sesión",
+    "savedDevices": "Dispositivos guardados",
+    "profilePhoto": "Foto de perfil",
+    "coverPhoto": "Foto de portada",
+    "uploadPhoto": "Subir",
+    "randomAvatar": "Avatar aleatorio",
+    "saveChanges": "Guardar cambios",
+    "fullName": "Nombre completo",
+    "dateOfBirth": "Fecha de nacimiento",
+    "originCity": "Ciudad de origen",
+    "currentCity": "Ciudad actual",
+    "savingChanges": "Guardando..."
   },
   "profile": {
     "profile": "Perfil",
@@ -144,7 +171,16 @@
     "coverImage": "Imagen de portada",
     "followers": "Seguidores",
     "following": "Siguiendo",
-    "posts": "Publicaciones"
+    "posts": "Publicaciones",
+    "about": "Acerca de",
+    "gallery": "Galería",
+    "friends": "Amigos",
+    "coverPhoto": "Foto de portada",
+    "uploadCover": "Subir",
+    "removeCover": "Eliminar",
+    "changeCover": "Cambiar portada",
+    "deleteCoverConfirm": "¿Estás seguro de que deseas eliminar tu foto de portada?",
+    "joinedDate": "Unido"
   },
   "pages": {
     "welcome": "Bienvenido a Unify",

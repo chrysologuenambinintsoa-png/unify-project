@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "loading": "加载中...",
     "error": "发生错误",
@@ -38,6 +38,7 @@
     "home": "首页",
     "explore": "探索",
     "stories": "故事",
+    "videos": "视频",
     "notifications": "通知",
     "messages": "消息",
     "groups": "群组",
@@ -78,7 +79,13 @@
     "react": "反应",
     "comment": "评论",
     "expiresIn": "过期时间",
-    "hours": "小时"
+    "hours": "小时",
+    "createStory": "创建故事",
+    "yourStory": "你的故事",
+    "text": "文本",
+    "imageUrl": "图片网址",
+    "videoUrl": "视频网址",
+    "atLeastOneRequired": "至少需要文本或媒体"
   },
   "group": {
     "groups": "群组",
@@ -121,7 +128,15 @@
     "newFollower": "开始关注你",
     "newMessage": "给你发送了消息",
     "newStory": "添加了故事",
-    "mention": "提到了你"
+    "mention": "提到了你",
+    "avatarChange": "个人头像",
+    "avatarChangeText": "更改了个人头像",
+    "coverChange": "封面照片",
+    "coverChangeText": "更改了封面照片",
+    "storyCreated": "新故事",
+    "storyCreatedText": "发布了一个故事",
+    "friendRequest": "朋友请求",
+    "reaction": "新反应"
   },
   "settings": {
     "settings": "设置",
@@ -134,7 +149,19 @@
     "account": "账号",
     "privacy": "隐私",
     "security": "安全",
-    "notifications": "通知"
+    "notifications": "通知",
+    "loginHistory": "登录历史",
+    "savedDevices": "已保存设备",
+    "profilePhoto": "个人头像",
+    "coverPhoto": "封面照片",
+    "uploadPhoto": "上传",
+    "randomAvatar": "随机头像",
+    "saveChanges": "保存更改",
+    "fullName": "全名",
+    "dateOfBirth": "出生日期",
+    "originCity": "出生城市",
+    "currentCity": "当前城市",
+    "savingChanges": "保存中..."
   },
   "profile": {
     "profile": "个人资料",
@@ -144,7 +171,16 @@
     "coverImage": "封面图片",
     "followers": "关注者",
     "following": "正在关注",
-    "posts": "帖子"
+    "posts": "帖子",
+    "about": "关于",
+    "gallery": "相册",
+    "friends": "朋友",
+    "coverPhoto": "封面照片",
+    "uploadCover": "上传",
+    "removeCover": "移除",
+    "changeCover": "更改封面",
+    "deleteCoverConfirm": "确定要删除您的封面照片吗？",
+    "joinedDate": "加入日期"
   },
   "pages": {
     "welcome": "欢迎来到Unify",

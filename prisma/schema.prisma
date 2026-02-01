@@ -64,6 +64,7 @@ model User {
   reactions     Reaction[]
   messageReactions MessageReaction[]
   storyReactions StoryReaction[]
+  commentReactions CommentReaction[]
   pageAdmins    PageAdmin[]
   photoGallery  PhotoGallery[]
   bookmarks     Bookmark[]
@@ -167,6 +168,7 @@ model Comment {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+  reactions CommentReaction[]
 
   @@index([postId])
   @@index([userId])
@@ -577,6 +579,23 @@ model SavedDevice {
   @@index([userId])
   @@index([createdAt])
   @@map("saved_devices")
+}
+
+// Comment Reaction Model (Emojis reactions to comments)
+model CommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String   // Stored as emoji string (👍, ❤️, etc.)
+  createdAt DateTime @default(now())
+
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_reactions")
 }
 
 // Sponsored Posts Model (Annonces sponsorisées pour monétisation)

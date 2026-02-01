@@ -108,6 +108,16 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      
+      // Validate file sizes
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > MAX_FILE_SIZE) {
+          alert(`Video "${files[i].name}" exceeds the 10MB size limit`);
+          return;
+        }
+      }
+      
       const formData = new FormData();
       Array.from(files).forEach(file => {
         formData.append('files', file);

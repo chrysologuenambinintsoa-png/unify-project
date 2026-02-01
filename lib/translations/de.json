@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "loading": "Wird geladen...",
     "error": "Ein Fehler ist aufgetreten",
@@ -38,6 +38,7 @@
     "home": "Startseite",
     "explore": "Entdecken",
     "stories": "Geschichten",
+    "videos": "Videos",
     "notifications": "Benachrichtigungen",
     "messages": "Nachrichten",
     "groups": "Gruppen",
@@ -78,7 +79,13 @@
     "react": "Reagieren",
     "comment": "Kommentieren",
     "expiresIn": "Läuft ab in",
-    "hours": "Stunden"
+    "hours": "Stunden",
+    "createStory": "Story erstellen",
+    "yourStory": "Ihre Story",
+    "text": "Text",
+    "imageUrl": "Bild-URL",
+    "videoUrl": "Video-URL",
+    "atLeastOneRequired": "Mindestens Text oder Medien erforderlich"
   },
   "group": {
     "groups": "Gruppen",
@@ -121,7 +128,15 @@
     "newFollower": "folgt dir jetzt",
     "newMessage": "hat dir eine Nachricht gesendet",
     "newStory": "hat eine Story hinzugefügt",
-    "mention": "hat dich erwähnt"
+    "mention": "hat dich erwähnt",
+    "avatarChange": "Profilfoto",
+    "avatarChangeText": "hat das Profilfoto geändert",
+    "coverChange": "Titelbild",
+    "coverChangeText": "hat das Titelbild geändert",
+    "storyCreated": "Neue Story",
+    "storyCreatedText": "hat eine Story gepostet",
+    "friendRequest": "Freundschaftsanfrage",
+    "reaction": "Neue Reaktion"
   },
   "settings": {
     "settings": "Einstellungen",
@@ -134,7 +149,19 @@
     "account": "Konto",
     "privacy": "Datenschutz",
     "security": "Sicherheit",
-    "notifications": "Benachrichtigungen"
+    "notifications": "Benachrichtigungen",
+    "loginHistory": "Anmeldeverlauf",
+    "savedDevices": "Gespeicherte Geräte",
+    "profilePhoto": "Profilfoto",
+    "coverPhoto": "Titelbild",
+    "uploadPhoto": "Hochladen",
+    "randomAvatar": "Zufälliger Avatar",
+    "saveChanges": "Änderungen speichern",
+    "fullName": "Vollständiger Name",
+    "dateOfBirth": "Geburtsdatum",
+    "originCity": "Herkunftsstadt",
+    "currentCity": "Aktuelle Stadt",
+    "savingChanges": "Speichern..."
   },
   "profile": {
     "profile": "Profil",
@@ -144,7 +171,16 @@
     "coverImage": "Titelbild",
     "followers": "Follower",
     "following": "Gefolgt",
-    "posts": "Beiträge"
+    "posts": "Beiträge",
+    "about": "Über",
+    "gallery": "Galerie",
+    "friends": "Freunde",
+    "coverPhoto": "Titelbild",
+    "uploadCover": "Hochladen",
+    "removeCover": "Entfernen",
+    "changeCover": "Titelbild ändern",
+    "deleteCoverConfirm": "Möchtest du dein Titelbild wirklich löschen?",
+    "joinedDate": "Beigetreten"
   },
   "pages": {
     "welcome": "Willkommen bei Unify",

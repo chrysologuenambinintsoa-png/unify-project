@@ -67,6 +67,7 @@ export async function uploadVideo(
     let result;
 
     if (typeof file === 'string') {
+      // Upload from data URL or URL
       result = await withTimeout(
         cloudinary.uploader.upload(file, {
           folder,
@@ -77,20 +78,15 @@ export async function uploadVideo(
         120000 // 120s for videos
       );
     } else {
+      // Upload from File object using streaming (more efficient for large files)
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       result = await withTimeout(
-        cloudinary.uploader.upload(
-          `data:video/mp4;base64,${buffer.toString('base64')}`,
-          {
-            folder,
-            resource_type: 'video',
-            timeout: 60000,
-            chunk_size: 5242880,
-          }
-        ),
+        bufferToCloudinaryVideo(buffer, folder),
         120000
       );
+      
+      return result;
     }
 
     return {
@@ -189,5 +185,48 @@ async function bufferToCloudinary(
         }
       }
     ).end(buffer);
+  });
+}
+
+// Helper function for video buffer upload (streaming for large files)
+async function bufferToCloudinaryVideo(
+  buffer: Buffer,
+  folder: string
+): Promise<{ url: string; publicId: string }> {
+  return new Promise((resolve, reject) => {
+    try {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          resource_type: 'video',
+          timeout: 60000,
+          eager_async: true,
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary video upload error:', JSON.stringify(error, null, 2));
+            reject(error);
+            return;
+          }
+          if (result) {
+            console.log('Video uploaded successfully:', result.public_id);
+            resolve({
+              url: result.secure_url,
+              publicId: result.public_id,
+            });
+          }
+        }
+      );
+
+      stream.on('error', (error) => {
+        console.error('Stream error during video upload:', error);
+        reject(error);
+      });
+
+      stream.end(buffer);
+    } catch (error) {
+      console.error('Error in bufferToCloudinaryVideo:', error);
+      reject(error);
+    }
   });
 }

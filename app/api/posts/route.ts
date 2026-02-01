@@ -12,9 +12,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Only return posts from the last 72 hours
+    const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000);
+
     const posts = await prisma.post.findMany({
       where: {
         isDeleted: false,
+        createdAt: {
+          gte: cutoff,
+        },
       },
       include: {
         user: {
@@ -132,6 +138,14 @@ export async function POST(request: NextRequest) {
         media: true,
       },
     });
+
+    try {
+      const { publishPostEvent } = await import('@/lib/postEvents');
+      publishPostEvent({ type: 'created', payload: post });
+    } catch (e) {
+      // best-effort
+      console.warn('Failed to publish post created event', e);
+    }
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {

@@ -20,31 +20,73 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert(translation.validation.selectImage);
-        return;
-      }
+    if (!file) return;
 
-      // Validate file size (max 10MB for cover)
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`${translation.validation.fileSizeTooLarge} 10MB.`);
-        return;
-      }
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert(translation.validation.selectImage);
+      return;
+    }
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string);
-        setShowOptions(false);
-      };
-      reader.readAsDataURL(file);
+    // Validate file size (max 10MB for cover)
+    if (file.size > 10 * 1024 * 1024) {
+      alert(`${translation.validation.fileSizeTooLarge} 10MB.`);
+      return;
+    }
 
-      // Upload file
-      uploadCover(file);
+    try {
+      // Process image client-side: automatic center-crop & resize to 1200x300 (4:1)
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(file);
+      });
+
+      const processed = await (async () => {
+        return new Promise<{ dataUrl: string; file: File }>((resolve, reject) => {
+          const img = new Image();
+          img.onload = async () => {
+            const canvasW = 1200;
+            const canvasH = 300;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasW;
+            canvas.height = canvasH;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return reject(new Error('Canvas not supported'));
+
+            // scale to cover
+            const scale = Math.max(canvasW / img.width, canvasH / img.height);
+            const dWidth = img.width * scale;
+            const dHeight = img.height * scale;
+            const dx = (canvasW - dWidth) / 2;
+            const dy = (canvasH - dHeight) / 2;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasW, canvasH);
+            ctx.drawImage(img, dx, dy, dWidth, dHeight);
+
+            canvas.toBlob((blob) => {
+              if (!blob) return reject(new Error('Failed to create blob'));
+              const outFile = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+              const outDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+              resolve({ dataUrl: outDataUrl, file: outFile });
+            }, 'image/jpeg', 0.9);
+          };
+          img.onerror = (e) => reject(e);
+          img.src = dataUrl;
+        });
+      })();
+
+      // Show preview and upload automatically
+      setPreview(processed.dataUrl);
+      setShowOptions(false);
+      await uploadCover(processed.file);
+    } catch (err) {
+      console.error('Error processing cover image:', err);
+      alert(translation.errors.uploadError);
     }
   };
 
@@ -63,6 +105,7 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
       if (response.ok) {
         const data = await response.json();
         onCoverChange?.(data.coverImage);
+        setPreview(null);
 
         // Update session
         await update({
@@ -72,8 +115,6 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
             coverImage: data.coverImage,
           },
         });
-
-        setPreview(null);
       } else {
         const error = await response.json();
         alert(error.error || translation.errors.uploadError);
@@ -85,6 +126,7 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
       setIsUploading(false);
     }
   };
+
 
   const removeCover = async () => {
     if (!confirm(translation.profile.deleteCoverConfirm)) return;
@@ -118,14 +160,14 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
     }
   };
 
-  const displayCover = preview || currentCover;
-
   return (
     <div className="relative">
+      {/* Cover images are auto-processed client-side; no crop modal required */}
+
       <div
         className="relative group cursor-pointer w-full h-48 rounded-lg overflow-hidden bg-gradient-to-r from-primary-dark to-accent-dark"
         style={{
-          backgroundImage: displayCover ? `url(${displayCover})` : undefined,
+          backgroundImage: (preview || currentCover) ? `url(${preview || currentCover})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

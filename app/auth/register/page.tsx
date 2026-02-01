@@ -18,6 +18,7 @@ export default function RegisterPage() {
     username: '',
     email: '',
     fullName: '',
+    dateOfBirth: '',
     password: '',
     confirmPassword: '',
   });
@@ -47,7 +48,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Créer le compte utilisateur
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,6 +55,7 @@ export default function RegisterPage() {
           username: formData.username,
           email: formData.email,
           fullName: formData.fullName,
+          dateOfBirth: formData.dateOfBirth,
           password: formData.password,
         }),
       });
@@ -138,6 +139,15 @@ export default function RegisterPage() {
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="John Doe"
+                required
+              />
+
+              <Input
+                type="date"
+                name="dateOfBirth"
+                label={translation.settings.dateOfBirth}
+                value={formData.dateOfBirth}
+                onChange={handleChange}
                 required
               />
 

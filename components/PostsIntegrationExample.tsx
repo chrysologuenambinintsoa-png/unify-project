@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // ============================================================================
 // 1. HOOK PERSONNALISÉ POUR RÉCUPÉRER LES POSTS
@@ -15,6 +16,64 @@ export function usePosts() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Realtime subscription via WebSocket (connects to local ws server)
+    let ws: WebSocket | null = null;
+    let reconnectTimer: any = null;
+
+    const connect = () => {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const url = proto + '://' + location.host + '/ws';
+      try {
+        ws = new WebSocket(url);
+      } catch (e) {
+        // fallback to explicit localhost
+        ws = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') + '://localhost:3000/ws');
+      }
+
+      ws.onmessage = (ev) => {
+        try {
+          const event = JSON.parse(ev.data);
+          if (!event || !event.type) return;
+          setPosts((prev) => {
+            if (event.type === 'created') {
+              return [event.payload, ...prev].filter(Boolean);
+            }
+            if (event.type === 'updated') {
+              return prev.map((p) => (p.id === event.payload.id ? event.payload : p));
+            }
+            if (event.type === 'deleted') {
+              return prev.filter((p) => p.id !== event.payload.id);
+            }
+            if (event.type === 'reaction') {
+              return prev.map((p) => (p.id === event.payload.id ? { ...p, _count: event.payload._count } : p));
+            }
+            return prev;
+          });
+        } catch (e) {
+          // ignore parse errors
+        }
+      };
+
+      ws.onclose = () => {
+        // try reconnect
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+
+      ws.onerror = () => {
+        ws?.close();
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, []);
+
+  useEffect(() => {
     fetchPosts();
   }, []);
 
@@ -24,7 +83,9 @@ export function usePosts() {
       const response = await fetch('/api/posts');
       if (!response.ok) throw new Error('Failed to fetch posts');
       const data = await response.json();
-      setPosts(data);
+      // Server already filters to last 72h; ensure client-side as well
+      const cutoff = Date.now() - 72 * 60 * 60 * 1000;
+      setPosts((data || []).filter((p: any) => new Date(p.createdAt).getTime() >= cutoff));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -134,8 +195,76 @@ export function useReactions(postId: string, type: 'post' | 'comment' = 'post', 
 // ============================================================================
 
 export function PostCard({ postId }: { postId: string }) {
-  const { post, loading, error } = usePost(postId);
+  const router = useRouter();
+  const { post, loading, error, refetch } = usePost(postId);
   const { reactions, addReaction, removeReaction } = useReactions(postId);
+  const [commentText, setCommentText] = useState('');
+
+  const submitComment = async () => {
+    if (!commentText.trim()) return;
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || 'Failed to comment');
+      }
+      setCommentText('');
+      // refresh post to show new comment
+      await refetch();
+    } catch (e) {
+      console.error('Comment error', e);
+      alert('Erreur lors de l\'envoi du commentaire');
+    }
+  };
+
+  const handleShare = async () => {
+    const type = prompt('Partager vers: "message" ou "group"? (tape message ou group)');
+    if (!type) return;
+    if (type !== 'message' && type !== 'group') {
+      alert('Type invalide');
+      return;
+    }
+
+    if (type === 'message') {
+      const recipientId = prompt('ID du destinataire (user id)');
+      if (!recipientId) return;
+      const message = prompt('Message optionnel');
+      const res = await fetch(`/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareType: 'message', recipientId, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Erreur de partage');
+        return;
+      }
+      alert('Partagé en message');
+      return;
+    }
+
+    if (type === 'group') {
+      const groupId = prompt('ID du groupe');
+      if (!groupId) return;
+      const message = prompt('Message optionnel');
+      const res = await fetch(`/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareType: 'group', groupId, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Erreur de partage');
+        return;
+      }
+      alert('Partagé dans le groupe');
+      return;
+    }
+  };
 
   if (loading) return <div className="p-4">Chargement du post...</div>;
   if (error) return <div className="p-4 text-red-500">Erreur: {error}</div>;
@@ -161,19 +290,25 @@ export function PostCard({ postId }: { postId: string }) {
       {/* Contenu */}
       <p className="mb-4">{post.content}</p>
 
-      {/* Médias */}
+      {/* Médias: click to open viewer page */}
       {post.media && post.media.length > 0 && (
-        <div className="mb-4 grid grid-cols-2 gap-2">
-          {post.media.map((media: any) => (
-            <div key={media.id}>
-              {media.type === 'image' && (
-                <img src={media.url} alt="Media" className="rounded" />
-              )}
-              {media.type === 'video' && (
-                <video src={media.url} className="rounded" controls />
-              )}
-            </div>
-          ))}
+        <div className="mb-4">
+          <div className="flex space-x-2 overflow-auto">
+            {post.media.map((media: any, idx: number) => (
+              <div
+                key={media.id}
+                className="flex-shrink-0 w-40 h-28 rounded overflow-hidden cursor-pointer hover:opacity-80 transition"
+                onClick={() => router.push(`/posts/${postId}/photo?mediaIndex=${idx}`)}
+              >
+                {media.type === 'image' && (
+                  <img src={media.url} alt="Media" className="object-cover w-full h-full" />
+                )}
+                {media.type === 'video' && (
+                  <video src={media.url} className="object-cover w-full h-full" />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

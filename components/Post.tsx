@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { MessageCircle, Share2, Bookmark, MoreVertical, X } from 'lucide-react';
+import { MessageCircle, Share2, Bookmark, MoreVertical, X, Send } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import ShareModal from '@/components/post/ShareModal';
+import { PostImageViewer } from '@/components/PostImageViewer';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { CommentThread } from '@/components/CommentThread';
 
 interface PostProps {
   post: any;
@@ -14,7 +17,7 @@ interface PostProps {
   onCommentAdded?: () => void | Promise<void>;
 }
 
-export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
+export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }: PostProps) {
   const [liked, setLiked] = useState(!!post.liked);
   const { incrementHomeActivity } = useHomeActivity();
   const initialLikeCount: number = Array.isArray(post.likes)
@@ -33,10 +36,13 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
   const [commentCount, setCommentCount] = useState<number>(initialCommentCount);
   const [shareCount, setShareCount] = useState<number>(initialShareCount);
   const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<any[]>(Array.isArray(post.comments) ? post.comments : []);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +63,40 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
     setSaved(!saved);
   };
 
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to add comment');
+      }
+
+      const newComment = await response.json();
+      setComments(prev => [...prev, newComment]);
+      setCommentCount(prev => prev + 1);
+      setCommentText('');
+
+      if (onCommentAdded) {
+        await onCommentAdded();
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Error adding comment';
+      console.error('Comment error:', errorMsg);
+      alert(errorMsg);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
   const formatDate = (date: Date) => {
     const now = new Date();
     const d = date ? new Date(date) : now;
@@ -72,7 +112,8 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
 
   // Normalize author/user and media for compatibility with different API shapes
   const author = post?.author ?? post?.user ?? { id: '', name: 'Unknown', avatar: undefined, username: undefined };
-  const images: string[] = post?.images ?? (post?.media ? post.media.map((m: any) => m.url).filter(Boolean) : []);
+  const images: string[] = post?.images ?? (post?.media ? post.media.map((m: any) => m.type !== 'video' ? m.url : null).filter(Boolean) : []);
+  const videos: string[] = post?.videos ?? (post?.media ? post.media.map((m: any) => m.type === 'video' ? m.url : null).filter(Boolean) : []);
   const createdAt = post?.createdAt ?? post?.created_at ?? new Date();
 
   return (
@@ -142,7 +183,7 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
         <p className="text-gray-900 leading-relaxed break-words">{post.content}</p>
       </div>
 
-      {/* Post Media */}
+      {/* Post Media - Images */}
       {images && images.length > 0 && (
         <div className={`grid gap-2 px-4 pb-4 ${
           images.length === 1 ? 'grid-cols-1' :
@@ -154,14 +195,30 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
               key={index}
               className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group aspect-square"
               onClick={() => {
-                setModalImage(image);
-                setShowModal(true);
+                setSelectedImageIndex(index);
+                setShowImageViewer(true);
               }}
             >
               <img
                 src={image}
                 alt={`Post media ${index + 1}`}
                 className="w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-200"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Post Media - Videos */}
+      {videos && videos.length > 0 && (
+        <div className="px-4 pb-4 space-y-3">
+          {videos.map((video, index) => (
+            <div key={index}>
+              <VideoPlayer
+                src={video}
+                title={`Video ${index + 1}`}
+                allowDownload={true}
+                className="w-full h-auto max-h-96"
               />
             </div>
           ))}
@@ -223,6 +280,43 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
         </button>
       </div>
 
+      {/* Comments Section - Inline */}
+      {showComments && (
+        <div className="border-t border-border bg-gray-50">
+          {/* Comments List */}
+          <div className="p-4 max-h-96 overflow-y-auto">
+            <CommentThread 
+              postId={post.id}
+              comments={comments}
+              onCommentAdded={(newComment) => {
+                setComments(prev => [...prev, newComment]);
+                setCommentCount(prev => prev + 1);
+              }}
+            />
+          </div>
+
+          {/* Comment Input */}
+          <div className="border-t border-border p-4 bg-white">
+            <form onSubmit={handleSubmitComment} className="flex space-x-2">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write a comment..."
+                className="flex-1 px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim() || isSubmittingComment}
+                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center space-x-2"
+              >
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Share Modal */}
       <ShareModal
         postId={post.id}
@@ -259,36 +353,15 @@ export default function Post({ post, onEdit, onDelete, onLike }: PostProps) {
         postContent={post.content}
       />
 
-      {/* Image Modal */}
-      {showModal && modalImage && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
-          onClick={() => {
-            setShowModal(false);
-            setModalImage(null);
-          }}
-        >
-          <div
-            className="relative max-w-2xl max-h-[90vh] w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => {
-                setShowModal(false);
-                setModalImage(null);
-              }}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors duration-200"
-            >
-              <X size={28} />
-            </button>
-            <img
-              src={modalImage}
-              alt="Full size"
-              className="w-full h-full object-contain rounded-lg"
-            />
-          </div>
-        </div>
-      )}
+      {/* Image Viewer */}
+      <PostImageViewer
+        post={post}
+        initialImageIndex={selectedImageIndex}
+        isOpen={showImageViewer}
+        onClose={() => setShowImageViewer(false)}
+        onLike={onLike}
+        onDelete={onDelete}
+      />
     </div>
   );
 }

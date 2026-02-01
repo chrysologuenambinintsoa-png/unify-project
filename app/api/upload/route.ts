@@ -98,7 +98,13 @@ export async function POST(req: NextRequest) {
         uploadedUrls.push(uploadResult.url);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`Error uploading file ${file.name}:`, errorMsg);
+        console.error(`Error uploading file ${file.name}:`, {
+          message: errorMsg,
+          error: err,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+        });
         errors.push({ 
           file: file.name, 
           message: errorMsg 

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail, Users, Settings, LogOut, Users2, Flag } from 'lucide-react';
+import { Home, Search, Bell, Mail, Users, Settings, LogOut, Users2, Flag, Video } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ import { SidebarUser } from '@/components/layout/SidebarUser';
 const navItems = [
   { href: '/', icon: Home, labelKey: 'nav.home' },
   { href: '/explore', icon: Search, labelKey: 'nav.explore' },
+  { href: '/stories', icon: Flag, labelKey: 'nav.stories' },
+  { href: '/videos', icon: Video, labelKey: 'nav.videos' },
   { href: '/notifications', icon: Bell, labelKey: 'nav.notifications' },
   { href: '/messages', icon: Mail, labelKey: 'nav.messages' },
   { href: '/friends', icon: Users, labelKey: 'friends.friends' },

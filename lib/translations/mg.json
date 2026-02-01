@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "loading": "Mikatraho...",
     "error": "Nisy olana",
@@ -37,8 +37,7 @@
   "nav": {
     "home": "Fandraisana",
     "explore": "Zarao",
-    "stories": "Tantara",
-    "notifications": "Fampitandremana",
+    "stories": "Tantara",    "videos": "Horonantsary",    "notifications": "Fampitandremana",
     "messages": "Hafatra",
     "groups": "Vondrona",
     "pages": "Pejy"
@@ -78,7 +77,13 @@
     "react": "Fihetsiketsehana",
     "comment": "Teny fanampiny",
     "expiresIn": "Hiala amin'ny",
-    "hours": "ora"
+    "hours": "ora",
+    "createStory": "Hamorona tantara",
+    "yourStory": "Ny iyong tantara",
+    "text": "Soratra",
+    "imageUrl": "URL sary",
+    "videoUrl": "URL vidio",
+    "atLeastOneRequired": "Mila soratra na media farafaharatsiny"
   },
   "group": {
     "groups": "Vondrona",
@@ -121,7 +126,15 @@
     "newFollower": "nanaraka anao",
     "newMessage": "naniraka hafatra",
     "newStory": "namorona tantara",
-    "mention": "nanoraty anao"
+    "mention": "nanoraty anao",
+    "avatarChange": "Sarin'ny olona",
+    "avatarChangeText": "novahiny ny sarin'ny olona",
+    "coverChange": "Sary afara",
+    "coverChangeText": "novahiny ny sary afara",
+    "storyCreated": "Tantara vaovao",
+    "storyCreatedText": "namorona tantara",
+    "friendRequest": "Fangatahana namana",
+    "reaction": "Fihetsiketsehana vaovao"
   },
   "settings": {
     "settings": "Fikirana",
@@ -134,7 +147,19 @@
     "account": "Kaonty",
     "privacy": "Fiarovana",
     "security": "Fiarovana",
-    "notifications": "Fampitandremana"
+    "notifications": "Fampitandremana",
+    "loginHistory": "Historiky hiditra",
+    "savedDevices": "Fitaovana raikitra",
+    "profilePhoto": "Sarin'ny olona",
+    "coverPhoto": "Sary afara",
+    "uploadPhoto": "Hampiakatra",
+    "randomAvatar": "Avatar kisendrasendra",
+    "saveChanges": "Raiketo ny fanovana",
+    "fullName": "Anarana feno",
+    "dateOfBirth": "Andro nahaterahana",
+    "originCity": "Tanàna niaviana",
+    "currentCity": "Tanàna ankehitriny",
+    "savingChanges": "Manao raiketo..."
   },
   "profile": {
     "profile": "Profile",
@@ -144,7 +169,16 @@
     "coverImage": "Sary afara",
     "followers": "Mpiara-miasa",
     "following": "Mpiara-miasa",
-    "posts": "Hafatra"
+    "posts": "Hafatra",
+    "about": "Momba",
+    "gallery": "Sarin-kazo",
+    "friends": "Namana",
+    "coverPhoto": "Sary afara",
+    "uploadCover": "Hampiakatra",
+    "removeCover": "Esory",
+    "changeCover": "Hanova ny afara",
+    "deleteCoverConfirm": "Akosika va ny sary afara?",
+    "joinedDate": "Niditra"
   },
   "pages": {
     "welcome": "Tongasoa ao amin'ny Unify",

@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
@@ -38,6 +38,7 @@
     "home": "Home",
     "explore": "Explore",
     "stories": "Stories",
+    "videos": "Videos",
     "notifications": "Notifications",
     "messages": "Messages",
     "groups": "Groups",
@@ -78,7 +79,13 @@
     "react": "React",
     "comment": "Comment",
     "expiresIn": "Expires in",
-    "hours": "hours"
+    "hours": "hours",
+    "createStory": "Create story",
+    "yourStory": "Your story",
+    "text": "Text",
+    "imageUrl": "Image URL",
+    "videoUrl": "Video URL",
+    "atLeastOneRequired": "At least text or media is required"
   },
   "group": {
     "groups": "Groups",
@@ -121,7 +128,15 @@
     "newFollower": "started following you",
     "newMessage": "sent you a message",
     "newStory": "added a story",
-    "mention": "mentioned you"
+    "mention": "mentioned you",
+    "avatarChange": "Profile photo",
+    "avatarChangeText": "changed their profile photo",
+    "coverChange": "Cover photo",
+    "coverChangeText": "changed their cover photo",
+    "storyCreated": "New story",
+    "storyCreatedText": "posted a story",
+    "friendRequest": "Friend request",
+    "reaction": "New reaction"
   },
   "settings": {
     "settings": "Settings",
@@ -134,7 +149,19 @@
     "account": "Account",
     "privacy": "Privacy",
     "security": "Security",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "loginHistory": "Login history",
+    "savedDevices": "Saved devices",
+    "profilePhoto": "Profile photo",
+    "coverPhoto": "Cover photo",
+    "uploadPhoto": "Upload",
+    "randomAvatar": "Random avatar",
+    "saveChanges": "Save changes",
+    "fullName": "Full name",
+    "dateOfBirth": "Date of birth",
+    "originCity": "City of origin",
+    "currentCity": "Current city",
+    "savingChanges": "Saving..."
   },
   "profile": {
     "profile": "Profile",
@@ -144,7 +171,16 @@
     "coverImage": "Cover image",
     "followers": "Followers",
     "following": "Following",
-    "posts": "Posts"
+    "posts": "Posts",
+    "about": "About",
+    "gallery": "Gallery",
+    "friends": "Friends",
+    "coverPhoto": "Cover photo",
+    "uploadCover": "Upload",
+    "removeCover": "Remove",
+    "changeCover": "Change cover",
+    "deleteCoverConfirm": "Are you sure you want to delete your cover photo?",
+    "joinedDate": "Joined"
   },
   "pages": {
     "welcome": "Welcome to Unify",

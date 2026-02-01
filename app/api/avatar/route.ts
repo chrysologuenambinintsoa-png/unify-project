@@ -96,20 +96,22 @@ export async function POST(request: NextRequest) {
       const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
       const content = getNotificationMessage('avatarChange', actorName, 'fr');
 
-      await prisma.post.create({
-        data: {
-          content,
-          userId: updatedUser.id,
-          media: {
-            create: [
-              {
-                type: 'image',
-                url: updatedUser.avatar,
-              },
-            ],
+      if (updatedUser.avatar) {
+        await prisma.post.create({
+          data: {
+            content,
+            userId: updatedUser.id,
+            media: {
+              create: [
+                {
+                  type: 'image',
+                  url: updatedUser.avatar,
+                },
+              ],
+            },
           },
-        },
-      });
+        });
+      }
     } catch (postErr) {
       console.error('Failed to create profile-change post:', postErr);
     }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ImageCropModal } from '@/components/ImageCropModal';
 
 interface AvatarUploadProps {
   currentAvatar?: string | null;
@@ -20,6 +21,8 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
   const [isUploading, setIsUploading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,16 +40,15 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
         return;
       }
 
-      // Create preview
+      // Create preview for crop modal
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreview(e.target?.result as string);
+        const dataUrl = e.target?.result as string;
+        setImageToEdit(dataUrl);
+        setCropModalOpen(true);
         setShowOptions(false);
       };
       reader.readAsDataURL(file);
-
-      // Upload file
-      uploadAvatar(file);
     }
   };
 
@@ -65,6 +67,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
       if (response.ok) {
         const data = await response.json();
         onAvatarChange?.(data.avatar);
+        setPreview(null);
 
         // Update session
         await update({
@@ -74,8 +77,6 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
             avatar: data.avatar,
           },
         });
-
-        setPreview(null);
       } else {
         const error = await response.json();
         alert(error.error || translation.errors.uploadError);
@@ -86,6 +87,15 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleCropSave = async (croppedImage: string, file: File) => {
+    // Update preview with cropped image
+    setPreview(croppedImage);
+    // Upload the cropped file
+    await uploadAvatar(file);
+    setCropModalOpen(false);
+    setImageToEdit(null);
   };
 
   const removeAvatar = async () => {
@@ -128,6 +138,20 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
 
   return (
     <div className="relative">
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={imageToEdit || ''}
+        onClose={() => {
+          setCropModalOpen(false);
+          setImageToEdit(null);
+        }}
+        onSave={handleCropSave}
+        aspectRatio={1}
+        title={translation.settings.profilePhoto}
+        minWidth={200}
+        minHeight={200}
+      />
+
       <div
         className="relative group cursor-pointer"
         onMouseEnter={() => setShowOptions(true)}

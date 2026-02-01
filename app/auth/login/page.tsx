@@ -178,47 +178,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const result = await signIn('google', { 
-        callbackUrl: '/',
-        redirect: false,
-      });
-      
-      if (result?.error) {
-        setError('Google sign-in failed: ' + result.error);
-      } else if (result?.ok) {
-        router.push('/');
-      }
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      setError('An error occurred during Google sign-in. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    try {
-      const result = await signIn('facebook', { 
-        callbackUrl: '/',
-        redirect: false,
-      });
-      
-      if (result?.error) {
-        setError('Facebook sign-in failed: ' + result.error);
-      } else if (result?.ok) {
-        router.push('/');
-      }
-    } catch (error) {
-      console.error('Facebook sign-in error:', error);
-      setError('An error occurred during Facebook sign-in. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Credential storage helpers (localStorage - base64 obfuscation)
   const credentialKey = (email: string) => `unify:cred:${email}`;
@@ -428,45 +387,6 @@ export default function LoginPage() {
                   </Button>
                 </form>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">ou</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full flex items-center justify-center"
-                    onClick={handleGoogleSignIn}
-                    disabled={loading}
-                  >
-                    <svg className="w-5 h-5 mr-2" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
-                      <path fill="#4285F4" d="M533.5 278.4c0-18.4-1.6-36.1-4.6-53.2H272v100.8h146.9c-6.3 34-25 62.8-53.2 82v68.1h85.9c50.3-46.4 79.8-114.6 79.8-197.7z"/>
-                      <path fill="#34A853" d="M272 544.3c72.7 0 133.8-24.1 178.4-65.5l-85.9-68.1c-24 16.1-54.7 25.7-92.5 25.7-71 0-131.1-47.9-152.6-112.1H31.3v70.6C76 486.5 167.7 544.3 272 544.3z"/>
-                      <path fill="#FBBC05" d="M119.4 326.3c-5.9-17.4-9.3-35.9-9.3-54.8s3.4-37.4 9.3-54.8V140.1H31.3C11.2 186.2 0 226.4 0 267.5s11.2 81.3 31.3 113.2l88.1-54.4z"/>
-                      <path fill="#EA4335" d="M272 107.7c39.5 0 75 13.6 102.9 40.5l77.2-77.2C405.9 24.8 343 0 272 0 167.7 0 76 57.8 31.3 144.4l88.1 70.6C140.9 155.6 201 107.7 272 107.7z"/>
-                    </svg>
-                    {translation.auth.loginWithGoogle}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleFacebookSignIn}
-                    disabled={loading}
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="#1877F2" viewBox="0 0 24 24">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    {translation.auth.loginWithFacebook}
-                  </Button>
-                </div>
               </CardContent>
 
               <CardFooter className="flex justify-center">

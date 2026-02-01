@@ -152,6 +152,13 @@ export async function DELETE(
       data: { isDeleted: true },
     });
 
+    try {
+      const { publishPostEvent } = await import('@/lib/postEvents');
+      publishPostEvent({ type: 'deleted', payload: { id: postId } });
+    } catch (e) {
+      console.warn('Failed to publish post deleted event', e);
+    }
+
     return NextResponse.json({
       message: 'Post deleted successfully',
       post: updatedPost,
@@ -226,6 +233,13 @@ export async function PUT(
         },
       },
     });
+
+    try {
+      const { publishPostEvent } = await import('@/lib/postEvents');
+      publishPostEvent({ type: 'updated', payload: updatedPost });
+    } catch (e) {
+      console.warn('Failed to publish post updated event', e);
+    }
 
     return NextResponse.json(updatedPost);
   } catch (error) {

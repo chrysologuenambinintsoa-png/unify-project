@@ -125,6 +125,18 @@ export async function POST(
         where: { id: existingReaction.id },
       });
 
+      // publish updated counts
+      try {
+        const counts = await prisma.post.findUnique({
+          where: { id: postId },
+          select: { _count: { select: { reactions: true, comments: true, likes: true, shares: true } } },
+        });
+        const { publishPostEvent } = await import('@/lib/postEvents');
+        publishPostEvent({ type: 'reaction', payload: { id: postId, _count: counts?._count } });
+      } catch (e) {
+        console.warn('Failed to publish reaction removed event', e);
+      }
+
       return NextResponse.json({
         message: 'Reaction removed',
         action: 'removed',
@@ -149,6 +161,17 @@ export async function POST(
         },
       },
     });
+
+    try {
+      const counts = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { _count: { select: { reactions: true, comments: true, likes: true, shares: true } } },
+      });
+      const { publishPostEvent } = await import('@/lib/postEvents');
+      publishPostEvent({ type: 'reaction', payload: { id: postId, _count: counts?._count } });
+    } catch (e) {
+      console.warn('Failed to publish reaction added event', e);
+    }
 
     return NextResponse.json(
       {

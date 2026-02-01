@@ -20,7 +20,7 @@ export async function GET(
     }
 
     // Fetch user profile (request only core fields to avoid missing-column DB errors)
-    const user = await (prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -42,9 +42,6 @@ export async function GET(
         collegeInfo: true,
         highSchoolInfo: true,
         universityInfo: true,
-        pseudonym: true,
-        mobileContact: true,
-        familyRelations: true,
         skills: true,
         _count: {
           select: {
@@ -54,7 +51,7 @@ export async function GET(
           },
         },
       },
-    }) as any);
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -131,12 +128,7 @@ export async function GET(
           highSchool: user.highSchoolInfo || (user.highSchoolName ? { name: user.highSchoolName } : null),
           university: user.universityInfo || (user.universityName ? { name: user.universityName } : null),
           skills: parsedSkills,
-          pseudonym: user.pseudonym,
-          mobileContact: user.mobileContact,
-          familyRelations: user.familyRelations,
         },
-        // Photo gallery
-        photoGallery: user.photoGallery,
       },
       friendshipStatus,
     });

@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
         imageUrl: story.imageUrl,
         videoUrl: story.videoUrl,
         text: story.text,
+        background: story.background,
         createdAt: story.createdAt,
         expiresAt: story.expiresAt,
         isViewed: story.views.some(v => v.userId === userId),
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { imageUrl, videoUrl, text } = await request.json();
+    const { imageUrl, videoUrl, text, background } = await request.json();
 
     if (!imageUrl && !videoUrl && !text) {
       return NextResponse.json({ error: 'At least one content field is required' }, { status: 400 });
@@ -144,6 +145,7 @@ export async function POST(request: NextRequest) {
         imageUrl,
         videoUrl,
         text,
+        background: text ? background : undefined,  // Only store background for text stories
         userId: session.user.id,
         expiresAt
       },

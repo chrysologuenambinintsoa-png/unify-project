@@ -70,13 +70,7 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
         setPreview(null);
 
         // Update session
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            avatar: data.avatar,
-          },
-        });
+        await update();
       } else {
         const error = await response.json();
         alert(error.error || translation.errors.uploadError);

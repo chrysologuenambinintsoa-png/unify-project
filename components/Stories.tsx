@@ -254,6 +254,16 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
   const openCreate = () => setShowCreateModal(true);
   const closeCreate = () => setShowCreateModal(false);
 
+  const getBackgroundCss = (bg: string): string => {
+    switch (bg) {
+      case 'gradient-1': return 'linear-gradient(135deg,#E8B923, #0D2E5F)';
+      case 'gradient-2': return 'linear-gradient(135deg,#ff7eb3,#65d6ff)';
+      case 'gradient-3': return 'linear-gradient(135deg,#7b2ff7,#f107a3)';
+      case 'solid-1': return '#0D2E5F';
+      default: return 'linear-gradient(135deg,#0D2E5F,#7b2ff7)';
+    }
+  };
+
   const handleCreate = async () => {
     if (!createImage && !createVideo && !createText) return;
     setCreating(true);
@@ -261,7 +271,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: createImage || undefined, videoUrl: createVideo || undefined, text: createText || undefined })
+        body: JSON.stringify({ imageUrl: createImage || undefined, videoUrl: createVideo || undefined, text: createText || undefined, background: createText ? getBackgroundCss(createBackground) : undefined })
       });
       if (!res.ok) {
         const err = await res.json();
@@ -505,12 +515,28 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
               </button>
             </div>
 
-            {/* Story Image */}
-            <img
-              src={activeStory.image}
-              alt={activeStory.user.name}
-              className="w-full h-full object-cover"
-            />
+            {/* Story Content: image / video / text with background */}
+            {activeStory.image ? (
+              <img
+                src={activeStory.image}
+                alt={activeStory.user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : activeStory.video ? (
+              <video src={activeStory.video} className="w-full h-full object-cover" controls />
+            ) : activeStory.text ? (
+              <div
+                className="w-full h-full flex items-center justify-center px-6 text-center"
+                style={{
+                  background: activeStory.background || 'linear-gradient(135deg,#0D2E5F,#7b2ff7)',
+                  color: 'white'
+                }}
+              >
+                <div className="text-2xl font-bold break-words whitespace-pre-wrap">{activeStory.text}</div>
+              </div>
+            ) : (
+              <div className="w-full h-full bg-gray-800" />
+            )}
 
             {/* Animated Sent Emojis */}
             {/* Reactions summary (emoji counts) */}

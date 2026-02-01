@@ -7,7 +7,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // User Model
@@ -229,6 +228,7 @@ model Story {
   imageUrl    String?
   videoUrl    String?
   text        String?
+  background  String?   // Gradient or color for text stories
   userId      String
   expiresAt   DateTime
   createdAt   DateTime  @default(now())

@@ -22,6 +22,9 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [showReactions, setShowReactions] = useState<string | null>(null);
+  const [commentReactionCounts, setCommentReactionCounts] = useState<{ [key: string]: number }>({});
+  const [commentUserLiked, setCommentUserLiked] = useState<{ [key: string]: boolean }>({});
+  const [commentReactions, setCommentReactions] = useState<{ [key: string]: Array<{ emoji: string; count: number }> }>({});
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>({});
   const [mentionSearch, setMentionSearch] = useState('');
@@ -84,20 +87,89 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
 
   const handleAddReaction = async (commentId: string, reaction: string) => {
     try {
-      const response = await fetch(`/api/posts/${postId}/comments/${commentId}/reaction`, {
+      const response = await fetch(`/api/posts/${postId}/comments/${commentId}/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emoji: reaction }),
       });
 
       if (!response.ok) throw new Error('Failed to add reaction');
-      
-      // Refresh comments would require parent callback
+
+      const data = await response.json();
+      const action = data.action;
+
+      // Update grouped reactions map
+      setCommentReactions(prev => {
+        const groups = prev[commentId] ? [...prev[commentId]] : [];
+        const idx = groups.findIndex(g => g.emoji === reaction);
+        if (action === 'added') {
+          if (idx !== -1) {
+            groups[idx] = { ...groups[idx], count: groups[idx].count + 1 };
+          } else {
+            groups.push({ emoji: reaction, count: 1 });
+          }
+        } else {
+          if (idx !== -1) {
+            const newCount = groups[idx].count - 1;
+            if (newCount <= 0) {
+              groups.splice(idx, 1);
+            } else {
+              groups[idx] = { ...groups[idx], count: newCount };
+            }
+          }
+        }
+        return { ...prev, [commentId]: groups };
+      });
+
+      // Update raw thumbs count as well for the Like UI
+      setCommentReactionCounts(prev => ({
+        ...prev,
+        [commentId]: (prev[commentId] || 0) + (action === 'added' ? 1 : -1),
+      }));
+
+      // Toggle local user-liked flag for thumbs
+      if (reaction === '👍') {
+        setCommentUserLiked(prev => ({ ...prev, [commentId]: action === 'added' }));
+      }
+
       setShowReactions(null);
     } catch (err) {
       console.error('Reaction error:', err);
     }
   };
+
+  // Load initial reaction counts for comments
+  useEffect(() => {
+    const loadCounts = async () => {
+      try {
+        const entries = await Promise.all(comments.map(async (c) => {
+          try {
+            const res = await fetch(`/api/posts/${postId}/comments/${c.id}/reactions`);
+            if (!res.ok) return [c.id, []];
+            const json = await res.json();
+            const groups = Array.isArray(json.reactions) ? json.reactions.map((r: any) => ({ emoji: r.emoji, count: r.count })) : [];
+            return [c.id, groups];
+          } catch (e) {
+            return [c.id, []];
+          }
+        }));
+
+        const map: { [key: string]: number } = {};
+        const groupedMap: { [key: string]: Array<{ emoji: string; count: number }> } = {};
+        for (const [id, groups] of entries) {
+          groupedMap[id as string] = groups as any;
+          const thumbs = (groups as any[]).find((g: any) => g.emoji === '👍');
+          map[id as string] = thumbs ? thumbs.count : 0;
+        }
+        setCommentReactions(groupedMap);
+        setCommentReactionCounts(map);
+      } catch (e) {
+        console.error('Failed to load comment reactions', e);
+      }
+    };
+
+    if (comments && comments.length > 0) loadCounts();
+  }, [comments, postId]);
 
   const handleReplySubmit = async (parentCommentId: string, e: React.FormEvent) => {
     e.preventDefault();
@@ -155,7 +227,14 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
 
           {/* Actions */}
           <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-            <button className="hover:text-primary transition-colors">Like</button>
+            <button
+              type="button"
+              onClick={() => handleAddReaction(comment.id, '👍')}
+              className={`transition-colors flex items-center gap-2 text-sm ${commentUserLiked[comment.id] ? 'text-red-500' : 'hover:text-primary text-gray-600'}`}
+            >
+              <span className="text-base">👍</span>
+              <span>{commentReactionCounts[comment.id] || 0}</span>
+            </button>
             <button 
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
               className="hover:text-primary transition-colors flex items-center space-x-1"
@@ -247,6 +326,18 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                 </button>
               </div>
             </form>
+          )}
+
+          {/* Reactions display */}
+          {commentReactions[comment.id] && commentReactions[comment.id].length > 0 && (
+            <div className="mt-2 flex items-center space-x-2 text-sm">
+              {commentReactions[comment.id].map(r => (
+                <div key={r.emoji} className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded-full text-xs">
+                  <span className="text-base">{r.emoji}</span>
+                  <span className="text-xs text-gray-600">{r.count}</span>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* Nested Replies */}

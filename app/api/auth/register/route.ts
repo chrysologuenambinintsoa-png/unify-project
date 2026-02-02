@@ -14,11 +14,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
     // Validate date of birth format (YYYY-MM-DD)
     const dobRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dobRegex.test(dateOfBirth)) {
       return NextResponse.json(
         { error: 'Invalid date of birth format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters' },
         { status: 400 }
       );
     }
@@ -36,34 +53,14 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email or username already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Check if IP/session has already created 3 accounts (basic rate limiting)
-    const recentAccounts = await prisma.user.findMany({
-      where: {
-        // Simple check: created in the last 24 hours
-        createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        },
-      },
-      take: 100, // Limit query
-    });
-
-    // Count accounts created from similar patterns (simplified)
-    // In a real app, you'd want to track IP address in a separate table
-    if (recentAccounts.length >= 3) {
-      return NextResponse.json(
-        { error: 'Account creation limit reached. Please try again later.' },
-        { status: 429 }
+        { status: 409 }
       );
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user with date of birth and optional avatar/cover URLs (already uploaded)
+    // Create user
     const user = await prisma.user.create({
       data: {
         username,
@@ -85,8 +82,19 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Check for specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('unique constraint')) {
+        return NextResponse.json(
+          { error: 'Email or username already exists' },
+          { status: 409 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create user' },
+      { error: 'Failed to create user. Please try again.' },
       { status: 500 }
     );
   }

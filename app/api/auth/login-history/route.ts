@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/auth/login-history - Get recent login history (no session required)
+// GET /api/auth/login-history - Get current user's login history
 export async function GET(request: NextRequest) {
   try {
-    // Get recent login history (last 50 logins across all users)
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get login history for the current user only
     const loginHistory = await prisma.loginHistory.findMany({
+      where: {
+        userId: session.user.id,
+      },
       select: {
         id: true,
-        userId: true,
-        email: true,
         loginAt: true,
         userAgent: true,
         ipAddress: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatar: true,
-            email: true,
-          },
-        },
       },
       orderBy: { loginAt: 'desc' },
       take: 50,
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(loginHistory);
   } catch (error) {
-    console.error('Error fetching login history:', error);
+    console.error('Get login history error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch login history' },
       { status: 500 }

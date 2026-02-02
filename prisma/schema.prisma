@@ -44,6 +44,10 @@ model User {
   googleId      String?   @unique
   facebookId    String?   @unique
 
+  // Password Reset
+  resetToken    String?   @unique
+  resetTokenExpiry DateTime?
+
   // Relations
   accounts      Account[]
   sessions      Session[]

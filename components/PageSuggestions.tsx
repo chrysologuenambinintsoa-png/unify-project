@@ -134,9 +134,9 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
                 <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
                   <div className="flex items-center space-x-1">
                     <Users className="w-3 h-3" />
-                    <span>{page.followers.toLocaleString()} abonnés</span>
+                    <span>{(page.followers ?? 0).toLocaleString()} abonnés</span>
                   </div>
-                  <span className="px-2 py-1 bg-gray-100 rounded-full">{page.category}</span>
+                  <span className="px-2 py-1 bg-gray-100 rounded-full">{page.category || 'Catégorie'}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button

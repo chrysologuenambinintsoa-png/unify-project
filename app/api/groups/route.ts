@@ -1,4 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 100);
+    const offset = parseInt(url.searchParams.get('offset') || '0');
+
+    // Basic discover: largest groups first
+    const groups = await prisma.group.findMany({
+      where: {},
+      orderBy: { members: 'desc' },
+      skip: offset,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        avatar: true,
+        coverImage: true,
+        members: true,
+        category: true,
+        privacy: true,
+      },
+    });
+
+    return NextResponse.json(groups);
+  } catch (error) {
+    console.error('Error in /api/groups', error);
+    return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 });
+  }
+}
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';

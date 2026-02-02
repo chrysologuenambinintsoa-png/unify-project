@@ -12,6 +12,7 @@
     "postinstall": "prisma generate",
     "ws-server": "tsx scripts/ws-server.ts",
     "db:clean": "tsx prisma/clean.ts",
+    "db:seed": "tsx prisma/seed.ts || echo \"No seed script found\"",
     "db:push": "prisma db push",
     "security-check": "npm audit --audit-level=moderate",
     "check-secrets": "git log -p | grep -i 'password\\|secret\\|api.key' | head || true"

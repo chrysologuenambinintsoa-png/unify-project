@@ -59,6 +59,8 @@ export default function LoginPage() {
     fetchLoginHistory();
   }, []);
 
+  const hasHistory = !loadingHistory && loginHistory.length > 0;
+
   // When a user is selected, fill email
   const handleSelectUser = (userEmail: string) => {
     setEmail(userEmail);
@@ -81,7 +83,6 @@ export default function LoginPage() {
             setPassword('');
           } else if (result?.ok) {
             router.push('/');
-            router.refresh();
           }
         } catch (err) {
           console.error('Auto sign-in failed:', err);
@@ -128,25 +129,24 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
-        setError(translation.common.error);
-      } else if (result?.ok) {
-        // Record login history
-        try {
-          await fetch('/api/auth/login-history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email,
-              userAgent: navigator.userAgent,
-            }),
-          });
-        } catch (err) {
-          console.error('Error recording login:', err);
-        }
-        
-        router.push('/');
-        router.refresh();
+        if (result?.error) {
+          setError(translation.common.error);
+        } else if (result?.ok) {
+          // Record login history
+          try {
+            await fetch('/api/auth/login-history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email,
+                userAgent: navigator.userAgent,
+              }),
+            });
+          } catch (err) {
+            console.error('Error recording login:', err);
+          }
+          
+          router.push('/');
         // Save credential locally if user opted in
         try {
           if (rememberPassword) saveCredential(email, password);
@@ -219,7 +219,7 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-6xl"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={hasHistory ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'grid place-items-center min-h-[60vh] p-4'}>
           {/* Left side - Login History */}
           {!loadingHistory && loginHistory.length > 0 && (
             <motion.div

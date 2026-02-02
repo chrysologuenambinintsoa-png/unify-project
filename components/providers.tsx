@@ -11,8 +11,24 @@ function ProvidersContent({ children }: { children: React.ReactNode }) {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
+    // Only show splash once per browser session. Use sessionStorage to persist flag.
+    try {
+      const shown = sessionStorage.getItem('unify:splashShown');
+      if (shown === '1') {
+        setIsInitialLoad(false);
+        return;
+      }
+    } catch (e) {
+      // ignore (SSR or restricted storage)
+    }
+
     if (status !== 'loading') {
       const timer = setTimeout(() => {
+        try {
+          sessionStorage.setItem('unify:splashShown', '1');
+        } catch (e) {
+          // ignore
+        }
         setIsInitialLoad(false);
       }, 500);
 

@@ -11,7 +11,8 @@ interface SuggestedFriend {
   username: string;
   fullName: string;
   avatar: string;
-  mutualFriends: number;
+  mutualFriends?: number;
+  mutualFriendsCount?: number;
 }
 
 interface FriendSuggestionsProps {
@@ -106,7 +107,7 @@ export function FriendSuggestions({ compact = false }: FriendSuggestionsProps) {
               />
               <div>
                 <p className="font-medium text-gray-900">{suggestion.fullName}</p>
-                <p className="text-sm text-gray-500">{suggestion.mutualFriends} amis en commun</p>
+                <p className="text-sm text-gray-500">{(suggestion.mutualFriends ?? suggestion.mutualFriendsCount ?? 0)} amis en commun</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">

@@ -11,7 +11,8 @@ interface SuggestedGroup {
   description: string;
   avatar: string;
   coverImage: string;
-  members: number;
+  members?: number;
+  _count?: { members: number };
   category: string;
   privacy: 'public' | 'private';
 }
@@ -113,7 +114,7 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
                 <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
                   <div className="flex items-center space-x-1">
                     <Users className="w-3 h-3" />
-                    <span>{group.members.toLocaleString()} membres</span>
+                    <span>{((group.members ?? group._count?.members) ?? 0).toLocaleString()} membres</span>
                   </div>
                   <span className="px-2 py-1 bg-gray-100 rounded-full">{group.category}</span>
                 </div>

@@ -32,7 +32,7 @@ wss.on('connection', (ws) => {
     console.log('WS client disconnected');
   });
 
-  ws.on('message', (msg) => {
+  ws.on('message', (msg: any) => {
     // ignore client messages for now; could be used for presence
   });
 });

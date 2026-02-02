@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { uploadImage, uploadVideo } from '@/lib/cloudinary';
 
-// Set timeout for file uploads (up to 2 minutes)
-export const config = {
-  maxDuration: 120,
-};
+// Note: `export const config` with `maxDuration` is deprecated for app routes
+// and cannot be statically parsed by Next.js. If you need longer timeouts
+// for uploads, handle them in a server runtime (custom server), configure
+// them in your deployment platform, or implement streaming/uploads that
+// avoid long-running serverless executions.
 
 export async function POST(req: NextRequest) {
   try {

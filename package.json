@@ -17,11 +17,10 @@
     "check-secrets": "git log -p | grep -i 'password\\|secret\\|api.key' | head || true"
   },
   "dependencies": {
-    "ws": "^8.13.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^1.41.3",
+    "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "emoji-picker-react": "^4.12.0",
@@ -30,11 +29,12 @@
     "isomorphic-dompurify": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.462.0",
-    "next": "^15.0.3",
+    "next": "^16.1.6",
     "next-auth": "^4.24.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4",
+    "ws": "^8.13.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

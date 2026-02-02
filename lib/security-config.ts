@@ -48,12 +48,9 @@ const nextConfig: NextConfig = {
   },
 
   // Configuration CORS
-  cors: {
-    credentials: 'include',
-    origin: process.env.NODE_ENV === 'production'
-      ? process.env.NEXTAUTH_URL
-      : 'http://localhost:3000'
-  },
+  // CORS should be handled via middleware or specific route handlers.
+  // Next.js `NextConfig` does not accept a `cors` top-level property.
+  // If you need global CORS, implement a middleware in `middleware.ts` or configure CORS per API route.
 
   // Environnement
   env: {

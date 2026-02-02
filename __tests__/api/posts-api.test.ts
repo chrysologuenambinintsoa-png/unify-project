@@ -1,4 +1,7 @@
 /**
+ * @jest-environment node
+ */
+/**
  * Tests pour les APIs Posts, Commentaires, Réponses et Réactions
  * 
  * À exécuter avec: npm test -- posts-api.test.ts

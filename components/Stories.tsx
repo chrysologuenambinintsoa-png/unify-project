@@ -16,7 +16,10 @@ interface Story {
     name: string;
     avatar: string;
   };
-  image: string;
+  image?: string;
+  video?: string;
+  text?: string;
+  background?: string;
   timestamp: Date;
   viewed?: boolean;
 }

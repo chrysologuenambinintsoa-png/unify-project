@@ -30,7 +30,7 @@
     "emoji-picker-react": "^4.12.0",
     "framer-motion": "^11.11.17",
     "helmet": "^7.1.0",
-    "image-size": "^1.0.1",
+    "image-size": "^2.0.2",
     "isomorphic-dompurify": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.462.0",

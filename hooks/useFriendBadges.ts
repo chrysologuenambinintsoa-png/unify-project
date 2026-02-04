@@ -8,7 +8,7 @@ interface FriendBadges {
 }
 
 interface UseFriendBadgesOptions {
-  refetchInterval?: number; // en millisecondes, défaut: 30000 (30 secondes)
+  refetchInterval?: number; // en millisecondes, défaut: 0 (disabled)
   enabled?: boolean;
 }
 
@@ -28,7 +28,7 @@ interface UseFriendBadgesOptions {
 export function useFriendBadges(
   options: UseFriendBadgesOptions = {}
 ) {
-  const { refetchInterval = 30000, enabled = true } = options;
+  const { refetchInterval = 0, enabled = true } = options;
 
   const [badges, setBadges] = useState<FriendBadges>({
     pendingRequests: 0,
@@ -91,7 +91,7 @@ export function useFriendBadges(
  * Hook pour obtenir la liste des demandes d'amis
  */
 export function useFriendRequests(options: UseFriendBadgesOptions = {}) {
-  const { refetchInterval = 30000, enabled = true } = options;
+  const { refetchInterval = 0, enabled = true } = options;
 
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

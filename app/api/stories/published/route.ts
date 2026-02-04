@@ -11,11 +11,13 @@ import { prisma } from '@/lib/prisma';
  * - userId: optionnel, filtrer par utilisateur spécifique
  */
 export async function GET(request: NextRequest) {
+  let limit: number = 20;
+  let skip: number = 0;
   try {
     const { searchParams } = new URL(request.url);
-    
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const skip = parseInt(searchParams.get('skip') || '0');
+
+    limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+    skip = parseInt(searchParams.get('skip') || '0');
     const userId = searchParams.get('userId');
 
     // Construire les conditions where
@@ -88,9 +90,16 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching published stories:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch published stories' },
-      { status: 500 }
-    );
+    // Return a safe empty response so client hooks don't throw on non-OK
+    return NextResponse.json({
+      success: false,
+      data: [],
+      pagination: {
+        total: 0,
+        limit,
+        skip,
+        hasMore: false
+      }
+    });
   }
 }

@@ -100,13 +100,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Create notification for the recipient
+    const requester = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { fullName: true },
+    });
+
     await prisma.notification.create({
       data: {
         userId: userId,
         type: 'friend_request',
         actorId: session.user.id,
-        title: `Friend Request`,
-        content: `${session.user.id} sent you a friend request`,
+        title: `${requester?.fullName || 'Someone'} sent you a friend request`,
+        content: `${requester?.fullName || 'Someone'} sent you a friend request`,
+        url: `/users/${session.user.id}/profile`, // Direct link to requester's profile
       },
     });
 

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ImageCropModal } from '@/components/ImageCropModal';
+import { PreviewModal } from '@/components/PreviewModal';
 
 interface CoverImageUploadProps {
   currentCover?: string | null;
@@ -18,9 +20,13 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
   const [isUploading, setIsUploading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -36,58 +42,15 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
       return;
     }
 
-    try {
-      // Process image client-side: automatic center-crop & resize to 1200x300 (4:1)
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (e) => reject(e);
-        reader.readAsDataURL(file);
-      });
-
-      const processed = await (async () => {
-        return new Promise<{ dataUrl: string; file: File }>((resolve, reject) => {
-          const img = new Image();
-          img.onload = async () => {
-            const canvasW = 1200;
-            const canvasH = 300;
-            const canvas = document.createElement('canvas');
-            canvas.width = canvasW;
-            canvas.height = canvasH;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return reject(new Error('Canvas not supported'));
-
-            // scale to cover
-            const scale = Math.max(canvasW / img.width, canvasH / img.height);
-            const dWidth = img.width * scale;
-            const dHeight = img.height * scale;
-            const dx = (canvasW - dWidth) / 2;
-            const dy = (canvasH - dHeight) / 2;
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvasW, canvasH);
-            ctx.drawImage(img, dx, dy, dWidth, dHeight);
-
-            canvas.toBlob((blob) => {
-              if (!blob) return reject(new Error('Failed to create blob'));
-              const outFile = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
-              const outDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-              resolve({ dataUrl: outDataUrl, file: outFile });
-            }, 'image/jpeg', 0.9);
-          };
-          img.onerror = (e) => reject(e);
-          img.src = dataUrl;
-        });
-      })();
-
-      // Show preview and upload automatically
-      setPreview(processed.dataUrl);
+    // Create preview for crop modal
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setImageToEdit(dataUrl);
+      setCropModalOpen(true);
       setShowOptions(false);
-      await uploadCover(processed.file);
-    } catch (err) {
-      console.error('Error processing cover image:', err);
-      alert(translation.errors.uploadError);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const uploadCover = async (file: File) => {
@@ -128,6 +91,29 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
   };
 
 
+  const handleCropSave = async (croppedImage: string, file: File) => {
+    // Show preview and wait for user confirmation
+    setPreview(croppedImage);
+    setPendingFile(file);
+    setPreviewModalOpen(true);
+    setCropModalOpen(false);
+    setImageToEdit(null);
+  };
+
+  const confirmPreviewUpload = async () => {
+    if (!pendingFile) return;
+    setPreviewModalOpen(false);
+    await uploadCover(pendingFile);
+    setPendingFile(null);
+    setPreview(null);
+  };
+
+  const cancelPreview = () => {
+    setPreviewModalOpen(false);
+    setPendingFile(null);
+    setPreview(null);
+  };
+
   const removeCover = async () => {
     if (!confirm(translation.profile.deleteCoverConfirm)) return;
 
@@ -162,7 +148,26 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
 
   return (
     <div className="relative">
-      {/* Cover images are auto-processed client-side; no crop modal required */}
+      {/* Crop Modal for Cover */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={imageToEdit || ''}
+        onClose={() => {
+          setCropModalOpen(false);
+          setImageToEdit(null);
+        }}
+        onSave={handleCropSave}
+        aspectRatio={4} // 4:1 ratio for cover (Facebook style)
+        title="Ajuster photo de couverture"
+      />
+
+      <PreviewModal
+        isOpen={previewModalOpen}
+        imageSrc={preview}
+        title={translation.profile.changeCover}
+        onConfirm={confirmPreviewUpload}
+        onCancel={cancelPreview}
+      />
 
       <div
         className="relative group cursor-pointer w-full h-48 rounded-lg overflow-hidden bg-gradient-to-r from-primary-dark to-accent-dark"

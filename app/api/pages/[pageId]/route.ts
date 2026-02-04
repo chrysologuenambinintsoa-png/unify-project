@@ -30,10 +30,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pa
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await req.json();
-    const { name, description, image } = body;
+    // Verify user is admin
+    const isAdmin = await (prisma as any).pageAdmin.findFirst({
+      where: { pageId, userId: session.user.id },
+    });
 
-    const updated = await prisma.page.update({ where: { id: pageId }, data: { name, description, image } });
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Only page admins can update pages' },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const { name, description, category, visibility, coverImage } = body;
+
+    // Only allow updating specific fields
+    const updateData: any = {};
+    ['name', 'description', 'category', 'visibility', 'coverImage'].forEach((field) => {
+      if (field in body) {
+        updateData[field] = body[field];
+      }
+    });
+
+    const updated = await (prisma as any).page.update({
+      where: { id: pageId },
+      data: updateData,
+    });
+    
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Error updating page:', error);
@@ -48,8 +72,27 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    await prisma.page.delete({ where: { id: pageId } });
-    return NextResponse.json({ success: true });
+    // Verify user is admin
+    const isAdmin = await (prisma as any).pageAdmin.findFirst({
+      where: { pageId, userId: session.user.id },
+    });
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Only page admins can delete pages' },
+        { status: 403 }
+      );
+    }
+
+    const deleted = await (prisma as any).page.delete({
+      where: { id: pageId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Page deleted successfully',
+      page: deleted,
+    });
   } catch (error) {
     console.error('Error deleting page:', error);
     return NextResponse.json({ error: 'Failed to delete page' }, { status: 500 });

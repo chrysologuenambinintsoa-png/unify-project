@@ -39,9 +39,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(pages);
     }
 
-    // Discover pages
+    // Discover pages - exclude user's own pages
+    const session = await getServerSession(authOptions);
+    let userPageIds: string[] = [];
+    
+    if (session?.user?.id) {
+      const userPages = await prisma.page.findMany({
+        where: {
+          OR: [
+            { admins: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+        select: { id: true },
+      });
+      userPageIds = userPages.map(p => p.id);
+    }
+
     const pages = await prisma.page.findMany({
-      where: {},
+      where: {
+        NOT: {
+          id: { in: userPageIds }
+        }
+      },
       orderBy: { createdAt: 'desc' },
       skip: offset,
       take: limit,
@@ -60,7 +80,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(pages);
   } catch (error) {
     console.error('Error fetching pages:', error);
-    return NextResponse.json({ error: 'Failed to fetch pages' }, { status: 500 });
+    // Check if it's a database connection error
+    if (error instanceof Error) {
+      if (error.message.includes('P1001') || error.message.includes('Can\'t reach database')) {
+        console.warn('Database connection error - returning empty array');
+        return NextResponse.json([], { status: 200 });
+      }
+    }
+    // For other errors, also return empty array to maintain functionality
+    return NextResponse.json([], { status: 200 });
   }
 }
 
@@ -85,6 +113,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(page, { status: 201 });
   } catch (error) {
     console.error('Error creating page:', error);
+    // Check if it's a database connection error
+    if (error instanceof Error) {
+      if (error.message.includes('P1001') || error.message.includes('Can\'t reach database')) {
+        return NextResponse.json({ error: 'Database temporarily unavailable' }, { status: 503 });
+      }
+    }
     return NextResponse.json({ error: 'Failed to create page' }, { status: 500 });
   }
 }

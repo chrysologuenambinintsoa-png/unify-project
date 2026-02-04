@@ -251,5 +251,57 @@
     "managePreferences": "Manage your preferences and account settings",
     "profilePhoto": "Profile Photo",
     "coverPhoto": "Cover Photo"
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: February 2026",
+    "introduction": "At Unify, we take your privacy very seriously. This privacy policy explains how we collect, use, protect and share your personal data.",
+    "dataCollection": "Data Collection",
+    "dataUsage": "Data Usage",
+    "dataSecurity": "Data Security",
+    "gdprRights": "Your Rights (GDPR)",
+    "cookies": "Cookies and Tracking",
+    "dataRetention": "Data Retention",
+    "childrenProtection": "Parental Control",
+    "contact": "Contact and Complaints"
+  },
+  "termsOfService": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: February 2026",
+    "introduction": "Please read and accept our terms before continuing",
+    "acceptTerms": "I accept the terms of service and understand that I must comply with community guidelines",
+    "responsibleUse": "Responsible Use",
+    "dataPrivacy": "Data Privacy",
+    "userContent": "User Content",
+    "intellectualProperty": "Intellectual Property",
+    "limitationOfLiability": "Limitation of Liability",
+    "modifications": "Modifications to Terms",
+    "access": "Access Unify"
+  },
+  "helpPage": {
+    "welcome": "Welcome to Unify!",
+    "discoverFeatures": "Discover how to use all the features",
+    "messaging": "Messaging",
+    "messagingDesc": "Send private messages to your friends in real-time",
+    "friends": "Friends",
+    "friendsDesc": "Find and connect with other users",
+    "sharing": "Sharing",
+    "sharingDesc": "Share photos, videos and your thoughts with the community",
+    "stories": "Stories",
+    "storiesDesc": "Create ephemeral stories that disappear after 24h",
+    "privacy": "Privacy",
+    "privacyDesc": "Control your security and privacy settings",
+    "settings": "Settings",
+    "settingsDesc": "Customize your profile and preferences",
+    "faq": "Frequently Asked Questions",
+    "moreQuestions": "Have more questions?",
+    "contactUs": "Contact Us"
+  },
+  "copyright": {
+    "allRights": "All rights reserved",
+    "socialPlatform": "A social platform to connect communities",
+    "privacyLink": "Privacy",
+    "termsLink": "Terms",
+    "helpLink": "Help"
   }
 }

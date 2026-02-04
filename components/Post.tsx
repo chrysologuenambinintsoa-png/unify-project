@@ -3,11 +3,14 @@
 import { useState, useRef } from 'react';
 import { MessageCircle, Share2, Bookmark, MoreVertical, X, Send } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
+import { motion } from 'framer-motion';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import ShareModal from '@/components/post/ShareModal';
 import { PostImageViewer } from '@/components/PostImageViewer';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { CommentThread } from '@/components/CommentThread';
+import { optimizeAvatarUrl, optimizeImageUrl } from '@/lib/cloudinaryOptimizer';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface PostProps {
   post: any;
@@ -44,7 +47,46 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showEmojiMenu, setShowEmojiMenu] = useState(false);
+  const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({
+    '❤️': 0,
+    '😢': 0,
+    '😮': 0,
+    '🫂': 0,
+  });
+  const [hoveredReaction, setHoveredReaction] = useState<string | null>(null);
+  const [floatingEmoji, setFloatingEmoji] = useState<{ emoji: string; id: number } | null>(null);
+  const floatingEmojiIdRef = useRef(0);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
+  const likeButtonRef = useRef<HTMLDivElement>(null);
+
+  // Enhanced emoji reactions with 10 emojis and auto-animation
+  const reactionEmojis = [
+    { emoji: '👍', label: 'Like', color: 'from-blue-400 to-blue-500' },
+    { emoji: '❤️', label: 'Love', color: 'from-red-400 to-red-500' },
+    { emoji: '😂', label: 'Haha', color: 'from-yellow-400 to-yellow-500' },
+    { emoji: '😮', label: 'Wow', color: 'from-orange-400 to-orange-500' },
+    { emoji: '😢', label: 'Sad', color: 'from-blue-300 to-blue-400' },
+    { emoji: '😡', label: 'Angry', color: 'from-red-500 to-red-600' },
+    { emoji: '🔥', label: 'Fire', color: 'from-orange-500 to-red-600' },
+    { emoji: '🎉', label: 'Celebrate', color: 'from-purple-400 to-pink-500' },
+    { emoji: '✨', label: 'Amazing', color: 'from-yellow-300 to-purple-400' },
+    { emoji: '🫂', label: 'Solidarity', color: 'from-pink-400 to-purple-500' },
+  ];
+
+  const handleEmojiReaction = (emojiData: { emoji: string; label: string }) => {
+    setReactionCounts(prev => ({
+      ...prev,
+      [emojiData.emoji]: (prev[emojiData.emoji] || 0) + 1,
+    }));
+    // Add floating emoji animation
+    const newId = floatingEmojiIdRef.current++;
+    setFloatingEmoji({ emoji: emojiData.emoji, id: newId });
+    setTimeout(() => setFloatingEmoji(null), 1000);
+    setShowEmojiMenu(false);
+  };
+
+  const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
 
   const handleLike = () => {
     const newLiked = !liked;
@@ -112,52 +154,44 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
   // Normalize author/user and media for compatibility with different API shapes
   const author = post?.author ?? post?.user ?? { id: '', name: 'Unknown', avatar: undefined, username: undefined };
-  const images: string[] = post?.images ?? (post?.media ? post.media.map((m: any) => m.type !== 'video' ? m.url : null).filter(Boolean) : []);
+  const images: string[] = (post?.images ?? (post?.media ? post.media.map((m: any) => m.type !== 'video' ? m.url : null).filter(Boolean) : []))
+    .filter(Boolean)
+    .map((u: string) => u as string);
   const videos: string[] = post?.videos ?? (post?.media ? post.media.map((m: any) => m.type === 'video' ? m.url : null).filter(Boolean) : []);
   const createdAt = post?.createdAt ?? post?.created_at ?? new Date();
 
   return (
-    <div className="bg-white border border-border rounded-lg shadow-sm mb-4 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg md:rounded-lg shadow-sm mb-4 overflow-hidden hover:shadow-md transition-shadow duration-200 w-full">
       {/* Post Header */}
-      <div className="p-4 flex items-center justify-between border-b border-border">
-        <div className="flex items-center space-x-3">
+      <div className="p-3 md:p-4 flex items-center justify-between border-b border-border gap-2">
+        <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
           {/* User Avatar */}
-          <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm overflow-hidden">
-            {author.avatar ? (
-              <img 
-                src={author.avatar} 
-                alt={author.name} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              (author.name || 'U').charAt(0).toUpperCase()
-            )}
-          </div>
+          <Avatar src={optimizeAvatarUrl(author.avatar, 40) || author.avatar || null} name={author.name} size="md" className="w-10 h-10 flex-shrink-0" />
           {/* User Info */}
-          <div>
-            <p className="font-semibold text-gray-900">{author.name}</p>
-            <p className="text-sm text-gray-500">@{author.username || 'username'} • {formatDate(createdAt)}</p>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base truncate">{author.name}</p>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'} • {formatDate(createdAt)}</p>
           </div>
         </div>
 
         {/* Options Menu */}
-        <div className="relative" ref={optionsMenuRef}>
+        <div className="relative flex-shrink-0" ref={optionsMenuRef}>
           <button
             onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors duration-200"
           >
-            <MoreVertical size={18} className="text-gray-600" />
+            <MoreVertical size={18} className="text-gray-600 dark:text-gray-400" />
           </button>
 
           {showOptionsMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-border">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 border border-border">
               {onEdit && (
                 <button
                   onClick={() => {
                     setShowOptionsMenu(false);
                     onEdit(post);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 font-medium transition-colors duration-200"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors duration-200 text-sm"
                 >
                   Edit Post
                 </button>
@@ -180,12 +214,12 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
       {/* Post Content */}
       <div className="p-4">
-        <p className="text-gray-900 leading-relaxed break-words">{post.content}</p>
+        <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">{post.content}</p>
       </div>
 
       {/* Post Media - Images */}
       {images && images.length > 0 && (
-        <div className={`grid gap-2 px-4 pb-4 ${
+        <div className={`grid gap-1 md:gap-2 px-3 md:px-4 pb-4 w-full ${
           images.length === 1 ? 'grid-cols-1' :
           images.length === 2 ? 'grid-cols-2' :
           'grid-cols-2 grid-rows-2'
@@ -193,16 +227,16 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           {images.map((image, index) => (
             <div
               key={index}
-              className="relative bg-gray-100 rounded-lg overflow-hidden cursor-pointer group aspect-square"
+              className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer group w-full"
               onClick={() => {
                 setSelectedImageIndex(index);
                 setShowImageViewer(true);
               }}
             >
               <img
-                src={image}
+                src={optimizeImageUrl(image, 1200, 1200) || image}
                 alt={`Post media ${index + 1}`}
-                className="w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-200"
+                className={`w-full h-full ${images.length === 1 ? 'object-contain max-h-96 md:max-h-[500px]' : 'object-cover aspect-square'} group-hover:opacity-90 transition-opacity duration-200`}
               />
             </div>
           ))}
@@ -211,14 +245,14 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
       {/* Post Media - Videos */}
       {videos && videos.length > 0 && (
-        <div className="px-4 pb-4 space-y-3">
+        <div className="px-3 md:px-4 pb-4 space-y-3 w-full">
           {videos.map((video, index) => (
-            <div key={index}>
+            <div key={index} className="w-full">
               <VideoPlayer
                 src={video}
                 title={`Video ${index + 1}`}
                 allowDownload={true}
-                className="w-full h-auto max-h-96"
+                className="w-full h-auto max-h-96 md:max-h-[500px]"
               />
             </div>
           ))}
@@ -226,60 +260,152 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       )}
 
       {/* Engagement Stats */}
-      <div className="px-4 py-2 border-t border-b border-border text-sm text-gray-600 flex justify-between">
+      <div className="px-3 md:px-4 py-2 border-t border-b border-border text-xs md:text-sm text-gray-600 dark:text-gray-400 flex justify-between">
         <span>{likeCount} likes</span>
-        <div className="flex space-x-4">
+        <div className="flex space-x-2 md:space-x-4">
           <span>{commentCount} comments</span>
-          <span>{shareCount} shares</span>
+          <span className="hidden sm:inline">{shareCount} shares</span>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="p-4 flex justify-between">
-        <button
-          onClick={handleLike}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-            liked
-              ? 'text-primary'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
+      <div className="p-2 md:p-4 flex flex-wrap justify-between items-start relative gap-2">
+        {/* Like Button with Facebook-style Emoji Menu */}
+        <div
+          ref={likeButtonRef}
+          className="relative flex-1 min-w-max"
+          onMouseEnter={() => setShowEmojiMenu(true)}
+          onMouseLeave={() => setShowEmojiMenu(false)}
         >
-          <HeartIcon className={`w-5 h-5 ${liked ? 'fill-primary' : ''}`} fill={liked} />
-          <span>Like</span>
-        </button>
+          <button
+            onClick={handleLike}
+            className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base transition-all duration-200 flex-shrink-0 ${
+              liked
+                ? 'text-primary'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <HeartIcon className={`w-4 h-4 md:w-5 md:h-5 ${liked ? 'fill-primary' : ''}`} fill={liked} />
+            <span className="hidden sm:inline">Like</span>
+          </button>
+
+          {/* Facebook-style Emoji Reaction Menu */}
+          {showEmojiMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-3xl px-2 py-2 flex gap-1 shadow-xl z-50 border border-gray-200 dark:border-gray-700"
+            >
+              {reactionEmojis.map((reactionData, idx) => (
+                <motion.button
+                  key={reactionData.emoji}
+                  onClick={() => handleEmojiReaction(reactionData)}
+                  onMouseEnter={() => setHoveredReaction(reactionData.emoji)}
+                  onMouseLeave={() => setHoveredReaction(null)}
+                  whileHover={{ scale: 1.4, y: -12 }}
+                  whileTap={{ scale: 0.85 }}
+                  initial={{ opacity: 0, y: 20, scale: 0 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0 }}
+                  transition={{ 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 20,
+                    delay: idx * 0.05
+                  }}
+                  className="text-2xl md:text-3xl cursor-pointer p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative"
+                  title={reactionData.label}
+                >
+                  {reactionData.emoji}
+                  {hoveredReaction === reactionData.emoji && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap font-semibold z-10"
+                    >
+                      {reactionData.label}
+                    </motion.div>
+                  )}
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Floating Emoji Animation */}
+          {floatingEmoji && (
+            <motion.div
+              key={floatingEmoji.id}
+              initial={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+              animate={{ opacity: 0, y: -40, scale: 1.2 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="absolute pointer-events-none text-2xl md:text-3xl"
+              style={{ left: '20px', bottom: '50px' }}
+            >
+              {floatingEmoji.emoji}
+            </motion.div>
+          )}
+        </div>
 
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 flex-shrink-0"
         >
           <MessageCircle size={18} />
-          <span>Comment</span>
+          <span className="hidden sm:inline">Comment</span>
         </button>
 
         <button
           onClick={() => setShowShareModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 flex-shrink-0"
         >
           <Share2 size={18} />
-          <span>Share</span>
+          <span className="hidden sm:inline">Share</span>
         </button>
 
         <button
           onClick={handleSave}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+          className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base transition-all duration-200 flex-shrink-0 ${
             saved
               ? 'text-primary bg-primary/10'
-              : 'text-gray-600 hover:bg-gray-100'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <Bookmark
             size={18}
             className={saved ? 'fill-current' : ''}
           />
-          <span>Save</span>
+          <span className="hidden sm:inline">Save</span>
         </button>
-      </div>
-
+      </div>      {/* Reaction Counter Display - Facebook style */}
+      {totalReactions > 0 && (
+        <div className="px-4 py-2 border-t border-gray-200 text-sm">
+          <div className="flex items-center gap-2 text-gray-700">
+            {/* Reaction pills */}
+            <div className="flex gap-1">
+              {Object.entries(reactionCounts)
+                .filter(([_, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1])
+                .map(([emoji, count]) => (
+                  <motion.div
+                    key={emoji}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2 py-1 cursor-pointer transition-colors"
+                  >
+                    <span className="text-base">{emoji}</span>
+                    <span className="text-xs font-semibold text-gray-700">{count}</span>
+                  </motion.div>
+                ))}
+            </div>
+            <span className="text-xs text-gray-500">
+              {totalReactions} {totalReactions === 1 ? 'reaction' : 'reactions'}
+            </span>
+          </div>
+        </div>
+      )}
       {/* Comments Section - Inline */}
       {showComments && (
         <div className="border-t border-border bg-gray-50">

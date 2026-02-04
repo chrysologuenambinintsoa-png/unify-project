@@ -52,13 +52,7 @@ export function useUnreadCounts() {
     }
   }, [session?.user?.id]);
 
-  // Refresh counts every 30 seconds
-  useEffect(() => {
-    if (!session?.user?.id) return;
-
-    const interval = setInterval(fetchCounts, 30000);
-    return () => clearInterval(interval);
-  }, [session?.user?.id]);
+  // Auto-refresh disabled - only manual refresh allowed
 
   return {
     counts,

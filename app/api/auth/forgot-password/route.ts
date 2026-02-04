@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { sendResetCodeEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,22 +30,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate reset token
+    // Generate reset token (keep resetToken for compatibility) and a 6-digit code
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
-    // Save token to database
+    // 6-digit reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpiry = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
+    // Save token and code to database
     await prisma.user.update({
       where: { id: user.id },
       data: {
         resetToken,
         resetTokenExpiry,
+        resetCode,
+        resetCodeExpiry,
       },
     });
 
-    // TODO: Send email with reset link
-    // const resetLink = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
-    // await sendResetEmail(email, resetLink);
+    // Send reset code email (best-effort)
+    try {
+      await sendResetCodeEmail(email, resetCode);
+    } catch (e) {
+      console.error('Failed to send reset code email:', e);
+    }
 
     return NextResponse.json(
       { 

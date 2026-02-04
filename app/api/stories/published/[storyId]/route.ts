@@ -110,9 +110,10 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching story details:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch story details' },
-      { status: 500 }
-    );
+    // Return a safe response to avoid client-side fetch() throwing
+    return NextResponse.json({
+      success: false,
+      data: null
+    });
   }
 }

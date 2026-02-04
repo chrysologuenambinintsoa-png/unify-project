@@ -95,6 +95,32 @@ export async function POST(
       },
     });
 
+    // Get post details for notification
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { userId: true },
+    });
+
+    // Send notification to post owner if they're not the commenter
+    if (post && post.userId !== session.user.id && comment.user) {
+      try {
+        await prisma.notification.create({
+          data: {
+            type: 'comment',
+            title: `${comment.user.fullName} a commenté votre publication`,
+            content: `${comment.user.fullName}: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+            url: `/posts/${postId}`, // Direct link to post
+            isRead: false,
+            userId: post.userId,
+            actorId: session.user.id,
+          },
+        });
+      } catch (notifError) {
+        console.error('Error creating comment notification:', notifError);
+        // Don't fail the comment if notification fails
+      }
+    }
+
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {
     console.error('Error creating comment:', error);

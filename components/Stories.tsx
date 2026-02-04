@@ -36,7 +36,6 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createImage, setCreateImage] = useState('');
   const [createVideo, setCreateVideo] = useState('');
-  const [createText, setCreateText] = useState('');
   const [creating, setCreating] = useState(false);
   const [createBackground, setCreateBackground] = useState<string>('gradient-1');
   const [previewType, setPreviewType] = useState<'image'|'video'|null>(null);
@@ -120,6 +119,29 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       // if at first, close viewer
       handleCloseStory();
     }
+  };
+
+  // Handle taps / pointer interactions for navigation (left/right)
+  const handlePointerUp = (e: any) => {
+    try {
+      const tgt = e.target as HTMLElement;
+      if (tgt && typeof tgt.closest === 'function') {
+        const interactive = tgt.closest('button, input, textarea, select, label');
+        if (interactive) return;
+      }
+
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const clientX = (typeof e.clientX === 'number')
+        ? e.clientX
+        : (e.changedTouches && e.changedTouches[0] && typeof e.changedTouches[0].clientX === 'number' ? e.changedTouches[0].clientX : null);
+      if (!clientX) return;
+      const x = clientX - rect.left;
+      if (x < rect.width / 2) {
+        goPrev();
+      } else {
+        goNext();
+      }
+    } catch (err) {}
   };
 
   const handleSendMessage = async () => {
@@ -268,13 +290,13 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
   };
 
   const handleCreate = async () => {
-    if (!createImage && !createVideo && !createText) return;
+      if (!createImage && !createVideo) return;
     setCreating(true);
     try {
       const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: createImage || undefined, videoUrl: createVideo || undefined, text: createText || undefined, background: createText ? getBackgroundCss(createBackground) : undefined })
+          body: JSON.stringify({ imageUrl: createImage || undefined, videoUrl: createVideo || undefined })
       });
       if (!res.ok) {
         const err = await res.json();
@@ -456,32 +478,13 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
           onClick={handleCloseStory}
         >
           <div
-            className="relative w-full max-w-md h-full md:h-[80vh] md:rounded-lg overflow-hidden"
+            className="relative w-full max-w-3xl h-full md:h-[80vh] md:rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={() => setPaused(true)}
             onMouseUp={() => setPaused(false)}
             onTouchStart={() => setPaused(true)}
             onTouchEnd={() => setPaused(false)}
-            onClickCapture={(e: any) => {
-              // prevent navigation when interacting with controls (input/button/etc.)
-              try {
-                const tgt = e.target as HTMLElement;
-                if (tgt && typeof tgt.closest === 'function') {
-                  const interactive = tgt.closest('button, input, textarea, select, label');
-                  if (interactive) return;
-                }
-
-                // handle tap to navigate left/right
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clientX = e.clientX ?? (e.touches?.[0]?.clientX);
-                const x = clientX - rect.left;
-                if (x < rect.width / 2) {
-                  goPrev();
-                } else {
-                  goNext();
-                }
-              } catch (err) {}
-            }}
+            onPointerUp={handlePointerUp}
           >
             {/* Multi-segment Progress (Facebook-like) */}
             <div className="absolute top-0 left-0 right-0 z-10 p-4">
@@ -512,22 +515,24 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
               </div>
               <button
                 onClick={handleCloseStory}
-                className="ml-auto text-white text-2xl font-bold hover:text-gray-200"
+                className="ml-auto text-white text-3xl font-bold hover:text-gray-300 hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-colors duration-200"
+                title="Fermer"
               >
-                ×
+                ✕
               </button>
             </div>
 
             {/* Story Content: image / video / text with background */}
-            {activeStory.image ? (
-              <img
-                src={activeStory.image}
-                alt={activeStory.user.name}
-                className="w-full h-full object-cover"
-              />
-            ) : activeStory.video ? (
-              <video src={activeStory.video} className="w-full h-full object-cover" controls />
-            ) : activeStory.text ? (
+            <div className="w-full h-full flex items-center justify-center bg-black">
+              {activeStory.image ? (
+                <img
+                  src={activeStory.image}
+                  alt={activeStory.user.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : activeStory.video ? (
+                <video src={activeStory.video} className="max-w-full max-h-full object-contain" controls />
+              ) : activeStory.text ? (
               <div
                 className="w-full h-full flex items-center justify-center px-6 text-center"
                 style={{
@@ -540,6 +545,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
             ) : (
               <div className="w-full h-full bg-gray-800" />
             )}
+            </div>
 
             {/* Animated Sent Emojis */}
             {/* Reactions summary (emoji counts) */}
@@ -679,64 +685,118 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
           </div>
         </div>
       )}
-      {/* Create Story Modal */}
+      {/* Create Story Modal - Enhanced */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Créer une Story</h3>
-            <label className="block text-sm text-gray-700">Image / Video</label>
-            <input
-              type="file"
-              accept="image/*,video/*"
-              onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (!f) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  const result = reader.result as string;
-                  if (f.type.startsWith('image/')) {
-                    setCreateImage(result);
-                    setCreateVideo('');
-                    setPreviewType('image');
-                  } else if (f.type.startsWith('video/')) {
-                    setCreateVideo(result);
-                    setCreateImage('');
-                    setPreviewType('video');
-                  }
-                };
-                reader.readAsDataURL(f);
-              }}
-              className="w-full mb-3"
-            />
-
-            <label className="block text-sm text-gray-700">Fond</label>
-            <div className="flex space-x-2 mb-3">
-              <button type="button" onClick={() => setCreateBackground('gradient-1')} className={`w-10 h-10 rounded ${createBackground==='gradient-1' ? 'ring-2 ring-offset-2 ring-primary' : ''}`} style={{background: 'linear-gradient(135deg,#E8B923, #0D2E5F)'}} />
-              <button type="button" onClick={() => setCreateBackground('gradient-2')} className={`w-10 h-10 rounded ${createBackground==='gradient-2' ? 'ring-2 ring-offset-2 ring-primary' : ''}`} style={{background: 'linear-gradient(135deg,#ff7eb3,#65d6ff)'}} />
-              <button type="button" onClick={() => setCreateBackground('gradient-3')} className={`w-10 h-10 rounded ${createBackground==='gradient-3' ? 'ring-2 ring-offset-2 ring-primary' : ''}`} style={{background: 'linear-gradient(135deg,#7b2ff7,#f107a3)'}} />
-              <button type="button" onClick={() => setCreateBackground('solid-1')} className={`w-10 h-10 rounded ${createBackground==='solid-1' ? 'ring-2 ring-offset-2 ring-primary' : ''}`} style={{background: '#0D2E5F'}} />
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Créer une Story</h2>
+              <button
+                onClick={closeCreate}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition"
+              >
+                ✕
+              </button>
             </div>
 
-            <label className="block text-sm text-gray-700">Texte (optionnel)</label>
-            <textarea value={createText} onChange={(e) => setCreateText(e.target.value)} className="w-full border border-border rounded px-3 py-2 mb-3" />
+            {/* Tabs */}
+            <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setPreviewType('image')}
+                className={`pb-2 px-4 font-medium transition ${previewType === 'image' ? 'text-primary border-b-2 border-primary' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                Image
+              </button>
+              <button
+                onClick={() => setPreviewType('video')}
+                className={`pb-2 px-4 font-medium transition ${previewType === 'video' ? 'text-primary border-b-2 border-primary' : 'text-gray-600 dark:text-gray-400'}`}
+              >
+                Vidéo
+              </button>
+            </div>
 
-            { (createImage || createVideo || createText) && (
-              <div className="mb-3">
-                <p className="text-sm font-medium mb-2">Aperçu</p>
-                <div className="w-full h-64 rounded overflow-hidden relative" style={{background: createImage||createVideo ? undefined : (createBackground==='gradient-1' ? 'linear-gradient(135deg,#E8B923, #0D2E5F)' : createBackground==='gradient-2' ? 'linear-gradient(135deg,#ff7eb3,#65d6ff)' : createBackground==='gradient-3' ? 'linear-gradient(135deg,#7b2ff7,#f107a3)' : '#0D2E5F')}}>
-                  { previewType === 'image' && createImage && (<img src={createImage} alt="preview" className="w-full h-full object-cover" />) }
-                  { previewType === 'video' && createVideo && (<video src={createVideo} controls className="w-full h-full object-cover" />) }
-                  { !previewType && createText && (
-                    <div className="w-full h-full flex items-center justify-center px-4 text-white text-center">
-                      <div className="text-2xl font-bold">{createText}</div>
-                    </div>
-                  ) }
+            {/* Content Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Form Side */}
+              <div className="space-y-4">
+                {previewType === 'image' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ajouter une image
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setCreateImage(ev.target?.result as string);
+                          reader.readAsDataURL(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full"
+                    />
+                    {createImage && (
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-2">✓ Image chargée</p>
+                    )}
+                  </div>
+                )}
+
+                {previewType === 'video' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Ajouter une vidéo
+                    </label>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setCreateVideo(ev.target?.result as string);
+                          reader.readAsDataURL(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full"
+                    />
+                    {createVideo && (
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-2">✓ Vidéo chargée</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Preview Side */}
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Aperçu</p>
+                <div className="w-48 h-96 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  {previewType === 'image' && createImage ? (
+                    <img src={createImage} alt="Preview" className="w-full h-full object-cover" />
+                  ) : previewType === 'video' && createVideo ? (
+                    <video src={createVideo} className="w-full h-full object-cover" />
+                  ) : (
+                    <p className="text-gray-400 text-sm text-center">Aperçu de votre story</p>
+                  )}
                 </div>
               </div>
-            ) }
-            <div className="flex justify-end space-x-2">
-              <button onClick={closeCreate} className="px-4 py-2 rounded bg-gray-100">Annuler</button>
-              <button onClick={handleCreate} disabled={creating} className="px-4 py-2 rounded bg-primary text-white">{creating ? 'Création...' : 'Publier'}</button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={closeCreate}
+                className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              >
+                Annuler
+              </button>
+              <button
+                  onClick={handleCreate}
+                  disabled={creating || (!createImage && !createVideo)}
+                className="px-6 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {creating ? 'Publication...' : 'Publier Story'}
+              </button>
             </div>
           </div>
         </div>

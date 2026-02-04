@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
  */
 export async function PATCH(
   request: NextRequest,
-  context: any
+  { params }: { params: Promise<{ notificationId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +18,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { notificationId } = context?.params || {};
+    const { notificationId } = await params;
 
     // Récupérer la notification avant mise à jour
     const existingNotification = await prisma.notification.findUnique({

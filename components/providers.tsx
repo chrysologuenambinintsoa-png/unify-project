@@ -3,6 +3,7 @@
 import { SessionProvider, useSession } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HomeActivityProvider } from '@/contexts/HomeActivityContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SplashScreen } from './SplashScreen';
 import { useState, useEffect } from 'react';
 
@@ -47,11 +48,13 @@ function ProvidersContent({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <LanguageProvider>
-        <HomeActivityProvider>
-          <ProvidersContent>{children}</ProvidersContent>
-        </HomeActivityProvider>
-      </LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <HomeActivityProvider>
+            <ProvidersContent>{children}</ProvidersContent>
+          </HomeActivityProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </SessionProvider>
   );
 }

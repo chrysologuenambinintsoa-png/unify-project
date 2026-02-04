@@ -38,8 +38,7 @@
     "home": "Inicio",
     "explore": "Explorar",
     "stories": "Historias",
-    "videos": "Videos",
-    "notifications": "Notificaciones",
+    "videos": "Videos",    "notifications": "Notificaciones",
     "messages": "Mensajes",
     "groups": "Grupos",
     "pages": "Páginas"
@@ -251,5 +250,57 @@
     "managePreferences": "Administra tus preferencias y configuración de cuenta",
     "profilePhoto": "Foto de perfil",
     "coverPhoto": "Foto de portada"
+  },
+  "privacyPolicy": {
+    "title": "Política de Privacidad",
+    "lastUpdated": "Última actualización: Febrero 2026",
+    "introduction": "En Unify, tomamos tu privacidad muy en serio. Esta política de privacidad explica cómo recopilamos, utilizamos, protegemos y compartimos tus datos personales.",
+    "dataCollection": "Recopilación de Datos",
+    "dataUsage": "Uso de Datos",
+    "dataSecurity": "Seguridad de Datos",
+    "gdprRights": "Tus Derechos (RGPD)",
+    "cookies": "Cookies y Seguimiento",
+    "dataRetention": "Retención de Datos",
+    "childrenProtection": "Control Parental",
+    "contact": "Contacto y Reclamaciones"
+  },
+  "termsOfService": {
+    "title": "Términos de Servicio",
+    "lastUpdated": "Última actualización: Febrero 2026",
+    "introduction": "Por favor, lee y acepta nuestros términos antes de continuar",
+    "acceptTerms": "Acepto los términos de servicio y entiendo que debo cumplir con las directrices de la comunidad",
+    "responsibleUse": "Uso Responsable",
+    "dataPrivacy": "Privacidad de Datos",
+    "userContent": "Contenido del Usuario",
+    "intellectualProperty": "Propiedad Intelectual",
+    "limitationOfLiability": "Limitación de Responsabilidad",
+    "modifications": "Modificaciones de Términos",
+    "access": "Acceder a Unify"
+  },
+  "helpPage": {
+    "welcome": "¡Bienvenido a Unify!",
+    "discoverFeatures": "Descubre cómo usar todas las funciones",
+    "messaging": "Mensajería",
+    "messagingDesc": "Envía mensajes privados a tus amigos en tiempo real",
+    "friends": "Amigos",
+    "friendsDesc": "Busca y conecta con otros usuarios",
+    "sharing": "Compartir",
+    "sharingDesc": "Comparte fotos, videos y tus pensamientos con la comunidad",
+    "stories": "Historias",
+    "storiesDesc": "Crea historias efímeras que desaparecen después de 24h",
+    "privacy": "Privacidad",
+    "privacyDesc": "Controla tu configuración de seguridad y privacidad",
+    "settings": "Configuración",
+    "settingsDesc": "Personaliza tu perfil y preferencias",
+    "faq": "Preguntas Frecuentes",
+    "moreQuestions": "¿Tienes más preguntas?",
+    "contactUs": "Contáctanos"
+  },
+  "copyright": {
+    "allRights": "Todos los derechos reservados",
+    "socialPlatform": "Una plataforma social para conectar comunidades",
+    "privacyLink": "Privacidad",
+    "termsLink": "Términos",
+    "helpLink": "Ayuda"
   }
 }

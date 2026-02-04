@@ -3,34 +3,70 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/auth/login-history - Get current user's login history
+// GET /api/auth/login-history - Get login history
+// - With auth: returns current user's login history
+// - Without auth: returns recent logins with user info (for login page)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const searchParams = request.nextUrl.searchParams;
+    const includeUserInfo = searchParams.get('includeUserInfo') === 'true';
 
-    if (!session?.user?.id) {
+    if (session?.user?.id) {
+      // Authenticated: Get current user's login history
+      const loginHistory = await prisma.loginHistory.findMany({
+        where: {
+          userId: session.user.id,
+        },
+        select: {
+          id: true,
+          loginAt: true,
+          userAgent: true,
+          ipAddress: true,
+        },
+        orderBy: { loginAt: 'desc' },
+        take: 50,
+      });
+
+      return NextResponse.json(loginHistory);
+    } else if (includeUserInfo) {
+      // Not authenticated but want user info: Get recent unique logins (for login page)
+      const recentLogins = await prisma.loginHistory.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              fullName: true,
+              avatar: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { loginAt: 'desc' },
+        take: 50,
+      });
+
+      // Group by userId to get unique users (most recent login for each)
+      const uniqueLogins = new Map();
+      const result = [];
+      
+      for (const login of recentLogins) {
+        if (!uniqueLogins.has(login.userId)) {
+          uniqueLogins.set(login.userId, true);
+          result.push(login);
+          if (result.length >= 10) break; // Limit to 10 recent users
+        }
+      }
+
+      return NextResponse.json(result);
+    } else {
+      // Not authenticated and no user info requested
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    // Get login history for the current user only
-    const loginHistory = await prisma.loginHistory.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      select: {
-        id: true,
-        loginAt: true,
-        userAgent: true,
-        ipAddress: true,
-      },
-      orderBy: { loginAt: 'desc' },
-      take: 50,
-    });
-
-    return NextResponse.json(loginHistory);
   } catch (error) {
     console.error('Get login history error:', error);
     return NextResponse.json(

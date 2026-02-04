@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -19,9 +20,17 @@ const config: Config = {
           DEFAULT: '#E8B923',
           light: '#F5C842',
         },
-        background: '#ffffff',
-        foreground: '#000000',
-        border: '#e5e7eb',    // Gris clair pour les bordures
+        background: 'rgb(var(--background-rgb) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
+        border: 'rgb(var(--border-rgb) / <alpha-value>)',
+      },
+      screens: {
+        'xs': '320px',
+        'sm': '375px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

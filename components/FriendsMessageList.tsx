@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, User, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Friend {
   id: string;
@@ -155,11 +156,7 @@ export function FriendsMessageList({
             >
               <div className="flex items-center space-x-3">
                 <div className="relative flex-shrink-0">
-                  <img
-                    src={friend.avatar}
-                    alt={friend.fullName}
-                    className="w-10 h-10 rounded-full"
-                  />
+                  <Avatar src={friend.avatar || null} name={friend.fullName} size="md" className="w-10 h-10" />
                   {friend.unreadCount && friend.unreadCount > 0 && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                       {friend.unreadCount}

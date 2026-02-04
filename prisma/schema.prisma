@@ -22,6 +22,7 @@ model User {
   isVerified    Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  theme         String    @default("auto")  // 'light', 'dark', or 'auto'
 
   // Profile Information - À propos
   dateOfBirth   DateTime?
@@ -48,6 +49,13 @@ model User {
   resetToken    String?   @unique
   resetTokenExpiry DateTime?
 
+  // 6-digit codes for signup verification and password reset
+  verificationCode String?
+  verificationCodeExpiry DateTime?
+
+  resetCode String?
+  resetCodeExpiry DateTime?
+
   // Relations
   accounts      Account[]
   sessions      Session[]
@@ -73,6 +81,13 @@ model User {
   bookmarks     Bookmark[]
   loginHistory  LoginHistory[]
   savedDevices  SavedDevice[]
+  callerCalls   VideoCall[]           @relation("CallerCalls")
+  recipientCalls VideoCall[]          @relation("RecipientCalls")
+  callParticipants CallParticipant[]
+  pagePollsCreated PagePoll[]          @relation("PagePollCreator")
+  groupPollsCreated GroupPoll[]        @relation("GroupPollCreator")
+  pollVotes     PollVote[]
+  adminMessages AdminMessage[]
 
   @@map("users")
 }
@@ -136,6 +151,7 @@ model Post {
   id          String      @id @default(cuid())
   content     String
   background  String?     // Background style for text posts
+  styling     Json?       // JSON metadata for text post styling (animation, gradients, etc.)
   userId      String
   sharedPostId String?    // For shared posts
   createdAt   DateTime    @default(now())
@@ -358,6 +374,8 @@ model Group {
   name        String
   description String?
   image       String?
+  profileImage String?       // Direct upload, not URL
+  visibility  String        @default("public") // 'public', 'private', 'restricted'
   adminId     String
   isPrivate   Boolean       @default(false)
   createdAt   DateTime      @default(now())
@@ -365,6 +383,8 @@ model Group {
 
   members     GroupMember[]
   posts       GroupPost[]
+  polls       GroupPoll[]
+  adminMessages AdminMessage[]
 
   @@index([adminId])
   @@map("groups")
@@ -424,7 +444,9 @@ model Page {
   description String?
   category    String?
   image       String?
+  profileImage String?       // Direct upload, not URL
   coverImage  String?
+  visibility  String        @default("public") // 'public', 'private', 'restricted'
   isVerified  Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -433,6 +455,8 @@ model Page {
   invites     PageInvite[]
   admins      PageAdmin[]
   posts       PagePost[]
+  polls       PagePoll[]
+  adminMessages AdminMessage[]
 
   @@map("pages")
 }
@@ -626,4 +650,143 @@ model SponsoredPost {
   @@index([startDate])
   @@index([endDate])
   @@map("sponsored_posts")
+}
+
+// Video Call Model
+model VideoCall {
+  id            String   @id @default(cuid())
+  callerId      String
+  recipientId   String
+  status        String   @default("pending") // pending, active, ended, missed
+  startedAt     DateTime?
+  endedAt       DateTime?
+  duration      Int      @default(0) // duration in seconds
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  caller        User     @relation("CallerCalls", fields: [callerId], references: [id], onDelete: Cascade)
+  recipient     User     @relation("RecipientCalls", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([callerId, recipientId, createdAt])
+  @@index([callerId])
+  @@index([recipientId])
+  @@index([status])
+  @@map("video_calls")
+}
+
+// Video Call Participant (for group calls in future)
+model CallParticipant {
+  id            String   @id @default(cuid())
+  videoCallId   String?
+  userId        String
+  joinedAt      DateTime @default(now())
+  leftAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("call_participants")
+}
+
+// Poll Model (for Pages and Groups)
+model PagePoll {
+  id          String      @id @default(cuid())
+  pageId      String
+  createdBy   String
+  question    String
+  description String?
+  status      String      @default("active") // 'active', 'closed'
+  allowMultiple Boolean    @default(false)
+  createdAt   DateTime    @default(now())
+  closedAt    DateTime?
+
+  page        Page        @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  creator     User        @relation("PagePollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  options     PollOption[]
+  votes       PollVote[]
+
+  @@index([pageId])
+  @@index([createdBy])
+  @@map("page_polls")
+}
+
+model GroupPoll {
+  id          String      @id @default(cuid())
+  groupId     String
+  createdBy   String
+  question    String
+  description String?
+  status      String      @default("active") // 'active', 'closed'
+  allowMultiple Boolean    @default(false)
+  createdAt   DateTime    @default(now())
+  closedAt    DateTime?
+
+  group       Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator     User        @relation("GroupPollCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  options     PollOption[]
+  votes       PollVote[]
+
+  @@index([groupId])
+  @@index([createdBy])
+  @@map("group_polls")
+}
+
+// Poll Option and Vote Models
+model PollOption {
+  id          String   @id @default(cuid())
+  pagePoolId  String?
+  groupPoolId String?
+  text        String
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  pagePoll    PagePoll?   @relation(fields: [pagePoolId], references: [id], onDelete: Cascade)
+  groupPoll   GroupPoll?  @relation(fields: [groupPoolId], references: [id], onDelete: Cascade)
+  votes       PollVote[]
+
+  @@index([pagePoolId])
+  @@index([groupPoolId])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id          String   @id @default(cuid())
+  pagePoolId  String?
+  groupPoolId String?
+  optionId    String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  pagePoll    PagePoll?   @relation(fields: [pagePoolId], references: [id], onDelete: Cascade)
+  groupPoll   GroupPoll?  @relation(fields: [groupPoolId], references: [id], onDelete: Cascade)
+  option      PollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([userId])
+  @@map("poll_votes")
+}
+
+// Admin Message Model (Direct messages from page/group members to admins)
+model AdminMessage {
+  id          String   @id @default(cuid())
+  pageId      String?
+  groupId     String?
+  senderId    String
+  subject     String
+  content     String
+  status      String   @default("unread") // 'unread', 'read', 'replied'
+  createdAt   DateTime @default(now())
+  repliedAt   DateTime?
+
+  page        Page?    @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@index([groupId])
+  @@index([senderId])
+  @@index([status])
+  @@map("admin_messages")
 }

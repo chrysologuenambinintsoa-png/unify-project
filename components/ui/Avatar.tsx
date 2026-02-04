@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { cn, getInitials } from '@/lib/utils';
 
@@ -19,6 +19,7 @@ export function Avatar({
   className,
   onClick,
 }: AvatarProps) {
+  const [errored, setErrored] = useState(false);
   const sizes = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
@@ -36,14 +37,30 @@ export function Avatar({
       )}
       onClick={onClick}
     >
-      {src ? (
-        <Image
-          src={src}
-          alt={alt || name || 'Avatar'}
-          width={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
-          height={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
-          className="object-cover w-full h-full"
-        />
+      {src && !errored ? (
+        // If the image is a locally uploaded avatar, render a plain <img>
+        // to avoid Next.js image optimization/resizing so original bytes are preserved.
+        (src.startsWith?.('/uploads/avatars/') ? (
+          // browser will scale/display the image without server-side re-encoding
+          // we keep object-cover so it crops to the circular container visually,
+          // but the file served remains the original
+          // eslint-disable-next-line jsx-a11y/alt-text
+          <img
+            src={src}
+            alt={alt || name || 'Avatar'}
+            className="object-cover w-full h-full"
+            onError={() => setErrored(true)}
+          />
+        ) : (
+          <Image
+            src={src}
+            alt={alt || name || 'Avatar'}
+            width={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
+            height={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
+            className="object-cover w-full h-full"
+            onError={() => setErrored(true)}
+          />
+        ))
       ) : (
         <span className={cn(
           'font-semibold text-gray-600',

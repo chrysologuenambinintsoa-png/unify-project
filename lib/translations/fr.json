@@ -34,16 +34,16 @@
                  "show":  "Afficher",
                  "hide":  "Masquer"
              },
-    "nav":  {
-                "home":  "Accueil",
-                "explore":  "Explorer",
-                "stories":  "Histoires",
-                "videos":  "Vidéos",
-                "notifications":  "Notifications",
-                "messages":  "Messages",
-                "groups":  "Groupes",
-                "pages":  "Pages"
-            },
+    "nav": {
+                  "home": "Accueil",
+                  "explore": "Explorer",
+                  "stories": "Histoires",
+                  "videos": "Vidéos",
+                  "notifications": "Notifications",
+                  "messages": "Messages",
+                  "groups": "Groupes",
+                  "pages": "Pages"
+    },
     "post":  {
                  "createPost":  "Créer une publication",
                  "whatsOnMind":  "Quoi de neuf ?",
@@ -247,10 +247,64 @@
       "notifications": "Notifications",
       "appearance": "Apparence"
     },
-        "settingsPage": {
-            "managePreferences": "Gérez vos préférences et paramètres de compte",
-            "profilePhoto": "Photo de profil",
-            "coverPhoto": "Photo de couverture"
-        }
+    "settingsPage": {
+      "managePreferences": "Gérez vos préférences et paramètres de compte",
+      "profilePhoto": "Photo de profil",
+      "coverPhoto": "Photo de couverture"
+    },
+    "privacyPolicy": {
+      "title": "Politique de Confidentialité",
+      "lastUpdated": "Dernière mise à jour : Février 2026",
+      "introduction": "Chez Unify, nous prenons votre vie privée très au sérieux. Cette politique de confidentialité explique comment nous collectons, utilisons, protégeons et partageons vos données personnelles.",
+      "dataCollection": "Collecte des Données",
+      "dataUsage": "Utilisation des Données",
+      "dataSecurity": "Sécurité des Données",
+      "gdprRights": "Vos Droits (RGPD)",
+      "cookies": "Cookies et Suivi",
+      "dataRetention": "Rétention des Données",
+      "childrenProtection": "Contrôle Parental",
+      "contact": "Contact et Réclamations"
+    },
+    "termsOfService": {
+      "title": "Conditions d'Utilisation",
+      "lastUpdated": "Dernière mise à jour : Février 2026",
+      "introduction": "Veuillez lire et accepter nos conditions avant de continuer",
+      "acceptTerms": "J'accepte les conditions d'utilisation et je comprends que je dois respecter les règles de la communauté",
+      "responsibleUse": "Utilisation Responsable",
+      "dataPrivacy": "Confidentialité des Données",
+      "userContent": "Contenu Utilisateur",
+      "intellectualProperty": "Propriété Intellectuelle",
+      "limitationOfLiability": "Limitation de Responsabilité",
+      "modifications": "Modification des Conditions",
+      "access": "Accéder à Unify"
+    },
+    "helpPage": {
+      "welcome": "Bienvenue sur Unify !",
+      "discoverFeatures": "Découvrez comment utiliser toutes les fonctionnalités",
+      "messaging": "Messagerie",
+      "messagingDesc": "Envoyez des messages privés à vos amis en temps réel",
+      "friends": "Amis",
+      "friendsDesc": "Trouvez et connectez-vous avec d'autres utilisateurs",
+      "sharing": "Partage",
+      "sharingDesc": "Partagez photos, vidéos et vos pensées avec la communauté",
+      "stories": "Stories",
+      "storiesDesc": "Créez des stories éphémères qui disparaissent après 24h",
+      "privacy": "Confidentialité",
+      "privacyDesc": "Contrôlez vos paramètres de sécurité et de confidentialité",
+      "settings": "Paramètres",
+      "settingsDesc": "Personnalisez votre profil et vos préférences",
+      "faq": "Questions Fréquemment Posées",
+      "moreQuestions": "Vous avez d'autres questions ?",
+      "contactUs": "Nous contacter"
+    },
+    "copyright": {
+      "allRights": "Tous droits réservés",
+      "socialPlatform": "Une plateforme sociale pour connecter les communautés",
+      "privacyLink": "Confidentialité",
+      "termsLink": "Conditions",
+      "helpLink": "Aide"
+    }
 
 }
+
+

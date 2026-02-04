@@ -29,7 +29,6 @@ export default function ForgotPasswordPage() {
       }
 
       setSubmitted(true);
-      setEmail('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -51,7 +50,7 @@ export default function ForgotPasswordPage() {
           {submitted ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
               <p className="text-green-800 text-sm">
-                Check your email for password reset instructions. If you don't see it, check your spam folder.
+                Check your email for a 6-digit reset code. Then <a href={`/auth/verify?email=${encodeURIComponent(email)}&purpose=reset`} className="text-indigo-600 font-medium">enter the code here</a> to continue.
               </p>
             </div>
           ) : null}

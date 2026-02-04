@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useBadges } from '@/hooks/useBadges';
@@ -11,6 +10,7 @@ import { SidebarBadge } from '@/components/SidebarBadge';
 export function SidebarUser() {
   const { data: session } = useSession();
   const { badges } = useBadges();
+  const [imageError, setImageError] = useState(false);
 
   if (!session?.user) return null;
 
@@ -29,19 +29,16 @@ export function SidebarUser() {
       >
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-accent-dark group-hover:border-accent-light transition-colors">
-            {session.user.image ? (
-              <Image
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-accent-dark group-hover:border-accent-light transition-colors bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+            {session.user.image && !imageError ? (
+              <img
                 src={session.user.image}
                 alt={session.user.name || 'User'}
-                width={40}
-                height={40}
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                {session.user.name?.[0]?.toUpperCase() || 'U'}
-              </div>
+              <span>{session.user.name?.[0]?.toUpperCase() || 'U'}</span>
             )}
           </div>
 

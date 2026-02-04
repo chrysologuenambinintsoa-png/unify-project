@@ -10,6 +10,7 @@ export interface NotificationData {
     avatar: string;
   };
   content: string;
+  url?: string | null;
   time: string;
   read: boolean;
 }
@@ -58,7 +59,8 @@ export const useNotifications = () => {
         );
 
         if (!response.ok) {
-          throw new Error('Failed to mark notification as read');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: Failed to mark notification as read`);
         }
 
         const data = await response.json();
@@ -75,6 +77,8 @@ export const useNotifications = () => {
         // Update unread count
         setUnreadCount(data.unreadCount || 0);
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to mark notification as read';
+        setError(errorMessage);
         console.error('Error marking notification as read:', err);
       }
     },
@@ -158,11 +162,7 @@ export const useNotifications = () => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Auto-refresh every 30 seconds (as fallback if SSE fails)
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  // Auto-refresh disabled - only manual refresh allowed (SSE handles real-time updates)
 
   return {
     notifications,

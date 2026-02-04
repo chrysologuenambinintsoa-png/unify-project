@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       type: notification.type,
       user: notification.user,
       content: notification.content,
+      url: notification.url || null,
       time: notification.createdAt.toISOString(),
       read: notification.isRead,
     }));

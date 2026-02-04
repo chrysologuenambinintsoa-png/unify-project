@@ -16,16 +16,30 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../*"],
-      "@/lib/*": ["../lib/*"],
-      "@/app/*": ["../app/*"],
-      "@/components/*": ["../components/*"],
-      "@/contexts/*": ["../contexts/*"],
-      "@/hooks/*": ["../hooks/*"],
-      "@/types/*": ["../types/*"]
+      "@/*": [
+        "../*"
+      ],
+      "@/lib/*": [
+        "../lib/*"
+      ],
+      "@/app/*": [
+        "../app/*"
+      ],
+      "@/components/*": [
+        "../components/*"
+      ],
+      "@/contexts/*": [
+        "../contexts/*"
+      ],
+      "@/hooks/*": [
+        "../hooks/*"
+      ],
+      "@/types/*": [
+        "../types/*"
+      ]
     }
   },
   "include": [

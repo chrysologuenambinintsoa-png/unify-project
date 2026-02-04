@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { HeartIcon } from '@/components/HeartIcon';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import ReactionPicker from './ReactionPicker';
@@ -18,6 +19,7 @@ interface Post {
   images: string[];
   videos: string[];
   timestamp: Date;
+  styling?: any;
 }
 
 interface Comment {
@@ -236,11 +238,62 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
 
       {/* Post Content */}
       <div className="px-4 pb-2">
-        {post.content && (
+        {post.content && (!post.styling || (!post.images?.length && !post.videos?.length && !post.styling?.background)) && (
           <p 
             className="text-gray-800 mb-3 whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: highlightContent(post.content) }}
           />
+        )}
+
+        {/* Styled text post (background + animation) */}
+        {post.content && post.styling?.background && !post.images?.length && !post.videos?.length && (
+          (() => {
+            const BG_MAP: Record<string, string> = {
+              'gradient-1': 'bg-gradient-to-br from-orange-400 via-red-500 to-purple-700',
+              'gradient-2': 'bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-700',
+              'gradient-3': 'bg-gradient-to-br from-green-400 via-emerald-500 to-cyan-700',
+              'gradient-4': 'bg-gradient-to-br from-purple-400 via-pink-500 to-red-500',
+              'gradient-5': 'bg-gradient-to-br from-yellow-300 via-orange-400 to-red-600',
+              'gradient-6': 'bg-gradient-to-br from-purple-300 via-purple-500 to-indigo-700',
+            };
+
+            const anim = post.styling?.animation || 'none';
+
+            const getVariants = () => {
+              switch (anim) {
+                case 'bounce':
+                  return { animate: { y: [0, -16, 0] }, transition: { duration: 0.8, repeat: Infinity } };
+                case 'pulse':
+                  return { animate: { scale: [1, 1.04, 1] }, transition: { duration: 2, repeat: Infinity } };
+                case 'rotate':
+                  return { animate: { rotate: 360 }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
+                case 'wave':
+                  return { animate: { skewY: [0, 2, -2, 0] }, transition: { duration: 2, repeat: Infinity } };
+                case 'shake':
+                  return { animate: { x: [-6, 6, -6, 6, 0] }, transition: { duration: 0.5, repeat: Infinity } };
+                case 'glow':
+                  return { animate: { textShadow: ['0 0 8px rgba(255,255,255,0.5)', '0 0 18px rgba(255,255,255,0.9)', '0 0 8px rgba(255,255,255,0.5)'] }, transition: { duration: 1.5, repeat: Infinity } };
+                case 'scale':
+                  return { animate: { scale: [1, 1.08, 1] }, transition: { duration: 1.5, repeat: Infinity } };
+                default:
+                  return {};
+              }
+            };
+
+            const bgClass = BG_MAP[post.styling?.background] || BG_MAP['gradient-1'];
+
+            return (
+              <div className="mb-3">
+                <div className={`${bgClass} p-6 rounded-lg w-full min-h-[200px] flex items-center justify-center`}>
+                  <motion.div {...getVariants()} className="text-center">
+                    <p className="text-white text-2xl md:text-4xl font-bold leading-tight break-words">
+                      {post.content}
+                    </p>
+                  </motion.div>
+                </div>
+              </div>
+            );
+          })()
         )}
       </div>
 
@@ -280,49 +333,49 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
         <div className="flex items-center space-x-2">
           {likeCount > 0 && (
             <span className="flex items-center">
-              <span className="bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-1">
-                {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : '👍'}
+              <span className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-1 shadow-md">
+                {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : '👍'}
               </span>
-              <span>{likeCount}</span>
+              <span className="font-semibold text-gray-700">{likeCount}</span>
             </span>
           )}
         </div>
         <div className="flex items-center space-x-4">
-          <span>{commentCount} comments</span>
-          <span>{shareCount} shares</span>
+          <span className="text-gray-600">{commentCount} commentaires</span>
+          <span className="text-gray-600">{shareCount} partages</span>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 py-2 flex items-center justify-around border-b relative">
+      <div className="px-4 py-3 flex items-center justify-around border-b relative">
         <button
           ref={likeButtonRef}
           onClick={() => handleLike()}
           onMouseEnter={handleLikeButtonLongPress}
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-            liked ? 'text-primary' : 'text-gray-600 hover:bg-gray-100'
+            liked ? 'text-amber-600 bg-amber-50' : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <div className="text-xl">
-            {currentReaction === 'Love' ? <HeartIcon className="w-5 h-5" fill={true} /> : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : liked ? <HeartIcon className="w-5 h-5" fill={true} /> : <HeartIcon className="w-5 h-5" fill={false} />}
+          <div className="text-2xl">
+            {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : liked ? <HeartIcon className="w-6 h-6" fill={true} /> : <HeartIcon className="w-6 h-6" fill={false} />}
           </div>
-          <span>{currentReaction || 'Like'}</span>
+          <span className="font-semibold">{currentReaction || 'J\'aime'}</span>
         </button>
 
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
         >
-          <span className="text-xl">💬</span>
-          <span>Comment</span>
+          <span className="text-2xl">💬</span>
+          <span>Commenter</span>
         </button>
 
         <button
           onClick={handleShare}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
         >
-          <span className="text-xl">🔄</span>
-          <span>Share</span>
+          <span className="text-2xl">🔄</span>
+          <span>Partager</span>
         </button>
 
         {/* Reaction Picker */}

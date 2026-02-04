@@ -43,9 +43,25 @@ export function PostImageViewer({
   const [showShareModal, setShowShareModal] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  // media arrays (images/videos) derived from post
+  const images: string[] = post?.images ?? (post?.media ? post.media.filter((m: any) => m.type === 'image').map((m: any) => m.url) : []);
+  const videos: string[] = post?.videos ?? (post?.media ? post.media.filter((m: any) => m.type === 'video').map((m: any) => m.url) : []);
+  const allMedia: Array<{ type: 'image' | 'video'; url: string }> = [
+    ...images.map(url => ({ type: 'image' as const, url })),
+    ...videos.map(url => ({ type: 'video' as const, url }))
+  ];
+
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const images: string[] = post?.images ?? (post?.media ? post.media.map((m: any) => m.url).filter(Boolean) : []);
+  // Touch swipe refs (declare unconditionally to preserve Hooks order)
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  // Keep currentImageIndex within bounds when media list changes
+  useEffect(() => {
+    if (currentImageIndex >= allMedia.length) setCurrentImageIndex(0);
+  }, [allMedia.length, currentImageIndex]);
   
   // Extract author - the API returns it as 'user', not 'author'
   let author = post?.user;
@@ -97,11 +113,11 @@ export function PostImageViewer({
   };
 
   const goToPrevious = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentImageIndex((prev) => (prev === 0 ? allMedia.length - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentImageIndex((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1));
   };
 
   const formatDate = (date: Date) => {
@@ -143,9 +159,33 @@ export function PostImageViewer({
     }
   };
 
-  if (!isOpen || !post || images.length === 0) return null;
+  if (!isOpen || !post || allMedia.length === 0) return null;
 
-  const currentImage = images[currentImageIndex];
+  const currentMedia = allMedia[currentImageIndex];
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) {
+      touchStartX.current = null;
+      touchEndX.current = null;
+      return;
+    }
+    const dx = touchEndX.current - touchStartX.current;
+    const threshold = 50; // px
+    if (Math.abs(dx) > threshold) {
+      if (dx < 0) goToNext();
+      else goToPrevious();
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/95 z-50 flex overflow-hidden pt-0">
@@ -160,32 +200,59 @@ export function PostImageViewer({
       {/* Left side - Image viewer */}
       <div className="flex-1 flex items-center justify-center relative">
         {/* Image */}
-        <div className="relative w-full h-screen flex items-center justify-center px-8">
-          <img
-            src={currentImage}
-            alt={`Post media ${currentImageIndex + 1}`}
-            className="max-w-full max-h-full object-contain"
-          />
+        <div
+          className="relative w-full h-screen flex items-center justify-center px-8"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {currentMedia.type === 'image' ? (
+            <img
+              src={currentMedia.url}
+              alt={`Post media ${currentImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+          ) : (
+            <video
+              src={currentMedia.url}
+              controls
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
 
-          {/* Navigation Arrows */}
-          {images.length > 1 && (
+          {/* Navigation Arrows + Dots */}
+          {allMedia.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 text-white transition-colors duration-200"
+                aria-label="Previous media"
               >
                 <ChevronLeft size={28} />
               </button>
               <button
                 onClick={goToNext}
                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 rounded-full p-2 text-white transition-colors duration-200"
+                aria-label="Next media"
               >
                 <ChevronRight size={28} />
               </button>
 
               {/* Image Counter */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
-                {currentImageIndex + 1} / {images.length}
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
+                {currentImageIndex + 1} / {allMedia.length}
+              </div>
+
+              {/* Dots */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {allMedia.map((m, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-2 h-2 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-white' : 'bg-white/40'}`}
+                    aria-label={`Go to media ${idx + 1}`}
+                  />
+                ))}
               </div>
             </>
           )}
@@ -200,17 +267,14 @@ export function PostImageViewer({
             <div className="flex items-center space-x-3">
               {/* User Avatar */}
               <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
-                {author?.avatar ? (
+                {author?.avatar && !avatarError ? (
                   <img
                     src={author.avatar}
                     alt={author?.name || 'User'}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
+                    onError={() => setAvatarError(true)}
                   />
-                ) : null}
-                {!author?.avatar && (
+                ) : (
                   <span>{(author?.name || 'U').charAt(0).toUpperCase()}</span>
                 )}
               </div>

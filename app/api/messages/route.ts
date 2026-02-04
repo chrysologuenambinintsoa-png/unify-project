@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { notifyNewMessage } from '@/lib/notification-service';
 
 // GET /api/messages - Get messages for a user
 export async function GET(request: NextRequest) {
@@ -180,6 +181,22 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Send notification email to receiver (best-effort)
+    try {
+      const senderName = session.user.fullName || session.user.username || 'Someone';
+      const messagePreview = content.substring(0, 100);
+      await notifyNewMessage(
+        receiverId,
+        senderName,
+        messagePreview,
+        `/messages?userId=${session.user.id}`
+      );
+      console.log(`Message notification sent to user ${receiverId}`);
+    } catch (notificationError) {
+      console.error('Failed to send message notification:', notificationError);
+      // Don't block message sending if notification fails
+    }
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {

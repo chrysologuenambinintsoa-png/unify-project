@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import PostCreator from '@/components/post/PostCreator';
+import TextPostCreator from '@/components/post/TextPostCreator';
 import Stories from '@/components/Stories';
 import Post from '@/components/Post';
 import SponsoredPostCard from '@/components/SponsoredPostCard';
@@ -185,19 +186,25 @@ export default function HomePage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="md:col-span-2 space-y-4 md:space-y-6 w-full">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white px-4 md:px-0">
               {translation.nav.home}
             </h1>
 
-            <PostCreator onCreatePost={handleCreatePost} />
+            <div className="px-4 md:px-0">
+              <PostCreator onCreatePost={handleCreatePost} />
+            </div>
+
+            <div className="px-4 md:px-0">
+              <TextPostCreator onCreatePost={handleCreatePost} />
+            </div>
 
             {/* Stories Section */}
-            <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-md p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-3xl shadow-md p-4 md:p-6 mx-4 md:mx-0">
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Stories</h2>
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Stories</h2>
               </div>
               <Stories 
                 stories={stories.map(story => ({
@@ -217,18 +224,18 @@ export default function HomePage() {
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-gray-500">Chargement des publications...</p>
+                <p className="mt-4 text-gray-500 text-sm md:text-base">Chargement des publications...</p>
               </div>
             ) : error ? (
               <div className="text-center py-12">
-                <p className="text-red-500">{error}</p>
+                <p className="text-red-500 text-sm md:text-base">{error}</p>
               </div>
             ) : posts.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">Aucune publication pour le moment.</p>
+                <p className="text-gray-500 text-sm md:text-base">Aucune publication pour le moment.</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4 px-4 md:px-0">
                 {/* Afficher les annonces sponsorisées tous les 3 posts */}
                 {posts.map((post, index) => (
                   <div key={post.id}>
@@ -252,11 +259,15 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Sidebar with Suggestions */}
-          <div className="space-y-6">
+          {/* Sidebar with Suggestions - Visible on all screens, full-width on mobile */}
+          <div className="w-full md:w-80 flex flex-col space-y-4 md:space-y-6 px-4 md:px-0">
             <FriendSuggestions compact />
-            <PageSuggestions compact />
-            <GroupSuggestions compact />
+            <div className="hidden md:block">
+              <PageSuggestions compact />
+            </div>
+            <div className="hidden md:block">
+              <GroupSuggestions compact />
+            </div>
           </div>
         </div>
       </motion.div>

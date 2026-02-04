@@ -38,12 +38,44 @@ export async function POST(
       return NextResponse.json({ liked: false });
     } else {
       // Like
-      await prisma.like.create({
+      const like = await prisma.like.create({
         data: {
           postId: postId,
           userId: session.user.id,
         },
       });
+
+      // Get post details for notification
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { userId: true },
+      });
+
+      // Get liker details
+      const liker = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, username: true, fullName: true, avatar: true },
+      });
+
+      // Send notification to post owner if they're not the liker
+      if (post && post.userId !== session.user.id && liker) {
+        try {
+          await prisma.notification.create({
+            data: {
+              type: 'like',
+              title: `${liker.fullName} a aimé votre publication`,
+              content: `${liker.fullName} a aimé votre publication`,
+              url: `/posts/${postId}`, // Direct link to post
+              isRead: false,
+              userId: post.userId,
+              actorId: session.user.id,
+            },
+          });
+        } catch (notifError) {
+          console.error('Error creating like notification:', notifError);
+          // Don't fail the like if notification fails
+        }
+      }
 
       return NextResponse.json({ liked: true });
     }

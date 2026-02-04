@@ -35,13 +35,26 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    // Validation du format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('❌ Veuillez entrer une adresse email valide (exemple: user@example.com)');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError('⚠️ Les deux mots de passe ne correspondent pas. Vérifiez que vous les avez saisis correctement.');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setError('🔐 Le mot de passe doit contenir au moins 6 caractères pour votre sécurité');
+      return;
+    }
+
+    // Validation de la force du mot de passe
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      setError('💪 Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre');
       return;
     }
 
@@ -61,7 +74,10 @@ export default function RegisterPage() {
       });
 
       if (response.ok) {
-        // Connecter automatiquement l'utilisateur
+        // Temporarily disabled: skip verification code and redirect to login
+        // router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}&purpose=signup`);
+        
+        // Auto-login the user
         const signInResult = await signIn('credentials', {
           email: formData.email,
           password: formData.password,
@@ -69,56 +85,63 @@ export default function RegisterPage() {
         });
 
         if (signInResult?.ok) {
-          // Rediriger vers la page d'accueil
-          router.push('/');
+          // Redirect to welcome page for onboarding
+          router.push('/welcome');
         } else {
-          // Si la connexion échoue, rediriger vers le login
-          router.push('/auth/login?registered=true');
+          // If auto-login fails, redirect to login page
+          router.push('/auth/login');
         }
       } else {
         const data = await response.json();
-        setError(data.error || translation.common.error);
+        if (data.error?.includes('email')) {
+          setError('📧 ' + (data.error || 'Cette adresse email est déjà utilisée'));
+        } else if (data.error?.includes('username')) {
+          setError('👤 ' + (data.error || 'Ce nom d\'utilisateur est déjà pris'));
+        } else {
+          setError('❌ ' + (data.error || translation.common.error));
+        }
       }
     } catch (error) {
-      setError(translation.common.error);
+      setError('❌ Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-sm sm:max-w-md"
       >
         <Card className="shadow-2xl bg-white/95">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center px-4 sm:px-6 py-4 sm:py-6">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
-              className="w-16 h-16 bg-gradient-to-br from-primary-dark to-accent-dark rounded-2xl flex items-center justify-center mx-auto mb-4"
+              className="w-12 sm:w-14 md:w-16 h-12 sm:h-14 md:h-16 bg-gradient-to-br from-primary-dark to-accent-dark rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4"
             >
-              <img src="/logo.svg" alt="Unify Logo" className="w-12 h-12" />
+              <img src="/logo.svg" alt="Unify Logo" className="w-9 sm:w-10 md:w-12 h-9 sm:h-10 md:h-12" />
             </motion.div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               {translation.pages.welcome}
             </h1>
-            <p className="text-gray-600 mt-2">{translation.auth.signUp}</p>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">{translation.auth.signUp}</p>
           </CardHeader>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 text-red-800 px-5 py-4 rounded-xl shadow-lg"
                 >
-                  {error}
+                  <p className="font-semibold text-base">{error}</p>
                 </motion.div>
               )}
 

@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ImageCropModal } from '@/components/ImageCropModal';
+import { PreviewModal } from '@/components/PreviewModal';
 
 interface AvatarUploadProps {
   currentAvatar?: string | null;
@@ -23,6 +24,8 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
   const [preview, setPreview] = useState<string | null>(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToEdit, setImageToEdit] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,12 +87,26 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
   };
 
   const handleCropSave = async (croppedImage: string, file: File) => {
-    // Update preview with cropped image
+    // Show preview modal and await user confirmation
     setPreview(croppedImage);
-    // Upload the cropped file
-    await uploadAvatar(file);
+    setPendingFile(file);
+    setPreviewModalOpen(true);
     setCropModalOpen(false);
     setImageToEdit(null);
+  };
+
+  const confirmPreviewUpload = async () => {
+    if (!pendingFile) return;
+    setPreviewModalOpen(false);
+    await uploadAvatar(pendingFile);
+    setPendingFile(null);
+    setPreview(null);
+  };
+
+  const cancelPreview = () => {
+    setPreviewModalOpen(false);
+    setPendingFile(null);
+    setPreview(null);
   };
 
   const removeAvatar = async () => {
@@ -144,6 +161,14 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
         title={translation.settings.profilePhoto}
         minWidth={200}
         minHeight={200}
+      />
+
+      <PreviewModal
+        isOpen={previewModalOpen}
+        imageSrc={preview}
+        title={translation.settings.profilePhoto}
+        onConfirm={confirmPreviewUpload}
+        onCancel={cancelPreview}
       />
 
       <div

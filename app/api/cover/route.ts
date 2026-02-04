@@ -61,10 +61,8 @@ export async function POST(request: NextRequest) {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
             folder: 'unify/covers',
-            transformation: [
-              { width: 1200, height: 300, crop: 'fill' },
-              { quality: 'auto' }
-            ],
+            // Store original image - transformations applied on display
+            quality: 'auto',
             public_id: `user_cover_${session.user.id}_${Date.now()}`,
             timeout: 60000,
             chunk_size: 5242880,
@@ -93,12 +91,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Create a post announcing the cover image change
+    let profileChangePostId: string | null = null;
     try {
       const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
       const content = getNotificationMessage('coverChange', actorName, 'fr');
 
       if (updatedUser.coverImage) {
-        await prisma.post.create({
+        const profileChangePost = await prisma.post.create({
           data: {
             content,
             userId: updatedUser.id,
@@ -112,6 +111,7 @@ export async function POST(request: NextRequest) {
             },
           },
         });
+        profileChangePostId = profileChangePost.id;
       }
     } catch (postErr) {
       console.error('Failed to create cover-change post:', postErr);
@@ -135,12 +135,13 @@ export async function POST(request: NextRequest) {
         const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
         const notificationTitle = getNotificationTitle('coverChange', 'fr');
         const notificationContent = getNotificationMessage('coverChange', actorName, 'fr');
+        const notificationUrl = profileChangePostId ? `/posts/${profileChangePostId}` : `/users/${updatedUser.id}`;
         
         const notifData = friendIds.map((fid) => ({
           type: 'profile',
           title: notificationTitle,
           content: notificationContent,
-          url: `/users/${updatedUser.id}`,
+          url: notificationUrl,
           userId: fid,
           actorId: updatedUser.id,
         }));
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
             type: 'profile',
             title: notificationTitle,
             content: notificationContent,
-            url: `/users/${updatedUser.id}`,
+            url: notificationUrl,
             actorId: updatedUser.id,
             createdAt: new Date(),
           });

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { PhotoGallery } from '@/components/profile/PhotoGallery';
 import { About } from '@/components/profile/About';
 import Post from '@/components/Post';
+import { optimizeAvatarUrl, optimizeCoverUrl } from '@/lib/cloudinaryOptimizer';
 import { Mail, Calendar, Image, FileText, Users } from 'lucide-react';
 
 interface Photo {
@@ -83,9 +84,15 @@ export default function UserProfilePage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [selectedSection, setSelectedSection] = useState<'about' | 'gallery' | 'posts' | 'friends'>('about');
+  const [selectedSection, setSelectedSection] = useState<'about' | 'gallery' | 'posts' | 'friends' | null>(null);
 
   useEffect(() => {
+    // Guard: only fetch if userId is defined and not undefined
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -113,9 +120,7 @@ export default function UserProfilePage() {
       }
     };
 
-    if (userId) {
-      fetchProfile();
-    }
+    fetchProfile();
   }, [userId]);
 
   // Fetch user posts
@@ -147,7 +152,7 @@ export default function UserProfilePage() {
   }, [userId]);
 
   // Refresh photos when gallery section is opened
-  const handleSectionChange = async (section: 'about' | 'gallery' | 'posts' | 'friends') => {
+  const handleSectionChange = async (section: 'about' | 'gallery' | 'posts' | 'friends' | null) => {
     setSelectedSection(section);
     
     // Refresh gallery photos if gallery section is selected
@@ -261,25 +266,30 @@ export default function UserProfilePage() {
       >
         {/* Profile Header */}
         <Card className="overflow-hidden mb-6">
-          <div 
-            className="h-32 bg-gradient-to-r from-primary-dark to-accent-dark"
-            style={{
-              backgroundImage: profile.coverImage ? `url(${profile.coverImage})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          ></div>
+          <div className="h-32 bg-gray-100 relative overflow-hidden">
+            {profile.coverImage ? (
+              <img
+                src={optimizeCoverUrl(profile.coverImage, 1600, 320) || profile.coverImage}
+                alt={`${profile.username} cover`}
+                className="w-full h-32 object-cover"
+                loading="eager"
+              />
+            ) : (
+              <div className="w-full h-32 bg-gradient-to-r from-primary-dark to-accent-dark" />
+            )}
+          </div>
 
           <div className="px-6 pb-6 -mt-16 relative z-10">
             <div className="flex items-end gap-4 mb-6">
               {profile.avatar ? (
                 <img
-                  src={profile.avatar}
+                  src={optimizeAvatarUrl(profile.avatar, 128) || profile.avatar}
                   alt={profile.username}
-                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
+                  className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-lg"
+                  loading="eager"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white text-4xl font-bold">
+                <div className="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white text-4xl font-bold shadow-lg">
                   {profile.username?.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -445,6 +455,12 @@ export default function UserProfilePage() {
 
         {/* Section content */}
         <div className="mb-6">
+          {selectedSection === null && (
+            <Card className="p-8 text-center">
+              <p className="text-gray-600">Sélectionnez une section pour afficher le contenu</p>
+            </Card>
+          )}
+
           {selectedSection === 'about' && (
             <About
               about={{

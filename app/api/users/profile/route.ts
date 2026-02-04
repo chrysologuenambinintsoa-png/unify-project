@@ -48,6 +48,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(user);
   } catch (error) {
     console.error('Error fetching user profile:', error);
+    // If database is down, return a minimal user object to allow client to handle gracefully
+    if (error instanceof Error && (error.message.includes('P1001') || error.message.includes('Can\'t reach database'))) {
+      return NextResponse.json(
+        { error: 'Database temporarily unavailable', status: 503 },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
       { status: 500 }

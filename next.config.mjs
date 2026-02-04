@@ -20,9 +20,14 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'api.dicebear.com',
+          hostname: 'api.dicebear.com',
         pathname: '/**',
       },
+        {
+          protocol: 'https',
+          hostname: 'via.placeholder.com',
+          pathname: '/**',
+        },
     ],
   },
   

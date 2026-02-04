@@ -37,7 +37,9 @@
   "nav": {
     "home": "Fandraisana",
     "explore": "Zarao",
-    "stories": "Tantara",    "videos": "Horonantsary",    "notifications": "Fampitandremana",
+    "stories": "Tantara",
+    "videos": "Horonantsary",
+    "notifications": "Fampitandremana",
     "messages": "Hafatra",
     "groups": "Vondrona",
     "pages": "Pejy"
@@ -249,5 +251,57 @@
     "managePreferences": "Mandrindra ny iyong paramètres at akawonty",
     "profilePhoto": "Sarin'ny olona",
     "coverPhoto": "Sary afara"
+  },
+  "privacyPolicy": {
+    "title": "Politikan'ny Fiarovana",
+    "lastUpdated": "Vao navaovao: Febroary 2026",
+    "introduction": "Ao amin'ny Unify, dia sora-panala ny iyong fiarovana. Ity politikan'ny fiarovana ity dia manazava ny fomba ahafinoana, mampiasana, miaro ary mizara ny iyong angona.",
+    "dataCollection": "Fanangonana Data",
+    "dataUsage": "Fampiasana Data",
+    "dataSecurity": "Fiarovana Data",
+    "gdprRights": "Ny Iyong Zon'andovo (GDPR)",
+    "cookies": "Cookies sy Fiharana",
+    "dataRetention": "Fiahana Data",
+    "childrenProtection": "Fiarovana Ankizy",
+    "contact": "Iraka sy Soran-tafika"
+  },
+  "termsOfService": {
+    "title": "Teny Fampiasana",
+    "lastUpdated": "Vao navaovao: Febroary 2026",
+    "introduction": "Tandio sy tanggapo ny aming teny alohan'ny ho an'ny lavy",
+    "acceptTerms": "Tiako ny teny fampiasana ary dia tomoinina fa tsy maintsy mankavita ny fitsipiky ny komunitate aho",
+    "responsibleUse": "Fampiasana Amin'ny Fomba Maimaim-poana",
+    "dataPrivacy": "Fiarovana Data",
+    "userContent": "Alalala Nampiasan'ny Mpampiasa",
+    "intellectualProperty": "Fananana Sain-kevitra",
+    "limitationOfLiability": "Famenoana ny Fiajiana",
+    "modifications": "Fiovana amin'ny Teny",
+    "access": "Miditra amin'ny Unify"
+  },
+  "helpPage": {
+    "welcome": "Tonga soa ao amin'ny Unify!",
+    "discoverFeatures": "Ahafantarany ny fampiasana ny samy hafa fisampatasantanterahana",
+    "messaging": "Hafatra",
+    "messagingDesc": "Alefaso ny hafatra amin'ny iyong namako amin'ny fotoana misy",
+    "friends": "Namako",
+    "friendsDesc": "Tafahohin'ny mpampiasa hafa ary miambona",
+    "sharing": "Fizarana",
+    "sharingDesc": "Mizara sary, vidio ary iyong lavina amin'ny komunitate",
+    "stories": "Tantara",
+    "storiesDesc": "Atsangana tantara mikitsika izay nalany rehefa 24 ora",
+    "privacy": "Fiarovana",
+    "privacyDesc": "Aseho ny iyong pamarihana miaro sy fiarovana",
+    "settings": "Paramètres",
+    "settingsDesc": "Ahitsarovy ny iyong olona sy ny iyong faniririna",
+    "faq": "Fanontaniana Matetika",
+    "moreQuestions": "Misy fanontaniana koa?",
+    "contactUs": "Mihaona Aminay"
+  },
+  "copyright": {
+    "allRights": "Ny avela rehetra",
+    "socialPlatform": "Fampandrosoana sosialin amam-pamokarana komunitate",
+    "privacyLink": "Fiarovana",
+    "termsLink": "Teny",
+    "helpLink": "Andrivandra"
   }
 }

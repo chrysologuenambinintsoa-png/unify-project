@@ -10,6 +10,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/Card'
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Trash2 } from 'lucide-react';
+import { optimizeAvatarUrl } from '@/lib/cloudinaryOptimizer';
 
 interface LoginHistory {
   id: string;
@@ -44,7 +45,7 @@ export default function LoginPage() {
   useEffect(() => {
     const fetchLoginHistory = async () => {
       try {
-        const response = await fetch('/api/auth/login-history');
+        const response = await fetch('/api/auth/login-history?includeUserInfo=true');
         if (response.ok) {
           const data = await response.json();
           setLoginHistory(data);
@@ -122,6 +123,20 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    // Validation du format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('📧 Veuillez entrer une adresse email valide (exemple: user@example.com)');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('🔐 Le mot de passe doit contenir au moins 6 caractères');
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signIn('credentials', {
         email,
@@ -130,7 +145,12 @@ export default function LoginPage() {
       });
 
         if (result?.error) {
-          setError(translation.common.error);
+          // Fournir un message d'erreur plus détaillé
+          if (result.error.includes('Invalid') || result.error.includes('invalid')) {
+            setError('❌ Adresse email ou mot de passe incorrect. Vérifiez vos identifiants.');
+          } else {
+            setError('❌ ' + (result.error || translation.common.error));
+          }
         } else if (result?.ok) {
           // Record login history
           try {
@@ -172,7 +192,7 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      setError(translation.common.error);
+      setError('❌ Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
@@ -212,14 +232,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-6xl"
+        className="w-full max-w-full sm:max-w-lg md:max-w-2xl lg:max-w-6xl"
       >
-        <div className={hasHistory ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'grid place-items-center min-h-[60vh] p-4'}>
+        <div className={hasHistory ? 'grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6' : 'grid place-items-center min-h-[60vh] p-2 sm:p-4 md:p-6'}>
           {/* Left side - Login History */}
           {!loadingHistory && loginHistory.length > 0 && (
             <motion.div
@@ -237,32 +257,42 @@ export default function LoginPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 * index }}
                     className={`relative p-4 rounded-lg backdrop-blur-md transition-all duration-300 text-left ${
-                      selectedUser === (login.user.email || login.email)
+                      selectedUser === (login?.user?.email ?? login.email)
                         ? 'bg-white/20 border-2 border-white'
                         : 'bg-white/10 border-2 border-transparent hover:bg-white/15'
                     }`}
                   >
                     <button
-                      onClick={() => handleSelectUser(login.user.email || login.email)}
+                      onClick={() => handleSelectUser(login?.user?.email ?? login.email)}
                       className="w-full text-left flex items-center gap-4"
                       type="button"
                     >
-                      {login.user.avatar ? (
-                        <img
-                          src={login.user.avatar}
-                          alt={login.user.fullName}
-                          className="w-14 h-14 rounded-full object-cover"
+                      {login?.user?.avatar ? (
+                        <motion.img
+                          whileHover={{ scale: 1.1 }}
+                          src={optimizeAvatarUrl(login.user.avatar, 56) || login.user.avatar}
+                          alt={login.user?.fullName ?? login.email}
+                          className="w-14 h-14 rounded-full object-cover border-2 border-white/50"
                         />
                       ) : (
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white font-bold text-lg">
-                          {login.user.fullName?.charAt(0) || 'U'}
-                        </div>
+                        <motion.div 
+                          whileHover={{ scale: 1.1 }}
+                          className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white font-bold text-lg border-2 border-white/50"
+                        >
+                          {(login?.user?.fullName?.charAt(0) || login.email?.charAt(0) || 'U').toUpperCase()}
+                        </motion.div>
                       )}
-                      <div className="flex-1">
-                        <p className="text-white font-semibold">{login.user.fullName}</p>
-                        <p className="text-white/70 text-sm">@{login.user.username}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-semibold truncate">{login.user?.fullName ?? 'Utilisateur'}</p>
+                        <p className="text-white/70 text-sm truncate">@{login.user?.username ?? (login.email?.split('@')[0] ?? login.email)}</p>
                         <p className="text-white/50 text-xs mt-1">
-                          {new Date(login.loginAt).toLocaleDateString('fr-FR')}
+                          🕐 {new Date(login.loginAt).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </p>
                       </div>
                     </button>
@@ -270,7 +300,7 @@ export default function LoginPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteLogin(login.id, login.user.email || login.email);
+                        handleDeleteLogin(login.id, login?.user?.email ?? login.email);
                       }}
                       className="absolute top-3 right-3 p-1 text-white/80 hover:text-red-400"
                       aria-label="Supprimer"
@@ -294,31 +324,32 @@ export default function LoginPage() {
             transition={{ delay: 0.1 }}
             className="flex items-center justify-center"
           >
-            <Card className="shadow-2xl bg-white/95 w-full max-w-md mx-auto">
-              <CardHeader className="text-center">
+            <Card className="shadow-2xl bg-white/95 w-full max-w-sm sm:max-w-md mx-auto">
+              <CardHeader className="text-center px-4 sm:px-6 py-4 sm:py-6">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: 'spring' }}
-                  className="w-16 h-16 bg-gradient-to-br from-primary-dark to-accent-dark rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  className="w-12 sm:w-14 md:w-16 h-12 sm:h-14 md:h-16 bg-gradient-to-br from-primary-dark to-accent-dark rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4"
                 >
-                  <img src="/logo.svg" alt="Unify Logo" className="w-12 h-12" />
+                  <img src="/logo.svg" alt="Unify Logo" className="w-9 sm:w-10 md:w-12 h-9 sm:h-10 md:h-12" />
                 </motion.div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                   {translation.pages.welcome}
                 </h1>
-                <p className="text-gray-600 mt-2">{translation.auth.signIn}</p>
+                <p className="text-sm sm:text-base text-gray-600 mt-2">{translation.auth.signIn}</p>
               </CardHeader>
 
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+              <CardContent className="px-4 sm:px-6">
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 text-red-800 px-5 py-4 rounded-xl shadow-lg"
                     >
-                      {error}
+                      <p className="font-semibold text-base">{error}</p>
                     </motion.div>
                   )}
 

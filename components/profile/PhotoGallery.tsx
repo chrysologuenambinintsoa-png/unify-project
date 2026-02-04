@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Trash2, Image as ImageIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Image as ImageIcon, X, Camera, LogIn } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 interface Photo {
   id: string;
@@ -32,10 +33,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   onPhotoUpload,
   onPhotoDelete,
 }) => {
-  // Separate photos by type
-  const profilePhotos = photos.filter(p => p.type === 'profile');
-  const coverPhotos = photos.filter(p => p.type === 'cover');
-  const galleryPhotos = photos.filter(p => p.type === 'gallery');
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [settingAsProfile, setSettingAsProfile] = useState(false);
+  const [settingAsCover, setSettingAsCover] = useState(false);
 
   const handleDelete = async (photoId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette photo?')) {
@@ -46,10 +46,55 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
         if (response.ok) {
           onPhotoDelete?.(photoId);
+          setSelectedPhoto(null);
         }
       } catch (error) {
         console.error('Delete error:', error);
       }
+    }
+  };
+
+  const handleSetAsProfile = async (photo: Photo) => {
+    if (!isOwnProfile) return;
+    try {
+      setSettingAsProfile(true);
+      const response = await fetch('/api/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId: photo.id }),
+      });
+
+      if (response.ok) {
+        alert('Photo de profil mise à jour');
+        setSelectedPhoto(null);
+      }
+    } catch (error) {
+      console.error('Error setting profile photo:', error);
+      alert('Erreur lors de la mise à jour');
+    } finally {
+      setSettingAsProfile(false);
+    }
+  };
+
+  const handleSetAsCover = async (photo: Photo) => {
+    if (!isOwnProfile) return;
+    try {
+      setSettingAsCover(true);
+      const response = await fetch('/api/cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId: photo.id }),
+      });
+
+      if (response.ok) {
+        alert('Photo de couverture mise à jour');
+        setSelectedPhoto(null);
+      }
+    } catch (error) {
+      console.error('Error setting cover photo:', error);
+      alert('Erreur lors de la mise à jour');
+    } finally {
+      setSettingAsCover(false);
     }
   };
 
@@ -68,32 +113,94 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
-                className="relative aspect-square rounded-lg overflow-hidden group"
+                className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer"
+                onClick={() => setSelectedPhoto(photo)}
               >
                 <img
                   src={photo.url}
                   alt={photo.caption || 'Photo'}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 />
-                {isOwnProfile && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2"
-                  >
-                    <button
-                      onClick={() => handleDelete(photo.id)}
-                      className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
               </motion.div>
             ))}
           </div>
         </Card>
       )}
+
+      {/* Photo Viewer Modal */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedPhoto(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-2xl w-full bg-white rounded-lg overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute top-4 right-4 z-10 p-2 bg-gray-200 hover:bg-gray-300 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-700" />
+              </button>
+
+              {/* Image */}
+              <div className="relative w-full bg-gray-200 flex items-center justify-center max-h-[70vh]">
+                <img
+                  src={selectedPhoto.url}
+                  alt={selectedPhoto.caption || 'Photo'}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              {/* Caption & Actions */}
+              <div className="p-4 space-y-4">
+                {selectedPhoto.caption && (
+                  <p className="text-gray-700">{selectedPhoto.caption}</p>
+                )}
+
+                {isOwnProfile && (
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      onClick={() => handleSetAsProfile(selectedPhoto)}
+                      disabled={settingAsProfile}
+                      className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Utiliser comme photo de profil
+                    </Button>
+                    <Button
+                      onClick={() => handleSetAsCover(selectedPhoto)}
+                      disabled={settingAsCover}
+                      className="flex items-center gap-2 bg-green-500 hover:bg-green-600"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      Utiliser comme photo de couverture
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(selectedPhoto.id)}
+                      variant="outline"
+                      className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Supprimer
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Empty State */}
       {photos.length === 0 && (

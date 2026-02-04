@@ -44,7 +44,9 @@ app.prepare().then(() => {
         wss.emit('connection', ws, request);
       });
     } else {
-      socket.destroy();
+      // Do not destroy other upgrade sockets (e.g. Next's HMR websocket).
+      // Let other upgrade listeners (registered by Next) handle them.
+      return;
     }
   });
 

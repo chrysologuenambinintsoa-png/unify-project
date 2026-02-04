@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { CopyrighFooter } from '@/components/CopyrighFooter';
 import { motion } from 'framer-motion';
 import { ArrowRight, MessageCircle, Users, Share2, Zap, Shield, Settings } from 'lucide-react';
 
@@ -103,60 +104,91 @@ export default function HelpPage() {
           })}
         </div>
 
-        {/* Info Section */}
+        {/* CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 mb-12"
+          className="flex flex-col md:flex-row justify-center gap-6 mb-12"
         >
-          <h2 className="text-2xl font-bold text-white mb-6">
-            Quelques conseils pour bien commencer 💡
-          </h2>
-          <ul className="space-y-4 text-white/80">
-            <li className="flex items-start space-x-3">
-              <span className="text-accent-dark text-xl mt-1">✓</span>
-              <span>Complétez votre profil avec une photo et une bio intéressante</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-accent-dark text-xl mt-1">✓</span>
-              <span>Trouvez vos amis en les recherchant par nom d'utilisateur</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-accent-dark text-xl mt-1">✓</span>
-              <span>Respectez les règles de communauté et soyez bienveillant</span>
-            </li>
-            <li className="flex items-start space-x-3">
-              <span className="text-accent-dark text-xl mt-1">✓</span>
-              <span>Explorez les différentes sections de l'application</span>
-            </li>
-          </ul>
-        </motion.div>
-
-        {/* Navigation Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <button
-            onClick={() => router.back()}
-            className="px-8 py-3 bg-white/10 border-2 border-white/30 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
-          >
-            Retour
-          </button>
-          <Link href="/terms">
+          <Link href="/settings">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="flex items-center justify-center space-x-2 px-8 py-3 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-colors shadow-xl"
             >
-              <span>Conditions d'utilisation</span>
+              <span>Accéder aux paramètres</span>
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
+          </Link>
+
+          <Link href="/privacy">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center space-x-2 px-8 py-3 bg-white/20 text-white rounded-xl font-bold hover:bg-white/30 transition-colors border border-white/30 shadow-xl"
+            >
+              <span>Politique de confidentialité</span>
               <ArrowRight className="w-5 h-5" />
             </motion.button>
           </Link>
         </motion.div>
+
+        {/* FAQ Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 mb-12"
+        >
+          <h2 className="text-2xl font-bold text-white mb-6">Questions Fréquemment Posées</h2>
+          <div className="space-y-6">
+            {[
+              {
+                q: 'Comment puis-je créer une publication ?',
+                a: 'Sur la page d\'accueil, cliquez sur le champ "Quoi de neuf ?" et composez votre message. Vous pouvez ajouter des images, des vidéos et du contenu riche.'
+              },
+              {
+                q: 'Comment puis-je ajouter des amis ?',
+                a: 'Utilisez l\'onglet Explore pour rechercher des utilisateurs, puis cliquez sur "Ajouter comme ami" pour envoyer une demande d\'amitié.'
+              },
+              {
+                q: 'Mes données sont-elles sécurisées ?',
+                a: 'Oui, nous utilisons le chiffrement SSL/TLS et nous nous conformons aux normes RGPD pour protéger vos données personnelles.'
+              },
+              {
+                q: 'Comment puis-je supprimer mon compte ?',
+                a: 'Allez dans Paramètres → Compte et cliquez sur "Supprimer le compte". Toutes vos données seront supprimées définitivement.'
+              },
+            ].map((faq, index) => (
+              <div key={index} className="border-b border-white/10 pb-6 last:border-b-0">
+                <h3 className="text-white font-bold mb-2">❓ {faq.q}</h3>
+                <p className="text-white/70">{faq.a}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Footer with CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-center mb-8"
+        >
+          <h3 className="text-white text-lg font-bold mb-4">Vous avez d'autres questions ?</h3>
+          <Link href="mailto:support@unify.com">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition-colors"
+            >
+              Nous contacter
+            </motion.button>
+          </Link>
+        </motion.div>
+
+        <CopyrighFooter />
       </div>
     </div>
   );

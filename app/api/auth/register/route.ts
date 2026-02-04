@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { sendVerificationCodeEmail, sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
+    // Test database connection
+    try {
+      const testUser = await prisma.user.findFirst({ take: 1 });
+      console.log('Database connection OK');
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      throw new Error(`Database connection failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+    }
+
     const { username, email, fullName, dateOfBirth, password, avatar, coverImage } = await request.json();
 
     // Validate input
@@ -60,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user (unverified)
     const user = await prisma.user.create({
       data: {
         username,
@@ -70,18 +80,45 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         avatar: avatar || null,
         coverImage: coverImage || null,
+        isVerified: false,
       },
     });
 
-    // Return user without password
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiry = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
+    // Update user with verification code (use raw update)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode,
+        verificationCodeExpiry,
+      } as any, // Cast to any to bypass type checking
+    });
+
+    // Send verification code email (best-effort)
+    try {
+      await sendVerificationCodeEmail(email, verificationCode);
+      console.log(`Verification code sent to ${email}`);
+    } catch (e) {
+      console.error('Failed to send verification email:', e);
+      // Don't fail registration if email fails
+    }
+
     const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(
-      { message: 'User created successfully', user: userWithoutPassword },
+      { message: 'User created successfully. A verification code was sent to the email address.', user: userWithoutPassword },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Registration error:', {
+      message: errorMsg,
+      error: error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     
     // Check for specific database errors
     if (error instanceof Error) {
@@ -94,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to create user. Please try again.' },
+      { error: 'Failed to create user. Please try again.', details: errorMsg },
       { status: 500 }
     );
   }

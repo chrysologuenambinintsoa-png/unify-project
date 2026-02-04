@@ -34,9 +34,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(groups);
     }
 
-    // Discover/public groups
+    // Discover/public groups - exclude user's own groups
+    let userGroupIds: string[] = [];
+    if (session?.user?.id) {
+      const userGroups = await prisma.group.findMany({
+        where: {
+          members: { some: { userId: session.user.id } },
+        },
+        select: { id: true },
+      });
+      userGroupIds = userGroups.map(g => g.id);
+    }
+
     const groups = await prisma.group.findMany({
-      where: { isPrivate: false },
+      where: {
+        isPrivate: false,
+        NOT: {
+          id: { in: userGroupIds }
+        }
+      },
       orderBy: { createdAt: 'desc' },
       skip: offset,
       take: limit,
@@ -54,7 +70,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(groups);
   } catch (error) {
     console.error('Error fetching groups:', error);
-    return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 });
+    // Check if it's a database connection error
+    if (error instanceof Error) {
+      if (error.message.includes('P1001') || error.message.includes('Can\'t reach database')) {
+        console.warn('Database connection error - returning empty groups array');
+      }
+    }
+    // Return safe empty response to prevent client fetch failures
+    return NextResponse.json([], { status: 200 });
   }
 }
 
@@ -80,6 +103,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(group, { status: 201 });
   } catch (error) {
     console.error('Error creating group:', error);
+    // Check if it's a database connection error
+    if (error instanceof Error) {
+      if (error.message.includes('P1001') || error.message.includes('Can\'t reach database')) {
+        return NextResponse.json({ error: 'Database temporarily unavailable' }, { status: 503 });
+      }
+    }
     return NextResponse.json({ error: 'Failed to create group' }, { status: 500 });
   }
 }

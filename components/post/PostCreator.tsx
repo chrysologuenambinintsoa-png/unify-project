@@ -193,11 +193,11 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-lg shadow-md p-3 md:p-4 mb-4 w-full">
       {/* User Info */}
-      <div className="flex items-center mb-4 space-x-3">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 bg-primary-dark rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-accent-dark overflow-hidden flex-shrink-0">
+      <div className="flex items-start mb-4 space-x-2 md:space-x-3 gap-2">
+        <div className="flex flex-col items-center flex-shrink-0">
+          <div className="w-10 md:w-12 h-10 md:h-12 bg-primary-dark rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg border-2 border-accent-dark overflow-hidden">
             {session?.user?.image ? (
               <Image
                 src={session.user.image}
@@ -210,7 +210,7 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
               <span>{session?.user?.name?.[0]?.toUpperCase() || 'U'}</span>
             )}
           </div>
-          <p className="text-xs font-semibold text-gray-700 mt-1 truncate w-12 text-center">
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-400 mt-1 truncate w-10 md:w-12 text-center">
             {session?.user?.name?.split(' ')[0] || 'User'}
           </p>
         </div>
@@ -219,7 +219,7 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}
-          className="flex-1 bg-gray-100 rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none"
+          className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 md:px-4 py-2 text-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none text-sm md:text-base min-h-[60px]"
         />
       </div>
 
@@ -227,11 +227,11 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
       {images.length > 0 && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           {images.map((image, index) => (
-            <div key={index} className="relative">
-              <img src={image} alt={`Preview ${index}`} className="w-full h-40 object-cover rounded-lg" />
+            <div key={index} className="relative w-full">
+              <img src={image} alt={`Preview ${index}`} className="w-full h-32 md:h-40 object-cover rounded-lg" />
               <button
                 onClick={() => removeImage(index)}
-                className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-100"
+                className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-100 text-sm"
               >
                 ×
               </button>
@@ -242,10 +242,10 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
 
       {/* Preview Videos */}
       {videos.length > 0 && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2 mb-4 w-full">
           {videos.map((video, index) => (
-            <div key={index} className="relative">
-              <video src={video} controls className="w-full rounded-lg" />
+            <div key={index} className="relative w-full">
+              <video src={video} controls className="w-full rounded-lg max-h-64 md:max-h-80" />
               <button
                 onClick={() => removeVideo(index)}
                 className="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-opacity-100"
@@ -259,13 +259,13 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="border rounded-lg p-3 mb-4 bg-white shadow-lg">
-          <div className="grid grid-cols-8 gap-2">
+        <div className="border rounded-lg p-3 mb-4 bg-white dark:bg-gray-800 shadow-lg dark:border-gray-700">
+          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
             {emojis.map((emoji, index) => (
               <button
                 key={index}
                 onClick={() => handleEmojiSelect(emoji)}
-                className="text-2xl hover:bg-gray-100 rounded p-1 transition"
+                className="text-lg md:text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1 transition"
               >
                 {emoji}
               </button>
@@ -275,14 +275,14 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
       )}
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-3 border-t">
-        <div className="flex space-x-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-border">
+        <div className="flex flex-wrap gap-1 sm:gap-2 w-full sm:w-auto">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-1 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg transition"
+            className="flex items-center space-x-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 px-2 sm:px-4 py-2 rounded-lg transition text-sm"
           >
             <span>📷</span>
-            <span>Photo</span>
+            <span className="hidden sm:inline">Photo</span>
           </button>
           <input
             ref={fileInputRef}
@@ -295,10 +295,10 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
 
           <button
             onClick={() => videoInputRef.current?.click()}
-            className="flex items-center space-x-1 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition"
+            className="flex items-center space-x-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 sm:px-4 py-2 rounded-lg transition text-sm"
           >
             <span>🎥</span>
-            <span>Video</span>
+            <span className="hidden sm:inline">Video</span>
           </button>
           <input
             ref={videoInputRef}
@@ -311,17 +311,17 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
 
           <button
             onClick={showEmojiPicker ? closeEmojiPicker : openEmojiPicker}
-            className="flex items-center space-x-1 text-yellow-600 hover:bg-yellow-50 px-4 py-2 rounded-lg transition"
+            className="flex items-center space-x-1 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 px-2 sm:px-4 py-2 rounded-lg transition text-sm"
           >
             <span>😊</span>
-            <span>Emoji</span>
+            <span className="hidden sm:inline">Emoji</span>
           </button>
         </div>
 
         <button
           onClick={handleCreatePost}
           disabled={!content.trim() && images.length === 0 && videos.length === 0}
-          className="bg-primary text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+          className="bg-primary text-white px-4 sm:px-6 py-2 rounded-lg font-semibold hover:bg-primary-dark disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition w-full sm:w-auto text-sm sm:text-base"
         >
           Post
         </button>

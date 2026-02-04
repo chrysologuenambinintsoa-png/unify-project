@@ -251,5 +251,57 @@
     "managePreferences": "管理您的偏好和帐户设置",
     "profilePhoto": "个人资料照片",
     "coverPhoto": "封面照片"
+  },
+  "privacyPolicy": {
+    "title": "隐私政策",
+    "lastUpdated": "最后更新：2026年2月",
+    "introduction": "在Unify，我们非常重视您的隐私。本隐私政策说明我们如何收集、使用、保护和共享您的个人数据。",
+    "dataCollection": "数据收集",
+    "dataUsage": "数据使用",
+    "dataSecurity": "数据安全",
+    "gdprRights": "您的权利（GDPR）",
+    "cookies": "Cookies和跟踪",
+    "dataRetention": "数据保留",
+    "childrenProtection": "家长控制",
+    "contact": "联系和投诉"
+  },
+  "termsOfService": {
+    "title": "服务条款",
+    "lastUpdated": "最后更新：2026年2月",
+    "introduction": "请在继续前阅读并接受我们的条款",
+    "acceptTerms": "我接受服务条款，并理解我必须遵守社区准则",
+    "responsibleUse": "负责任的使用",
+    "dataPrivacy": "数据隐私",
+    "userContent": "用户内容",
+    "intellectualProperty": "知识产权",
+    "limitationOfLiability": "责任限制",
+    "modifications": "条款的修改",
+    "access": "访问Unify"
+  },
+  "helpPage": {
+    "welcome": "欢迎来到Unify！",
+    "discoverFeatures": "了解如何使用所有功能",
+    "messaging": "消息传递",
+    "messagingDesc": "与您的朋友实时发送私人消息",
+    "friends": "朋友",
+    "friendsDesc": "寻找并与其他用户建立联系",
+    "sharing": "分享",
+    "sharingDesc": "与社区分享照片、视频和你的想法",
+    "stories": "故事",
+    "storiesDesc": "创建24小时后消失的短暂故事",
+    "privacy": "隐私",
+    "privacyDesc": "控制您的安全和隐私设置",
+    "settings": "设置",
+    "settingsDesc": "自定义您的个人资料和偏好",
+    "faq": "常见问题",
+    "moreQuestions": "还有其他问题吗？",
+    "contactUs": "联系我们"
+  },
+  "copyright": {
+    "allRights": "保留所有权利",
+    "socialPlatform": "连接社区的社交平台",
+    "privacyLink": "隐私",
+    "termsLink": "条款",
+    "helpLink": "帮助"
   }
 }

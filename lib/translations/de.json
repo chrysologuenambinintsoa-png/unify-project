@@ -38,8 +38,7 @@
     "home": "Startseite",
     "explore": "Entdecken",
     "stories": "Geschichten",
-    "videos": "Videos",
-    "notifications": "Benachrichtigungen",
+    "videos": "Videos",    "notifications": "Benachrichtigungen",
     "messages": "Nachrichten",
     "groups": "Gruppen",
     "pages": "Seiten"
@@ -251,5 +250,57 @@
     "managePreferences": "Verwalten Sie Ihre Einstellungen und Kontoeinstellungen",
     "profilePhoto": "Profilbild",
     "coverPhoto": "Titelbild"
+  },
+  "privacyPolicy": {
+    "title": "Datenschutzerklärung",
+    "lastUpdated": "Zuletzt aktualisiert: Februar 2026",
+    "introduction": "Bei Unify nehmen wir Ihren Datenschutz sehr ernst. Diese Datenschutzerklärung erklärt, wie wir Ihre persönlichen Daten erfassen, verwenden, schützen und weitergeben.",
+    "dataCollection": "Datenerfassung",
+    "dataUsage": "Datenverwendung",
+    "dataSecurity": "Datensicherheit",
+    "gdprRights": "Ihre Rechte (DSGVO)",
+    "cookies": "Cookies und Verfolgung",
+    "dataRetention": "Datenspeicherung",
+    "childrenProtection": "Kindersicherung",
+    "contact": "Kontakt und Beschwerden"
+  },
+  "termsOfService": {
+    "title": "Nutzungsbedingungen",
+    "lastUpdated": "Zuletzt aktualisiert: Februar 2026",
+    "introduction": "Bitte lesen und akzeptieren Sie unsere Bedingungen, bevor Sie fortfahren",
+    "acceptTerms": "Ich akzeptiere die Nutzungsbedingungen und verstehe, dass ich die Community-Richtlinien einhalten muss",
+    "responsibleUse": "Verantwortungsvolle Nutzung",
+    "dataPrivacy": "Datenschutz",
+    "userContent": "Benutzerinhalte",
+    "intellectualProperty": "Geistiges Eigentum",
+    "limitationOfLiability": "Haftungsbeschränkung",
+    "modifications": "Änderungen der Bedingungen",
+    "access": "Auf Unify zugreifen"
+  },
+  "helpPage": {
+    "welcome": "Willkommen bei Unify!",
+    "discoverFeatures": "Erfahren Sie, wie Sie alle Funktionen nutzen",
+    "messaging": "Messaging",
+    "messagingDesc": "Senden Sie Privatnachrichten an Ihre Freunde in Echtzeit",
+    "friends": "Freunde",
+    "friendsDesc": "Finden Sie andere Benutzer und verbinden Sie sich mit ihnen",
+    "sharing": "Gemeinsame Nutzung",
+    "sharingDesc": "Teilen Sie Fotos, Videos und Ihre Gedanken mit der Community",
+    "stories": "Geschichten",
+    "storiesDesc": "Erstellen Sie kurzfristige Geschichten, die nach 24 Stunden verschwinden",
+    "privacy": "Datenschutz",
+    "privacyDesc": "Kontrollieren Sie Ihre Sicherheits- und Datenschutzeinstellungen",
+    "settings": "Einstellungen",
+    "settingsDesc": "Passen Sie Ihr Profil und Ihre Einstellungen an",
+    "faq": "Häufig Gestellte Fragen",
+    "moreQuestions": "Haben Sie weitere Fragen?",
+    "contactUs": "Kontaktieren Sie uns"
+  },
+  "copyright": {
+    "allRights": "Alle Rechte vorbehalten",
+    "socialPlatform": "Eine soziale Plattform zum Verbinden von Gemeinschaften",
+    "privacyLink": "Datenschutz",
+    "termsLink": "Bedingungen",
+    "helpLink": "Hilfe"
   }
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useRealProgress } from '@/hooks/useRealProgress';
 import Image from 'next/image';
 
 interface SplashScreenProps {
@@ -14,91 +15,44 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
   onComplete,
 }) => {
   const [showSplash, setShowSplash] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const progressRef = useRef(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { progress, isComplete, connectionSpeed } = useRealProgress(isLoading);
 
   useEffect(() => {
-    if (!isLoading) {
-      timerRef.current = setTimeout(() => {
+    if (isComplete && !isLoading) {
+      const timer = setTimeout(() => {
         setShowSplash(false);
         onComplete?.();
-      }, 2500);
+      }, 800);
 
-      return () => {
-        if (timerRef.current) clearTimeout(timerRef.current);
-      };
+      return () => clearTimeout(timer);
     }
-  }, [isLoading, onComplete]);
-
-  // Animation de la barre de progression optimisée
-  useEffect(() => {
-    if (!showSplash) return;
-
-    progressRef.current = 0;
-    setProgress(0);
-
-    // Phase 1: Progression rapide jusqu'à 60%
-    intervalRef.current = setInterval(() => {
-      progressRef.current += Math.random() * 15;
-      if (progressRef.current >= 60) {
-        progressRef.current = 60;
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }
-      setProgress(Math.min(progressRef.current, 100));
-    }, 250);
-
-    // Phase 2: Progression lente jusqu'à 95%
-    const slowTimer = setTimeout(() => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      intervalRef.current = setInterval(() => {
-        progressRef.current += Math.random() * 8;
-        if (progressRef.current >= 95) {
-          progressRef.current = 95;
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-        }
-        setProgress(Math.min(progressRef.current, 100));
-      }, 300);
-    }, 1500);
-
-    // Phase 3: Complétion finale
-    const finalTimer = setTimeout(() => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      progressRef.current = 100;
-      setProgress(100);
-    }, 2200);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      clearTimeout(slowTimer);
-      clearTimeout(finalTimer);
-    };
-  }, [showSplash]);
+  }, [isComplete, isLoading, onComplete]);
 
   if (!showSplash) return null;
 
+  // Déterminer le message basé sur la vitesse de connexion
+  const getSpeedMessage = () => {
+    switch (connectionSpeed) {
+      case 'fast':
+        return 'Connexion rapide ⚡';
+      case 'slow':
+        return 'Connexion lente 🐢';
+      case 'medium':
+        return 'Chargement...';
+      default:
+        return 'Chargement...';
+    }
+  };
+
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-950 via-amber-900 to-blue-900 overflow-hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Fond animé avec dégradé */}
+      {/* Fond animé */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl"
@@ -127,7 +81,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       </div>
 
       <div className="relative z-10 text-center px-6 w-full max-w-md">
-        {/* Logo Unify avec animation */}
+        {/* Logo Unify */}
         <motion.div
           className="flex justify-center mb-8"
           initial={{ scale: 0, opacity: 0 }}
@@ -148,106 +102,56 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
               ease: 'easeInOut',
             }}
           >
-            <Image
-              src="/logo.svg"
-              alt="Unify Logo"
-              width={100}
-              height={100}
-              priority
-              className="drop-shadow-lg"
-            />
+            <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+              <img src="/logo.svg" alt="Unify" className="w-12 h-12" />
+            </div>
           </motion.div>
         </motion.div>
 
-        {/* Titre principal */}
+        {/* Texte principal */}
         <motion.h1
-          className="text-6xl font-bold text-white mb-4 drop-shadow-lg"
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            duration: 0.8,
-            delay: 0.4,
-            ease: 'easeOut',
-          }}
+          className="text-4xl font-bold text-white mb-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
         >
           Unify
         </motion.h1>
 
-        {/* Texte de bienvenue */}
+        {/* Message de statut avec vitesse de connexion */}
         <motion.p
-          className="text-2xl text-white/90 mb-8 drop-shadow-md"
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            duration: 0.8,
-            delay: 0.6,
-            ease: 'easeOut',
-          }}
-        >
-          Bienvenue
-        </motion.p>
-
-        {/* Sous-texte */}
-        <motion.p
-          className="text-lg text-white/80 mb-12 drop-shadow-md"
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            duration: 0.8,
-            delay: 0.8,
-            ease: 'easeOut',
-          }}
-        >
-          Connectez-vous au monde
-        </motion.p>
-
-        {/* Barre de progression améliorée */}
-        <motion.div
-          className="space-y-3"
+          className="text-white/80 text-base mb-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.3 }}
+          transition={{ delay: 0.6 }}
         >
-          {/* Conteneur de la barre */}
-          <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden shadow-lg backdrop-blur-sm">
-            <motion.div
-              className="h-full bg-gradient-to-r from-yellow-300 via-yellow-200 to-amber-200 rounded-full shadow-md"
-              style={{ width: `${progress}%` }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-            />
-          </div>
+          {getSpeedMessage()}
+        </motion.p>
 
-          {/* Texte du pourcentage */}
-          <motion.p
-            className="text-white/80 text-xs font-medium tracking-wider"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-          >
-            {Math.round(progress)}%
-          </motion.p>
+        {/* Barre de progression synchronisée */}
+        <motion.div
+          className="h-1 bg-white/20 rounded-full overflow-hidden"
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+        >
+          <motion.div
+            className="h-full bg-gradient-to-r from-white via-white/80 to-white/60 rounded-full shadow-lg"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          />
         </motion.div>
 
-        {/* Points indicateurs */}
-        <motion.div
-          className="flex justify-center gap-3 mt-8"
+        {/* Pourcentage de progression */}
+        <motion.p
+          className="text-white/60 text-xs mt-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.3 }}
+          transition={{ delay: 1 }}
         >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="w-2 h-2 rounded-full bg-white/60"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
-            />
-          ))}
-        </motion.div>
+          {Math.round(progress)}%
+        </motion.p>
       </div>
     </motion.div>
   );

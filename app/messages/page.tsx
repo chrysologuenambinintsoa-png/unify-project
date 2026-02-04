@@ -10,6 +10,7 @@ import { FriendsMessageList } from '@/components/FriendsMessageList';
 import { motion } from 'framer-motion';
 import { MessageCircle, MoreVertical, Send, Heart, Paperclip, Download } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Conversation {
   id: string;
@@ -231,6 +232,9 @@ export default function MessagesPage() {
   const longPressTimer = React.useRef<NodeJS.Timeout | null>(null);
   const [longPressMessage, setLongPressMessage] = useState<any | null>(null);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmationData, setDeleteConfirmationData] = useState<{ messageId: string; isMine: boolean } | null>(null);
+  const [showConversationList, setShowConversationList] = useState(false);
 
   const handleMessagePointerDown = (e: any, message: any) => {
     // start long-press timer
@@ -275,11 +279,28 @@ export default function MessagesPage() {
       const url = typeof window !== 'undefined' ? `${window.location.origin}/api/messages/${messageId}?scope=${scope}` : `/api/messages/${messageId}?scope=${scope}`;
       const res = await fetch(url, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('Failed to delete');
-      // remove from UI
-      setMessages(prev => prev.filter(m => m.id !== messageId));
+      
+      // Remplacer le message supprimé par un texte spécial
+      setMessages(prev => prev.map(m => {
+        if (m.id === messageId) {
+          return {
+            ...m,
+            content: scope === 'everyone' ? '📝 Message supprimé' : '📝 Vous avez supprimé ce message',
+            isDeleted: true,
+            deletedByMe: scope === 'me',
+            reactions: [],
+            image: null,
+            document: null,
+          };
+        }
+        return m;
+      }));
       closeLongPressMenu();
+      setShowDeleteConfirmation(false);
+      setDeleteConfirmationData(null);
     } catch (e) {
       console.error('Delete message failed', e);
+      alert('Impossible de supprimer le message');
     }
   };
 
@@ -427,16 +448,30 @@ export default function MessagesPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="h-[calc(100vh-8rem)] flex bg-gray-50 overflow-hidden"
+        className="h-[calc(100vh-8rem)] flex flex-col md:flex-row bg-gray-50 overflow-hidden"
       >
-        {/* Conversations List */}
-        <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+        {/* Conversations List - Hidden on mobile unless modal is open */}
+        <div className={`${
+          showConversationList ? 'fixed inset-0 z-50 md:static md:z-0' : 'hidden md:flex'
+        } w-full md:w-1/3 bg-white border-r border-gray-200 flex flex-col md:relative`}>
+          {/* Mobile overlay close button */}
+          {showConversationList && (
+            <div className="md:hidden absolute top-0 right-0 z-10 p-4">
+              <button
+                onClick={() => setShowConversationList(false)}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors text-xl"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                 {translation.nav.messages}
               </h1>
-              <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+              <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors hidden md:block">
                 <MoreVertical className="w-5 h-5" />
               </button>
             </div>
@@ -446,6 +481,7 @@ export default function MessagesPage() {
             <FriendsMessageList
               onSelectFriend={(friendId) => {
                 setSelectedConversation(friendId);
+                setShowConversationList(false); // Close modal on selection
               }}
               selectedFriendId={selectedConversation}
               maxHeight="h-full"
@@ -454,34 +490,32 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white w-full md:w-2/3">
           {selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-[9998]">
-                <div className="flex items-center space-x-3">
+              <div className="p-3 md:p-4 border-b border-gray-200 bg-white sticky top-0 z-[9998]">
+                <div className="flex items-center space-x-2 md:space-x-3">
+                  {/* Mobile conversation list toggle */}
+                  <button
+                    onClick={() => setShowConversationList(!showConversationList)}
+                    className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+
                   <Link href={`/users/${selectedUser?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0">
-                    {selectedUser?.avatar ? (
-                      <img
-                        src={selectedUser.avatar}
-                        alt={selectedUser.fullName}
-                        className="w-12 h-12 rounded-full object-cover cursor-pointer"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold cursor-pointer">
-                        {selectedUser?.fullName?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="md" className="w-10 md:w-12 h-10 md:h-12 cursor-pointer" />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link href={`/users/${selectedUser?.id}`} className="block hover:opacity-75 transition-opacity">
-                      <h2 className="font-600 text-gray-900 truncate text-lg">
+                      <h2 className="font-600 text-gray-900 truncate text-base md:text-lg">
                         {selectedUser?.fullName || 'Conversation'}
                       </h2>
-                      <p className="text-sm text-gray-500">Actif maintenant</p>
+                      <p className="text-xs md:text-sm text-gray-500">Actif maintenant</p>
                     </Link>
                   </div>
-                  <div className="relative">
+                  <div className="relative flex-shrink-0">
                     <button 
                       onClick={() => setShowHeaderMenu(!showHeaderMenu)}
                       className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
@@ -489,17 +523,17 @@ export default function MessagesPage() {
                       <MoreVertical className="w-5 h-5" />
                     </button>
                     {showHeaderMenu && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg z-30 border border-gray-200">
-                        <button onClick={openContactInfo} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm border-b border-gray-200 transition-colors">
+                      <div className="absolute right-0 mt-2 w-48 md:w-56 bg-white rounded-lg shadow-lg z-30 border border-gray-200">
+                        <button onClick={openContactInfo} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
                           Informations du contact
                         </button>
-                        <button onClick={searchMessages} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm border-b border-gray-200 transition-colors">
+                        <button onClick={searchMessages} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
                           Rechercher des messages
                         </button>
-                        <button onClick={showMedia} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-sm border-b border-gray-200 transition-colors">
+                        <button onClick={showMedia} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
                           Médias
                         </button>
-                        <button onClick={deleteConversationHandler} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm transition-colors">
+                        <button onClick={deleteConversationHandler} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-xs md:text-sm transition-colors">
                           Supprimer la conversation
                         </button>
                       </div>
@@ -509,10 +543,10 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 flex flex-col">
+              <div className="flex-1 p-3 md:p-4 overflow-y-auto space-y-3 md:space-y-4 flex flex-col">
                 {messages.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center text-gray-400">
-                    <p>Aucun message. Commencez la conversation!</p>
+                    <p className="text-sm md:text-base">Aucun message. Commencez la conversation!</p>
                   </div>
                 ) : (
                   <>
@@ -528,23 +562,12 @@ export default function MessagesPage() {
                       >
                         {/* Avatar */}
                         <Link href={`/users/${message.sender?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0 mb-1">
-                          {message.sender?.avatar ? (
-                            <img
-                              src={message.sender.avatar}
-                              alt={message.sender.fullName}
-                              className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                              title={message.sender.fullName}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm text-gray-600 font-bold cursor-pointer">
-                              {message.sender?.fullName?.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <Avatar src={message.sender?.avatar || null} name={message.sender?.fullName} size="sm" className="w-10 h-10" />
                         </Link>
 
                         {/* Message Bubble */}
                         <div 
-                          className={`max-w-sm ${message.isMine ? 'items-start' : 'items-end'} flex flex-col cursor-pointer`}
+                          className={`max-w-xs md:max-w-sm ${message.isMine ? 'items-start' : 'items-end'} flex flex-col cursor-pointer`}
                           onClick={() => setSelectedMessageId(message.id)}
                         >
                           <p className={`text-xs font-semibold mb-1 ${message.isMine ? 'text-left text-primary' : 'text-right text-gray-600'}`}>
@@ -553,6 +576,18 @@ export default function MessagesPage() {
                           {message.content === '💙' ? (
                             <div className="flex items-center justify-center">
                               <HeartIcon className="w-12 h-12" fill={true} />
+                            </div>
+                          ) : message.isDeleted ? (
+                            <div
+                              className={`px-4 py-3 rounded-2xl font-italic italic text-gray-500 transition-colors ${
+                                selectedMessageId === message.id ? 'ring-2 ring-primary' : ''
+                              } ${
+                                message.isMine
+                                  ? 'bg-gray-100 rounded-bl-md'
+                                  : 'bg-gray-100 rounded-br-md'
+                              }`}
+                            >
+                              <p className="text-xs md:text-sm">{message.content}</p>
                             </div>
                           ) : (
                             <div
@@ -565,9 +600,9 @@ export default function MessagesPage() {
                               }`}
                               style={{ position: 'relative' }}
                             >
-                              <p className="text-sm">{message.content}</p>
+                              <p className="text-xs md:text-sm">{message.content}</p>
                               {message.image && (
-                                <img src={message.image} alt="attachment" className="w-full mt-2 rounded" />
+                                <img src={message.image} alt="attachment" className="w-full mt-1 md:mt-2 rounded max-w-xs" />
                               )}
                               {message.document && (
                                 <div className="flex items-center gap-2 mt-2">
@@ -596,9 +631,9 @@ export default function MessagesPage() {
 
                               {/* Reactions preview */}
                               {message.reactions && message.reactions.length > 0 && (
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-1 md:gap-2 mt-1 md:mt-2 flex-wrap">
                                   {Array.from(groupReactions(message.reactions)).slice(0,5).map((r:any) => (
-                                    <div key={r.emoji} className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded text-sm">
+                                    <div key={r.emoji} className="flex items-center gap-1 bg-white/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm">
                                       <span>{r.emoji}</span>
                                       <span className="text-xs text-white">{r.count}</span>
                                     </div>
@@ -619,17 +654,7 @@ export default function MessagesPage() {
                         className="flex items-end gap-3"
                       >
                         <Link href={`/users/${selectedUser?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0 mb-1">
-                          {selectedUser?.avatar ? (
-                            <img
-                              src={selectedUser.avatar}
-                              alt={selectedUser.fullName}
-                              className="w-10 h-10 rounded-full object-cover cursor-pointer"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm text-gray-600 font-bold cursor-pointer">
-                              {selectedUser?.fullName?.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="sm" className="w-10 h-10" />
                         </Link>
                         <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-2">
                           <div className="flex space-x-1">
@@ -645,9 +670,9 @@ export default function MessagesPage() {
                             />
                             <motion.div
                               animate={{ y: [0, -4, 0] }}
-                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                              className="w-2 h-2 bg-gray-600 rounded-full"
-                            />
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                className="w-2 h-2 bg-gray-600 rounded-full"
+                              />
                           </div>
                         </div>
                       </motion.div>
@@ -659,13 +684,13 @@ export default function MessagesPage() {
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
                 {sendError && (
-                  <div className="mb-3 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                  <div className="mb-2 md:mb-3 p-2 md:p-3 bg-red-50 text-red-700 rounded-lg text-xs md:text-sm border border-red-200">
                     ⚠️ {sendError}
                   </div>
                 )}
 
                 {selectedMessageId && (
-                  <div className="mb-3 p-2 bg-blue-50 rounded-lg text-sm border border-blue-200 flex items-center justify-between">
+                  <div className="mb-2 md:mb-3 p-2 bg-blue-50 rounded-lg text-xs md:text-sm border border-blue-200 flex items-center justify-between">
                     <span className="text-blue-700">Message sélectionné</span>
                     <button 
                       onClick={() => setSelectedMessageId(null)}
@@ -676,7 +701,7 @@ export default function MessagesPage() {
                   </div>
                 )}
 
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-2 md:gap-3">
                   <div className="flex gap-2 items-center">
                     <input
                       type="text"
@@ -685,28 +710,28 @@ export default function MessagesPage() {
                       onKeyPress={(e) => e.key === 'Enter' && !isSending && handleSendMessage()}
                       placeholder="Aa"
                       disabled={isSending}
-                      className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors disabled:bg-gray-100 text-gray-900 placeholder-gray-500"
+                      className="flex-1 px-3 md:px-4 py-2 md:py-2.5 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors disabled:bg-gray-100 text-sm md:text-base text-gray-900 placeholder-gray-500"
                     />
 
                     <button
                       onClick={handleSendMessage}
                       disabled={!newMessage.trim() || isSending}
-                      className="flex-shrink-0 p-2.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 flex items-center justify-center"
+                      className="flex-shrink-0 p-2 md:p-2.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 flex items-center justify-center"
                     >
                       {isSending ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <Send className="w-4 md:w-5 h-4 md:h-5" />
                       )}
                     </button>
 
                     <button
                       onClick={handleLikeClickNearSend}
                       disabled={isSending}
-                      className="flex-shrink-0 ml-2 p-2.5 rounded-full transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-shrink-0 p-2 rounded-full transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Envoyer un cœur"
                     >
-                      <Heart className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" />
+                      <Heart className="w-4 md:w-5 h-4 md:h-5 text-gray-600" fill="none" stroke="currentColor" />
                     </button>
 
                     <div className="flex items-center gap-2">
@@ -722,17 +747,17 @@ export default function MessagesPage() {
                         reader.readAsDataURL(f);
                       }} />
                       <label htmlFor="attachmentInput" className="p-2 hover:bg-gray-100 rounded-full cursor-pointer" title="Joindre un fichier">
-                        <Paperclip className="w-5 h-5 text-gray-600" />
+                        <Paperclip className="w-4 md:w-5 h-4 md:h-5 text-gray-600" />
                       </label>
                     </div>
                   </div>
 
                   {attachment && (
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       {attachment.type === 'image' ? (
-                        <img src={attachment.dataUrl || ''} alt="preview" className="w-24 h-24 object-cover rounded" />
+                        <img src={attachment.dataUrl || ''} alt="preview" className="w-16 md:w-24 h-16 md:h-24 object-cover rounded" />
                       ) : (
-                        <div className="px-3 py-2 bg-gray-100 rounded text-sm">Fichier joint</div>
+                        <div className="px-3 py-2 bg-gray-100 rounded text-xs md:text-sm">Fichier joint</div>
                       )}
                       <button onClick={() => setAttachment(null)} className="text-sm text-red-500">Suppr.</button>
                     </div>
@@ -742,8 +767,14 @@ export default function MessagesPage() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500">
-              <h3 className="text-2xl font-semibold mb-2">📎</h3>
-              <p className="text-gray-500 text-base">Choisissez un ami pour commencer à discuter</p>
+              <h3 className="text-3xl md:text-4xl font-semibold mb-2">📎</h3>
+              <p className="text-gray-500 text-sm md:text-base px-4">Choisissez un ami pour commencer à discuter</p>
+              <button
+                onClick={() => setShowConversationList(true)}
+                className="md:hidden mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm transition-colors hover:bg-primary-dark"
+              >
+                Voir les conversations
+              </button>
             </div>
           )}
         </div>
@@ -751,46 +782,53 @@ export default function MessagesPage() {
         {/* Long-press action menu */}
               {longPressMessage && menuPos && (
                 <div style={{ position: 'fixed', left: menuPos.x, top: menuPos.y, zIndex: 9999 }}>
-                  <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-                    <button onClick={() => reactToMessage(longPressMessage.id, '❤️')} className="block px-4 py-2 text-sm hover:bg-gray-50">❤️ Aimer</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '👍')} className="block px-4 py-2 text-sm hover:bg-gray-50">👍 J'aime</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😂')} className="block px-4 py-2 text-sm hover:bg-gray-50">😂 Amusant</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😢')} className="block px-4 py-2 text-sm hover:bg-gray-50">😢 Triste</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😮')} className="block px-4 py-2 text-sm hover:bg-gray-50">😮 Surpris</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '🔥')} className="block px-4 py-2 text-sm hover:bg-gray-50">🔥 Chaud</button>
-                    <button onClick={() => deleteMessage(longPressMessage.id, 'me')} className="block px-4 py-2 text-sm hover:bg-gray-50 border-t">Supprimer pour moi</button>
-                    <button onClick={() => deleteMessage(longPressMessage.id, 'everyone')} className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Supprimer pour tout le monde</button>
-                    <button onClick={closeLongPressMenu} className="block px-4 py-2 text-sm hover:bg-gray-50 border-t">Annuler</button>
+                  <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-xs md:max-w-sm">
+                    <button onClick={() => reactToMessage(longPressMessage.id, '❤️')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">❤️ Aimer</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '👍')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">👍 J'aime</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😂')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😂 Amusant</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😢')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😢 Triste</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😮')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😮 Surpris</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '🔥')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">🔥 Chaud</button>
+                    <button 
+                      onClick={() => {
+                        setDeleteConfirmationData({ messageId: longPressMessage.id, isMine: longPressMessage.isMine });
+                        setShowDeleteConfirmation(true);
+                      }}
+                      className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm text-red-600 hover:bg-red-50 border-t"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                    <button onClick={closeLongPressMenu} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50 border-t">Annuler</button>
                   </div>
                 </div>
               )}
       {/* Media Modal */}
       {showMediaModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
-          <div className="bg-white w-[90%] max-w-3xl rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold">Médias de la conversation</h3>
+          <div className="bg-white w-[95%] md:w-[90%] max-w-3xl rounded-lg p-3 md:p-4 mx-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
+              <h3 className="text-base md:text-lg font-semibold">Médias de la conversation</h3>
               <div className="flex items-center gap-2">
                 {originalMessages && (
-                  <button onClick={() => { setMessages(originalMessages); setOriginalMessages(null); }} className="text-sm px-3 py-1 bg-gray-100 rounded">Réinitialiser la recherche</button>
+                  <button onClick={() => { setMessages(originalMessages); setOriginalMessages(null); }} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">Réinitialiser la recherche</button>
                 )}
-                <button onClick={() => setShowMediaModal(false)} className="text-sm px-3 py-1 bg-gray-100 rounded">Fermer</button>
+                <button onClick={() => setShowMediaModal(false)} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">Fermer</button>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 max-h-[60vh] overflow-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 max-h-[60vh] overflow-auto">
               {messages.filter(m => m.image || m.document).length === 0 ? (
-                <div className="text-gray-500">Aucun média trouvé.</div>
+                <div className="text-gray-500 text-sm col-span-2 md:col-span-3">Aucun média trouvé.</div>
               ) : (
                 messages.filter(m => m.image || m.document).map(m => (
-                  <div key={m.id} className="border rounded p-2 flex flex-col items-start">
+                  <div key={m.id} className="border rounded p-1 md:p-2 flex flex-col items-start">
                     {m.image ? (
-                      <img src={m.image} className="w-full h-36 object-cover rounded mb-2" />
+                      <img src={m.image} className="w-full h-20 md:h-36 object-cover rounded mb-1 md:mb-2" />
                     ) : (
-                      <div className="w-full h-36 flex items-center justify-center bg-gray-50 rounded mb-2">Fichier</div>
+                      <div className="w-full h-20 md:h-36 flex items-center justify-center bg-gray-50 rounded mb-1 md:mb-2 text-xs">Fichier</div>
                     )}
-                    <div className="text-xs text-gray-600 mb-1">{m.content?.slice(0,60)}</div>
+                    <div className="text-xs text-gray-600 mb-1 line-clamp-2">{m.content?.slice(0,60)}</div>
                     {m.document && (
-                      <a href={m.document} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline">Télécharger</a>
+                      <a href={m.document} target="_blank" rel="noreferrer" className="text-xs md:text-sm text-blue-600 underline">Télécharger</a>
                     )}
                   </div>
                 ))
@@ -806,6 +844,76 @@ export default function MessagesPage() {
             {toast.message}
           </div>
         </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && deleteConfirmationData && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001]"
+          onClick={() => {
+            setShowDeleteConfirmation(false);
+            setDeleteConfirmationData(null);
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-2xl md:text-3xl">🗑️</div>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">Supprimer le message?</h3>
+            </div>
+
+            <p className="text-sm md:text-base text-gray-600 mb-6">
+              Comment souhaitez-vous supprimer ce message?
+            </p>
+
+            <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  deleteMessage(deleteConfirmationData.messageId, 'me');
+                }}
+                className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-colors text-left"
+              >
+                <div className="font-semibold text-sm md:text-base">📋 Pour moi uniquement</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">Seul vous verrez le message supprimé</div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  deleteMessage(deleteConfirmationData.messageId, 'everyone');
+                }}
+                className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-900 rounded-lg font-medium transition-colors text-left border-2 border-red-200"
+              >
+                <div className="font-semibold text-sm md:text-base">🔴 Pour tout le monde</div>
+                <div className="text-xs md:text-sm text-red-700 mt-1">Tout le monde verra le message comme supprimé</div>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeleteConfirmationData(null);
+                  closeLongPressMenu();
+                }}
+                className="w-full px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-colors"
+              >
+                Annuler
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
       )}
       </motion.div>
     </MainLayout>

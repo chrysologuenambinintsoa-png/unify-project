@@ -24,6 +24,8 @@ interface GroupSuggestionsProps {
 export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
   const [groups, setGroups] = useState<SuggestedGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
+  const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchGroups();
@@ -38,11 +40,11 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
     try {
       setLoading(true);
       const res = await fetch('/api/groups?type=discover');
-      if (!res.ok) throw new Error('Failed to fetch groups');
       const data = await res.json();
       setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching groups:', error);
+      setGroups([]); // Fallback to empty groups
     } finally {
       setLoading(false);
     }
@@ -50,33 +52,49 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
 
   const handleJoin = async (groupId: string) => {
     try {
-      // Mock join action
-      console.log('Joined group:', groupId);
+      setActionLoading(prev => new Set(prev).add(groupId));
+      
+      const response = await fetch(`/api/groups/${groupId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.action === 'joined') {
+          setJoinedIds(prev => new Set(prev).add(groupId));
+        } else {
+          setJoinedIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(groupId);
+            return newSet;
+          });
+        }
+      }
     } catch (error) {
       console.error('Error joining group:', error);
+    } finally {
+      setActionLoading(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(groupId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleContact = async (groupId: string) => {
+    try {
+      // Navigate to messages or open contact modal
+      // For now, just show a simple alert
+      window.location.href = `/messages?group=${groupId}`;
+    } catch (error) {
+      console.error('Error contacting group:', error);
     }
   };
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-2xl p-6 shadow-lg">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Groupes suggérés</h3>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="border border-gray-200 rounded-xl p-4">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    // Don't show loading skeleton - just return null to avoid visual loading indicators
+    return null;
   }
 
   if (groups.length === 0) {
@@ -85,55 +103,61 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Groupes suggérés</h3>
-      <div className="space-y-4">
+    <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Groupes suggérés</h3>
+      <div className="space-y-3 md:space-y-4">
         {groups.slice(0, compact ? 3 : 5).map((group) => (
           <motion.div
             key={group.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow"
+            className="border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-2 sm:p-3 md:p-4 hover:shadow-md dark:hover:shadow-xl transition-shadow"
           >
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+            <div className="flex items-start gap-2 sm:gap-3 md:gap-4 min-w-0">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg md:rounded-xl flex items-center justify-center text-white font-bold text-sm md:text-lg flex-shrink-0">
                 {group.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h4 className="font-semibold text-gray-900 truncate">{group.name}</h4>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
+                <div className="flex items-center gap-1 md:gap-2 mb-1 flex-wrap">
+                  <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm md:text-base">{group.name}</h4>
+                  <span className={`px-1.5 md:px-2 py-0.5 md:py-1 text-xs rounded-full flex-shrink-0 ${
                     group.privacy === 'public'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                      : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300'
                   }`}>
                     {group.privacy === 'public' ? 'Public' : 'Privé'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{group.description}</p>
-                <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
-                  <div className="flex items-center space-x-1">
-                    <Users className="w-3 h-3" />
-                    <span>{((group.members ?? group._count?.members) ?? 0).toLocaleString()} membres</span>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{group.description}</p>
+                <div className="flex items-center gap-2 md:gap-4 text-xs text-gray-500 dark:text-gray-400 mb-2 md:mb-3 flex-wrap">
+                  <div className="flex items-center gap-1 whitespace-nowrap">
+                    <Users className="w-3 h-3 flex-shrink-0" />
+                    <span>{((group.members ?? group._count?.members) ?? 0).toLocaleString()}</span>
                   </div>
-                  <span className="px-2 py-1 bg-gray-100 rounded-full">{group.category}</span>
+                  <span className="px-1.5 md:px-2 py-0.5 md:py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs whitespace-nowrap">{group.category}</span>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                   <Button
                     onClick={() => handleJoin(group.id)}
+                    variant={joinedIds.has(group.id) ? 'secondary' : 'primary'}
                     size="sm"
-                    className="flex items-center space-x-1"
+                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 whitespace-nowrap"
+                    disabled={actionLoading.has(group.id)}
                   >
-                    <UserPlus className="w-3 h-3" />
-                    <span>Rejoindre</span>
+                    <UserPlus className="w-3 h-3 flex-shrink-0" />
+                    <span className="hidden sm:inline">{joinedIds.has(group.id) ? 'Rejoint' : 'Rejoindre'}</span>
+                    <span className="sm:hidden">{joinedIds.has(group.id) ? '✓' : '+'}</span>
                   </Button>
                   <Button
+                    onClick={() => handleContact(group.id)}
                     variant="outline"
                     size="sm"
-                    className="flex items-center space-x-1"
+                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 whitespace-nowrap"
+                    disabled={actionLoading.has(group.id)}
                   >
-                    <MessageCircle className="w-3 h-3" />
-                    <span>Contacter</span>
+                    <MessageCircle className="w-3 h-3 flex-shrink-0" />
+                    <span className="hidden sm:inline">Contacter</span>
+                    <span className="sm:hidden">💬</span>
                   </Button>
                 </div>
               </div>

@@ -39,57 +39,64 @@ export default function CreatePageModal({ isOpen, onClose, onCreate }: CreatePag
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Créer une page</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X size={20} />
+      <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl shadow-2xl p-8 w-full max-w-md border-2 border-amber-200">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-br from-amber-500 to-yellow-600 rounded-lg p-2">
+              <span className="text-white text-2xl">📄</span>
+            </div>
+            <h2 className="text-2xl font-bold text-amber-900">Créer une page</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-amber-200 rounded-full transition">
+            <X size={24} className="text-amber-900" />
           </button>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg font-medium">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Page Name</label>
+            <label className="block text-sm font-bold text-amber-900 mb-2">Nom de la page</label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter page name"
+              placeholder="Entrez le nom de la page"
               disabled={loading}
+              className="border-amber-300 focus:border-amber-500 focus:ring-amber-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label className="block text-sm font-bold text-amber-900 mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Enter page description"
+              placeholder="Décrivez votre page"
               disabled={loading}
-              className="w-full p-2 border border-gray-300 rounded text-sm"
+              className="w-full p-3 border-2 border-amber-300 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 focus:outline-none"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
+            <label className="block text-sm font-bold text-amber-900 mb-2">URL de l'image (optionnel)</label>
             <Input
               type="url"
               value={formData.image}
               onChange={(e) => setFormData({ ...formData, image: e.target.value })}
               placeholder="https://example.com/image.jpg"
               disabled={loading}
+              className="border-amber-300 focus:border-amber-500 focus:ring-amber-500"
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1">
-              Cancel
+          <div className="flex gap-3 pt-6">
+            <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 border-2 border-amber-300 text-amber-900 hover:bg-amber-100">
+              Annuler
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Creating...' : 'Create'}
+            <Button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold">
+              {loading ? 'Création...' : 'Créer'}
             </Button>
           </div>
         </form>

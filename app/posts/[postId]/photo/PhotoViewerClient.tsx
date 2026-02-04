@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChevronLeft, ChevronRight, Share2, Heart, MessageCircle } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Post {
   id: string;
@@ -248,15 +249,9 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
           </div>
 
           <div className="lg:col-span-1 p-6 flex flex-col bg-gray-50">
-            <div className="mb-6 pb-6 border-b">
+              <div className="mb-6 pb-6 border-b">
               <div className="flex items-center gap-3">
-                {post.user.avatar && (
-                  <img
-                    src={post.user.avatar}
-                    alt={post.user.username}
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
-                )}
+                <Avatar src={post.user.avatar || null} name={post.user.fullName} size="lg" className="w-14 h-14" />
                 <div className="flex-1">
                   <div className="font-bold text-lg">{post.user.fullName}</div>
                   <div className="text-gray-600 text-sm">@{post.user.username}</div>
@@ -357,13 +352,7 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
                   post.comments.map((comment) => (
                     <div key={comment.id} className="p-3 bg-white rounded border border-gray-200">
                       <div className="flex items-center gap-2 mb-1">
-                        {comment.user.avatar && (
-                          <img
-                            src={comment.user.avatar}
-                            alt={comment.user.username}
-                            className="w-6 h-6 rounded-full"
-                          />
-                        )}
+                        <Avatar src={comment.user.avatar || null} name={comment.user.fullName} size="sm" />
                         <div className="text-sm">
                           <div className="font-semibold">{comment.user.fullName}</div>
                           <div className="text-xs text-gray-600">@{comment.user.username}</div>

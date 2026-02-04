@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Smile, Send } from 'lucide-react';
+import { optimizeAvatarUrl } from '@/lib/cloudinaryOptimizer';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface CommentThreadProps {
   postId: string;
@@ -206,16 +208,8 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
       {/* Comment */}
       <div className="flex space-x-3 pb-4">
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-xs flex-shrink-0">
-          {comment.user?.avatar ? (
-            <img 
-              src={comment.user.avatar} 
-              alt={comment.user.fullName} 
-              className="w-full h-full object-cover rounded-full"
-            />
-          ) : (
-            (comment.user?.fullName || 'U').charAt(0).toUpperCase()
-          )}
+        <div className="flex-shrink-0">
+          <Avatar src={comment.user?.avatar ? (optimizeAvatarUrl(comment.user.avatar, 32) || comment.user.avatar) : null} name={comment.user?.fullName} size="sm" className="w-8 h-8" />
         </div>
 
         {/* Comment Content */}
@@ -301,12 +295,8 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                           onClick={() => insertMention(friend, 'reply')}
                           className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors flex items-center space-x-2 text-sm"
                         >
-                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">
-                            {friend.avatar ? (
-                              <img src={friend.avatar} alt={friend.fullName} className="w-full h-full object-cover rounded-full" />
-                            ) : (
-                              friend.fullName.charAt(0).toUpperCase()
-                            )}
+                          <div className="w-6 h-6 rounded-full overflow-hidden">
+                            <Avatar src={friend.avatar ? (optimizeAvatarUrl(friend.avatar, 24) || friend.avatar) : null} name={friend.fullName} size="sm" className="w-6 h-6" />
                           </div>
                           <div>
                             <p className="font-medium">{friend.fullName}</p>

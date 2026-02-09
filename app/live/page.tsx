@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import useLive from '@/hooks/useLive';
 import LiveStreamer from '@/components/live/LiveStreamer';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LivePage() {
   const { rooms } = useLive();
+  const { translation } = useLanguage();
   const [displayName, setDisplayName] = useState('Guest');
   const [role, setRole] = useState<'host' | 'participant' | 'viewer'>('participant');
   const [showLiveModal, setShowLiveModal] = useState(false);
@@ -18,38 +20,38 @@ export default function LivePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900">Live Streaming</h1>
-            <p className="text-sm text-slate-500 mt-1">Broadcast or watch live streams in realtime</p>
+            <h1 className="text-3xl font-extrabold text-slate-900">{translation.live.title}</h1>
+            <p className="text-sm text-slate-500 mt-1">{translation.live.subtitle}</p>
           </div>
           <button
             onClick={() => setShowLiveModal(true)}
             className="px-6 py-3 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition transform hover:scale-105"
           >
-            🔴 Go Live
+            {translation.live.goLive}
           </button>
         </div>
 
         {/* User Settings */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
-            <label className="block text-sm font-medium text-slate-900 mb-2">Display Name</label>
+            <label className="block text-sm font-medium text-slate-900 mb-2">{translation.live.displayName}</label>
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"
-              placeholder="Your name"
+              placeholder={translation.live.displayNamePlaceholder}
             />
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
-            <label className="block text-sm font-medium text-slate-900 mb-2">Join As</label>
+            <label className="block text-sm font-medium text-slate-900 mb-2">{translation.live.joinAs}</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as any)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"
             >
-              <option value="participant">Broadcaster (publish)</option>
-              <option value="viewer">Spectator (watch only)</option>
+              <option value="participant">{translation.live.broadcaster}</option>
+              <option value="viewer">{translation.live.spectator}</option>
             </select>
           </div>
         </div>
@@ -57,8 +59,8 @@ export default function LivePage() {
         {/* Active Rooms */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Active Streams</h2>
-            <span className="text-sm text-slate-500">{rooms?.length || 0} live</span>
+            <h2 className="text-xl font-bold text-slate-900">{translation.live.activeStreams}</h2>
+            <span className="text-sm text-slate-500">{rooms?.length || 0} {translation.live.live}</span>
           </div>
 
           {rooms && rooms.length ? (
@@ -80,13 +82,13 @@ export default function LivePage() {
                   {/* Info */}
                   <div className="p-4">
                     <h3 className="font-semibold text-slate-900 line-clamp-2">{room.title}</h3>
-                    <p className="text-xs text-slate-500 mt-2">👥 {room.participantCount || 0} watching</p>
+                    <p className="text-xs text-slate-500 mt-2">👥 {room.participantCount || 0} {translation.live.watching}</p>
 
                     <button
                       onClick={() => setSelectedRoomId(room.id)}
                       className="w-full mt-3 px-3 py-2 bg-blue-900 text-white rounded-lg text-sm font-medium hover:bg-blue-800 transition"
                     >
-                      Join
+                      {translation.live.join}
                     </button>
                   </div>
                 </div>
@@ -95,12 +97,12 @@ export default function LivePage() {
           ) : (
             <div className="bg-slate-50 rounded-lg p-12 text-center border border-slate-200">
               <div className="text-4xl mb-3">🎬</div>
-              <p className="text-slate-600 mb-4">No active streams right now</p>
+              <p className="text-slate-600 mb-4">{translation.live.noActiveStreams}</p>
               <button
                 onClick={() => setShowLiveModal(true)}
                 className="px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-medium"
               >
-                Start one now
+                {translation.live.startOneNow}
               </button>
             </div>
           )}

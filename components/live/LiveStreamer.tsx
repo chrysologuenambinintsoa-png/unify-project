@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import useLive from '@/hooks/useLive';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type Role = 'host' | 'participant' | 'viewer';
 
@@ -15,6 +16,7 @@ type Props = {
 
 export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Guest', role = 'participant', myId: initialMyId, onClose }: Props) {
   const { send, onMessage, rooms } = useLive();
+  const { translation } = useLanguage();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcsRef = useRef<Record<string, RTCPeerConnection>>({});
@@ -507,7 +509,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
             <div className="relative flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                <h2 className="text-xl font-bold">Go Live</h2>
+                <h2 className="text-xl font-bold">{translation.live.goLive}</h2>
               </div>
               <button 
                 type="button"
@@ -532,8 +534,8 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
           {/* Content */}
           <div className="p-6 space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Stream Title</label>
-              <input value={streamTitle} onChange={(e) => setStreamTitle(e.target.value)} placeholder="e.g., My First Live Stream" className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-900" />
+              <label className="block text-sm font-semibold text-slate-900 mb-2">{translation.live.streamTitle}</label>
+              <input value={streamTitle} onChange={(e) => setStreamTitle(e.target.value)} placeholder={translation.live.streamTitlePlaceholder} className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-900" />
             </div>
 
             {canPreview ? (
@@ -542,7 +544,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                   {cameraError ? (
                     <div className="flex flex-col items-center justify-center text-center p-4 space-y-3">
                       <div className="text-4xl mb-3">❌</div>
-                      <p className="text-red-400 text-sm whitespace-pre-line max-h-40 overflow-y-auto">{cameraError}</p>
+                    <div className="text-red-400 text-sm">{translation.live.cameraError}: {cameraError}</div>
                       <div className="flex flex-col gap-2 w-full">
                         <button 
                           onClick={() => { 
@@ -551,7 +553,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                           }}
                           className="px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-medium hover:bg-blue-800 w-full"
                         >
-                          🔄 Try Again
+                          {translation.live.tryAgain}
                         </button>
                         <button 
                           onClick={() => {
@@ -565,13 +567,13 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                           }}
                           className="px-4 py-2 bg-blue-800 text-white rounded-lg text-sm font-medium hover:bg-blue-700 w-full"
                         >
-                          🎥 Try Cameras Only (No Mic)
+                          {translation.live.cameraOnly}
                         </button>
                         <button
                           onClick={() => setCanPreview(false)}
                           className="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium hover:bg-slate-700 w-full"
                         >
-                          ← Cancel
+                          {translation.live.cancel}
                         </button>
                       </div>
                     </div>
@@ -583,10 +585,10 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                 {!cameraError && (
                   <div className="flex gap-2 justify-center">
                     <button onClick={() => setCamOn((v) => !v)} className={`px-4 py-2 rounded-lg font-medium transition ${camOn ? 'bg-blue-900 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                      📹 {camOn ? 'Camera On' : 'Camera Off'}
+                      📹 {camOn ? translation.live.cameraOn : translation.live.cameraOff}
                     </button>
                     <button onClick={() => setMicOn((v) => !v)} className={`px-4 py-2 rounded-lg font-medium transition ${micOn ? 'bg-blue-900 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                      🎙️ {micOn ? 'Mic On' : 'Mic Off'}
+                      🎙️ {micOn ? translation.live.micOn : translation.live.micOff}
                     </button>
                   </div>
                 )}
@@ -594,10 +596,10 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                 {!cameraError && (
                   <div className="flex gap-3">
                     <button onClick={() => setCanPreview(false)} className="flex-1 px-4 py-3 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
-                      ← Cancel
+                      {translation.live.cancel}
                     </button>
                     <button onClick={goLive} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-lg font-semibold hover:shadow-lg transition transform hover:scale-105">
-                      🔴 Start Broadcasting
+                      {translation.live.startBroadcasting}
                     </button>
                   </div>
                 )}
@@ -605,9 +607,9 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
             ) : (
               <div className="space-y-3">
                 <button onClick={startSession} className="w-full px-4 py-3 bg-blue-900 text-white rounded-lg font-semibold hover:shadow-lg transition">
-                  📷 Preview Camera
+                  {translation.live.previewCamera}
                 </button>
-                <p className="text-xs text-slate-500 text-center">You'll need to allow camera access when prompted</p>
+                <p className="text-xs text-slate-500 text-center">{translation.live.cameraAccessNeeded}</p>
               </div>
             )}
           </div>
@@ -635,12 +637,12 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
               <div className="absolute top-4 left-4 flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span className="font-semibold">LIVE</span>
+                  <span className="font-semibold">{translation.live.liveBadge}</span>
                 </div>
                 <div className="bg-black/60 text-white px-4 py-2 rounded-lg">👥 {viewerCount}</div>
               </div>
 
-              <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 text-white rounded-lg">Exit Fullscreen</button>
+              <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 text-white rounded-lg">{translation.live.exitFullscreen}</button>
             </div>
           </div>
         </div>
@@ -652,12 +654,12 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-red-600 animate-pulse" />
-            <h1 className="text-2xl font-bold text-slate-900">Live Now</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{translation.live.liveNow}</h1>
             <div className="text-sm text-slate-500">{roomId}</div>
           </div>
 
           <button onClick={endStream} className="px-4 py-2 bg-blue-900 text-white rounded-lg font-semibold hover:bg-blue-800 transition">
-            End Stream
+            {translation.live.endStream}
           </button>
         </div>
 
@@ -675,7 +677,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
               <div className="absolute top-4 left-4 flex items-center gap-2">
                 <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-lg">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span className="text-sm font-semibold">LIVE</span>
+                  <span className="text-sm font-semibold">{translation.live.liveBadge}</span>
                 </div>
                 <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm">👥 {viewerCount}</div>
               </div>
@@ -683,7 +685,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
               {/* Fullscreen Button */}
               {role === 'viewer' && (
                 <button onClick={toggleFullscreen} className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition px-3 py-2 bg-white/20 text-white rounded-lg text-sm">
-                  ⛶ Fullscreen
+                  {translation.live.fullscreen}
                 </button>
               )}
 
@@ -692,7 +694,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4">
-              <p className="text-sm text-slate-600">{streamTitle || 'Live Stream'}</p>
+              <p className="text-sm text-slate-600">{streamTitle || translation.live.liveStream}</p>
             </div>
           </div>
 
@@ -700,31 +702,31 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
           <div className="space-y-4">
             {/* Stats */}
             <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900">Stats</h3>
+              <h3 className="text-sm font-semibold text-slate-900">{translation.live.stats}</h3>
               <div className="text-sm">
                 <span className="font-semibold text-red-600 animate-pulse">{reactions}</span>
-                <span className="text-slate-600"> reactions</span>
+                <span className="text-slate-600"> {translation.live.reactions}</span>
               </div>
               <div className="text-sm">
                 <span className="font-semibold">{messages.length}</span>
-                <span className="text-slate-600"> messages</span>
+                <span className="text-slate-600"> {translation.live.messages}</span>
               </div>
               <div className="text-sm">
                 <span className="font-semibold">{viewerCount}</span>
-                <span className="text-slate-600"> viewers</span>
+                <span className="text-slate-600"> {translation.live.viewers}</span>
               </div>
             </div>
 
             {/* Reaction Button */}
             {role === 'viewer' && (
               <button onClick={sendReaction} className="w-full px-4 py-3 bg-blue-900 text-white rounded-xl font-semibold hover:bg-blue-800 transition transform active:scale-95">
-                ❤️ Like
+                {translation.live.like}
               </button>
             )}
 
             {/* Chat */}
             <div className="bg-slate-50 rounded-xl p-4 flex flex-col h-80">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Chat</h3>
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">{translation.live.chat}</h3>
               <div className="flex-1 overflow-y-auto space-y-2">
                 {messages.length ? (
                   messages.map((m) => (
@@ -734,14 +736,14 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-slate-400">No messages yet</p>
+                  <p className="text-xs text-slate-400">{translation.live.noMessagesYet}</p>
                 )}
               </div>
 
               {/* Input */}
               <div className="mt-3 flex gap-2">
-                <input value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder="Say something..." className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-900" />
-                <button onClick={sendMessage} className="px-3 py-2 bg-blue-900 text-white rounded-lg text-xs font-medium">Send</button>
+                <input value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder={translation.live.saySomething} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-900" />
+                <button onClick={sendMessage} className="px-3 py-2 bg-blue-900 text-white rounded-lg text-xs font-medium">{translation.live.send}</button>
               </div>
             </div>
           </div>

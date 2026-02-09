@@ -5,9 +5,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mediaAdapter from '@/lib/mediasoupAdapter';
 
-export async function POST(request: NextRequest, { params }: { params: { roomId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ roomId: string }> }) {
   try {
-    const roomId = params.roomId;
+    const { roomId } = await params;
     const body = await request.json();
     const { transportId, dtlsParameters } = body || {};
     if (!roomId || !transportId || !dtlsParameters) return NextResponse.json({ ok: false, error: 'Missing params' }, { status: 400 });

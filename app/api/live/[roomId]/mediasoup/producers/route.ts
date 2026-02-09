@@ -5,9 +5,9 @@
 import { NextResponse } from 'next/server';
 import mediaAdapter from '@/lib/mediasoupAdapter';
 
-export async function GET(_request: Request, { params }: { params: { roomId: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ roomId: string }> }) {
   try {
-    const roomId = params.roomId;
+    const { roomId } = await params;
     if (!roomId) return NextResponse.json({ ok: false, error: 'roomId required' }, { status: 400 });
 
     await mediaAdapter.init();

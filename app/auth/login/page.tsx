@@ -148,15 +148,27 @@ export default function LoginPage() {
         // Provide more specific error messages
         console.error('[Login] SignIn error:', result.error);
         
-        if (result.error.toLowerCase().includes('callback')) {
-          setError('❌ Erreur de serveur. Le serveur d\'authentification ne répond pas. Veuillez réessayer.');
-        } else if (result.error.toLowerCase().includes('invalid') || result.status === 401) {
-          setError('❌ Email ou mot de passe incorrect. Vérifiez vos identifiants.');
-        } else if (result.status === 500) {
-          setError('❌ Erreur serveur (500). Veuillez contacter le support ou réessayer plus tard.');
-        } else {
-          setError('❌ ' + (result.error || translation.common.error));
+        // Map NextAuth error messages to user-friendly messages
+        const errorMap: Record<string, string> = {
+          'User not found': '❌ Cet utilisateur n\'existe pas. Veuillez d\'abord créer un compte.',
+          'Invalid password': '❌ Email ou mot de passe incorrect. Vérifiez vos identifiants.',
+          'No password set for this account': '❌ Ce compte n\'a pas de mot de passe défini. Veuillez réinitialiser votre mot de passe.',
+          'Invalid user email': '❌ Erreur de configuration du compte. Veuillez contacter le support.',
+          'Email and password are required': '❌ Veuillez entrer votre email et mot de passe.',
+          'Invalid credentials': '❌ Email ou mot de passe incorrect.',
+          'CredentialsSignin': '❌ Email ou mot de passe incorrect. Vérifiez vos identifiants.',
+        };
+
+        // Get user-friendly error message
+        let errorMessage = errorMap[result.error] || errorMap['CredentialsSignin'];
+        
+        // Handle database/server errors
+        if (result.error?.toLowerCase().includes('database') || 
+            result.error?.toLowerCase().includes('connection')) {
+          errorMessage = '❌ Erreur serveur. La base de données n\'est pas accessible. Veuillez réessayer.';
         }
+        
+        setError(errorMessage);
         setPassword('');
       } else if (result?.ok) {
         // Record login history

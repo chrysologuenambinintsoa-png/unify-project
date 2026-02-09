@@ -51,8 +51,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            console.error('[Auth] Missing email or password');
-            return null;
+            throw new Error('Email and password are required');
           }
 
           const user = await prisma.user.findUnique({
@@ -61,14 +60,19 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
-          if (!user || !user.email) {
-            console.error('[Auth] User not found:', credentials.email);
-            return null;
+          if (!user) {
+            console.log('[Auth] User not found:', credentials.email);
+            throw new Error('User not found');
+          }
+
+          if (!user.email) {
+            console.error('[Auth] User email is missing:', user.id);
+            throw new Error('Invalid user email');
           }
 
           if (!user.password) {
-            console.error('[Auth] User has no password set:', credentials.email);
-            return null;
+            console.log('[Auth] User has no password set:', credentials.email);
+            throw new Error('No password set for this account');
           }
 
           const isCorrectPassword = await bcrypt.compare(
@@ -77,10 +81,11 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isCorrectPassword) {
-            console.error('[Auth] Invalid password for:', credentials.email);
-            return null;
+            console.log('[Auth] Invalid password attempt for:', credentials.email);
+            throw new Error('Invalid password');
           }
 
+          console.log('[Auth] User authenticated successfully:', credentials.email);
           return {
             id: user.id,
             email: user.email,
@@ -89,8 +94,9 @@ export const authOptions: NextAuthOptions = {
             image: user.avatar || undefined,
           };
         } catch (error) {
-          console.error('[Auth] Authorize error:', error);
-          return null;
+          const msg = error instanceof Error ? error.message : 'Unknown error';
+          console.error('[Auth] Authorize error:', msg);
+          throw new Error(msg);
         }
       },
     }),

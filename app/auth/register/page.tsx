@@ -101,16 +101,27 @@ export default function RegisterPage() {
         }
       } else {
         const data = await response.json();
-        if (data.error?.includes('email')) {
-          setError('📧 ' + (data.error || 'Cette adresse email est déjà utilisée'));
-        } else if (data.error?.includes('username')) {
-          setError('👤 ' + (data.error || 'Ce nom d\'utilisateur est déjà pris'));
+        
+        // Handle specific error codes
+        if (response.status === 409) {
+          if (data.error?.toLowerCase().includes('email')) {
+            setError('📧 Cette adresse email est déjà utilisée');
+          } else if (data.error?.toLowerCase().includes('username')) {
+            setError('👤 Ce nom d\'utilisateur est déjà pris');
+          } else {
+            setError('⚠️ ' + data.error);
+          }
+        } else if (response.status === 503) {
+          setError('❌ Service temporairement indisponible. Veuillez réessayer dans quelques moments.');
+        } else if (response.status === 500) {
+          setError('❌ Erreur serveur. Veuillez contacter le support.');
         } else {
           setError('❌ ' + (data.error || translation.common.error));
         }
       }
     } catch (error) {
-      setError('❌ Une erreur est survenue. Veuillez réessayer.');
+      console.error('[Register] Error:', error);
+      setError('❌ Une erreur inattendue est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }

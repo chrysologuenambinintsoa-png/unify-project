@@ -144,29 +144,35 @@ export default function LoginPage() {
         redirect: false,
       });
 
-        if (result?.error) {
-          // Fournir un message d'erreur plus détaillé
-          if (result.error.includes('Invalid') || result.error.includes('invalid')) {
-            setError('❌ Adresse email ou mot de passe incorrect. Vérifiez vos identifiants.');
-          } else {
-            setError('❌ ' + (result.error || translation.common.error));
-          }
-        } else if (result?.ok) {
-          // Record login history
-          try {
-            await fetch('/api/auth/login-history', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email,
-                userAgent: navigator.userAgent,
-              }),
-            });
-          } catch (err) {
-            console.error('Error recording login:', err);
-          }
-          
-          router.push('/');
+      if (result?.error) {
+        // Provide more specific error messages
+        console.error('[Login] SignIn error:', result.error);
+        
+        if (result.error.toLowerCase().includes('callback')) {
+          setError('❌ Erreur de serveur. Le serveur d\'authentification ne répond pas. Veuillez réessayer.');
+        } else if (result.error.toLowerCase().includes('invalid') || result.status === 401) {
+          setError('❌ Email ou mot de passe incorrect. Vérifiez vos identifiants.');
+        } else if (result.status === 500) {
+          setError('❌ Erreur serveur (500). Veuillez contacter le support ou réessayer plus tard.');
+        } else {
+          setError('❌ ' + (result.error || translation.common.error));
+        }
+        setPassword('');
+      } else if (result?.ok) {
+        // Record login history
+        try {
+          await fetch('/api/auth/login-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email,
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            }),
+          });
+        } catch (err) {
+          console.error('Error recording login:', err);
+        }
+        
         // Save credential locally if user opted in
         try {
           if (rememberPassword) saveCredential(email, password);
@@ -174,6 +180,7 @@ export default function LoginPage() {
         } catch (e) {
           console.warn('Failed to save credential locally:', e);
         }
+        
         // Register saved device server-side when opted in
         try {
           if (rememberPassword) {
@@ -190,9 +197,13 @@ export default function LoginPage() {
         } catch (e) {
           console.warn('Failed to register saved device server-side:', e);
         }
+        
+        router.push('/');
       }
     } catch (error) {
-      setError('❌ Une erreur est survenue. Veuillez réessayer.');
+      console.error('[Login] Exception during login:', error);
+      setError('❌ Une erreur inattendue est survenue. Veuillez réessayer.');
+      setPassword('');
     } finally {
       setLoading(false);
     }

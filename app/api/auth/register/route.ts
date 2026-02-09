@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let user: any;
+
     try {
       // Check if user already exists
       const existingUser = await prisma.user.findFirst({
@@ -58,19 +60,10 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } catch (dbError) {
-      console.error('[Register] Database query failed:', dbError);
-      return NextResponse.json(
-        { error: 'Database connection failed. Please try again later.' },
-        { status: 503 }
-      );
-    }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
 
-    let user;
-    try {
       // Create user (unverified)
       user = await prisma.user.create({
         data: {
@@ -86,7 +79,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (dbError) {
       console.error('[Register] User creation failed:', dbError);
-      if (dbError instanceof Error && dbError.message.includes('unique")) {
+      if (dbError instanceof Error && dbError.message.includes('unique')) {
         return NextResponse.json(
           { error: 'Email or username already exists' },
           { status: 409 }

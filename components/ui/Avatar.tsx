@@ -9,6 +9,8 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   onClick?: () => void;
+  isOnline?: boolean;
+  showOnline?: boolean;
 }
 
 export function Avatar({
@@ -18,6 +20,8 @@ export function Avatar({
   size = 'md',
   className,
   onClick,
+  isOnline,
+  showOnline = true,
 }: AvatarProps) {
   const [errored, setErrored] = useState(false);
   const sizes = {
@@ -30,7 +34,7 @@ export function Avatar({
   return (
     <div
       className={cn(
-        'rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0',
+        'relative rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0',
         sizes[size],
         onClick && 'cursor-pointer hover:ring-2 hover:ring-primary-dark transition-all',
         className
@@ -68,6 +72,10 @@ export function Avatar({
         )}>
           {name ? getInitials(name) : '?'}
         </span>
+      )}
+      {/* Online presence dot */}
+      {showOnline && isOnline && (
+        <span className="absolute right-0 bottom-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white dark:ring-gray-800" />
       )}
     </div>
   );

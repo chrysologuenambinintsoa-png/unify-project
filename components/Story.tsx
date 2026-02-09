@@ -2,12 +2,18 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StoryProps {
   story: Story;
   isUserStory?: boolean;
   onViewStory?: (story: Story) => void;
   onCreateStory?: () => void;
+  currentUser?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
 }
 
 interface Story {
@@ -25,8 +31,9 @@ interface Story {
   viewed?: boolean;
 }
 
-export default function Story({ story, isUserStory = false, onViewStory, onCreateStory }: StoryProps) {
+export default function Story({ story, isUserStory = false, onViewStory, onCreateStory, currentUser }: StoryProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { translation } = useLanguage();
 
   const handleView = () => {
     if (isUserStory && onCreateStory) {
@@ -61,7 +68,7 @@ export default function Story({ story, isUserStory = false, onViewStory, onCreat
           {isUserStory && (
             <div className="absolute inset-0 bg-black bg-opacity-30 flex flex-col items-center justify-center">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-full flex items-center justify-center text-white text-xl sm:text-2xl mb-2 border-4 border-white">+</div>
-              <span className="text-white text-xs sm:text-sm font-semibold text-center px-2">Créer</span>
+              <span className="text-white text-xs sm:text-sm font-semibold text-center px-2">{translation.story?.createStory || 'Create'}</span>
             </div>
           )}
 

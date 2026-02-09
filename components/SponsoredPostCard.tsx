@@ -67,14 +67,16 @@ export default function SponsoredPostCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md border border-blue-200 overflow-hidden hover:shadow-lg transition cursor-pointer"
+      className="bg-gradient-to-br from-primary-dark/5 to-accent-dark/5 rounded-lg shadow-md border border-primary-dark/15 overflow-hidden hover:shadow-lg transition cursor-pointer"
       onClick={handleClick}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-blue-100 border-b border-blue-200">
+      <div className="flex items-center justify-between p-4 bg-primary-dark/5 border-b border-primary-dark/10">
         <div className="flex items-center space-x-2">
-          <Zap size={18} className="text-blue-600" />
-          <span className="text-xs font-semibold text-blue-600 uppercase">Sponsorisé</span>
+          <Zap size={18} className="text-primary-dark" />
+          <span className="sponsored-text">
+            📢 Sponsorisé
+          </span>
         </div>
         <p className="text-xs text-gray-600">Par {advertiser}</p>
       </div>
@@ -113,7 +115,7 @@ export default function SponsoredPostCard({
                 e.stopPropagation();
                 handleClick();
               }}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center space-x-2"
+              className="flex-1 btn-primary-dark font-semibold py-2 px-4 rounded-lg transition flex items-center justify-center space-x-2"
             >
               <span>En savoir plus</span>
               <ExternalLink size={16} />

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Settings, AlertCircle, Lock, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { PageMembers } from '@/components/PageMembers';
@@ -34,6 +35,7 @@ export function PageManagementPanel({
     description: pageData.description || '',
     visibility: pageData.visibility,
   });
+  const router = useRouter();
 
   const handleSaveSettings = async () => {
     try {
@@ -80,7 +82,7 @@ export function PageManagementPanel({
 
       setSuccess('Page deleted successfully. Redirecting...');
       setTimeout(() => {
-        window.location.href = '/pages';
+        router.push('/pages');
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error deleting page');

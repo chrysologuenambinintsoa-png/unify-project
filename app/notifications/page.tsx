@@ -154,15 +154,7 @@ export default function NotificationsPage() {
           {/* Notifications List */}
           {loading ? (
             <div className="text-center py-12">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                className="inline-block"
-              >
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              </motion.div>
-              <p className="mt-4 text-gray-500">Chargement...</p>
-              <p className="mt-4 text-gray-500">Chargement des notifications...</p>
+              <p className="text-gray-500">Chargement des notifications...</p>
             </div>
           ) : error ? (
             <motion.div
@@ -202,7 +194,7 @@ export default function NotificationsPage() {
             >
               <Bell className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Aucune notification
+                {translation.pageLabels?.noNotifications || 'No notifications'}
               </h3>
               <p className="text-gray-500">
                 Vous n'avez pas de notifications pour le moment.

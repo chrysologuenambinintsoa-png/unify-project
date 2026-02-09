@@ -41,6 +41,12 @@ export default function MessagesPage() {
   const [originalMessages, setOriginalMessages] = useState<Array<any> | null>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type?: 'success'|'error' } | null>(null);
+  const [conversationLoading, setConversationLoading] = useState(false);
+  const [showConversationMenu, setShowConversationMenu] = useState(false);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [friendsList, setFriendsList] = useState<any[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [conversations, setConversations] = useState<any[]>([]);
   const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
@@ -49,6 +55,7 @@ export default function MessagesPage() {
 
     const fetchConversation = async () => {
       try {
+        setConversationLoading(true);
         const url = typeof window !== 'undefined' 
           ? `${window.location.origin}/api/messages?userId=${selectedConversation}`
           : `/api/messages?userId=${selectedConversation}`;
@@ -87,10 +94,17 @@ export default function MessagesPage() {
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setConversationLoading(false);
       }
     };
 
     fetchConversation();
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    // Close conversation menu when a conversation is selected
+    setShowConversationMenu(false);
   }, [selectedConversation]);
 
   const handleSendMessage = async () => {
@@ -235,6 +249,20 @@ export default function MessagesPage() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteConfirmationData, setDeleteConfirmationData] = useState<{ messageId: string; isMine: boolean } | null>(null);
   const [showConversationList, setShowConversationList] = useState(false);
+  const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+  const [messageMenuCoords, setMessageMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const [showOnline, setShowOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const v = localStorage.getItem('showOnlineStatus');
+        if (v !== null) setShowOnline(v === 'true');
+      }
+    } catch (e) {}
+  }, []);
+
+  const isRecent = (time?: string) => !!time && (Date.now() - new Date(time).getTime()) < 5 * 60 * 1000;
 
   const handleMessagePointerDown = (e: any, message: any) => {
     // start long-press timer
@@ -389,7 +417,7 @@ export default function MessagesPage() {
     } catch (e) {
       console.error('Send heart failed', e);
       if (UI_CONFIG.SHOW_ERROR_TOAST) {
-        setToast({ message: 'Impossible d\'envoyer le cœur', type: 'error' });
+        setToast({ message: translation.messages?.errorSendingHeart || 'Unable to send heart', type: 'error' });
         setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
       }
     } finally {
@@ -441,6 +469,80 @@ export default function MessagesPage() {
     }
   };
 
+  const markAllAsRead = async () => {
+    try {
+      const res = await fetch('/api/messages/mark-as-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to mark as read');
+      if (UI_CONFIG.SHOW_SUCCESS_TOAST) {
+        setToast({ message: 'Toutes les conversations marquées comme lues', type: 'success' });
+        setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
+      }
+    } catch (e) {
+      console.error('Mark as read failed:', e);
+      alert('Impossible de marquer les conversations comme lues');
+    } finally {
+      setShowConversationMenu(false);
+    }
+  };
+
+  const clearAllConversations = async () => {
+    const ok = window.confirm('Supprimer toutes les conversations ? Cette action est irréversible.');
+    if (!ok) return;
+    try {
+      const res = await fetch('/api/messages/clear-all', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to clear conversations');
+      setMessages([]);
+      setSelectedConversation(null);
+      setSelectedUser(null);
+      setConversations([]);
+      if (UI_CONFIG.SHOW_SUCCESS_TOAST) {
+        setToast({ message: 'Toutes les conversations supprimées', type: 'success' });
+        setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
+      }
+    } catch (e) {
+      console.error('Clear conversations failed:', e);
+      alert('Impossible de supprimer les conversations');
+    } finally {
+      setShowConversationMenu(false);
+    }
+  };
+
+  const createNewMessage = async () => {
+    setShowConversationMenu(false);
+    setShowNewMessageModal(true);
+    setFriendsLoading(true);
+    try {
+      const res = await fetch('/api/friends/list');
+      if (res.ok) {
+        const data = await res.json();
+        setFriendsList(data.friends || []);
+      }
+    } catch (e) {
+      console.error('Error loading friends:', e);
+      setToast({ message: 'Erreur au chargement de la liste d\'amis', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const handleSelectFriendForMessage = (friendId: string) => {
+    setSelectedConversation(friendId);
+    setShowNewMessageModal(false);
+  };
+
+  const latestMessageTime = messages.reduce((acc: string | undefined, m: any) => {
+    if (!m || !m.time) return acc;
+    if (!acc) return m.time;
+    return new Date(m.time) > new Date(acc) ? m.time : acc;
+  }, undefined as string | undefined);
 
   return (
     <MainLayout>
@@ -466,14 +568,31 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="p-4 border-b border-gray-200 bg-white">
+          <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-40">
             <div className="flex items-center justify-between">
               <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                 {translation.nav.messages}
               </h1>
-              <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors hidden md:block">
-                <MoreVertical className="w-5 h-5" />
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setShowConversationMenu(!showConversationMenu)}
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                {showConversationMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-yellow-50 rounded-lg shadow-xl z-50 border border-yellow-200">
+                    <button onClick={createNewMessage} className="w-full text-left px-4 py-2 hover:bg-yellow-100 text-gray-700 text-sm border-b border-yellow-200 transition-colors">
+                      ✏️ Nouveau message
+                    </button>
+                    <button onClick={markAllAsRead} className="w-full text-left px-4 py-2 hover:bg-yellow-100 text-gray-700 text-sm border-b border-yellow-200 transition-colors">
+                      ✓ Marquer tout comme lu
+                    </button>
+                    <button onClick={clearAllConversations} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm transition-colors">
+                      🗑️ Effacer les conversations
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -490,7 +609,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-white w-full md:w-2/3">
+        <div className={`${showConversationList ? 'hidden md:flex' : 'flex-1 flex flex-col'} bg-white w-full md:w-2/3`}>
           {selectedConversation ? (
             <>
               {/* Chat Header */}
@@ -505,7 +624,7 @@ export default function MessagesPage() {
                   </button>
 
                   <Link href={`/users/${selectedUser?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0">
-                    <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="md" className="w-10 md:w-12 h-10 md:h-12 cursor-pointer" />
+                    <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="md" className="w-10 md:w-12 h-10 md:h-12 cursor-pointer" isOnline={isRecent(latestMessageTime)} showOnline={showOnline} />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link href={`/users/${selectedUser?.id}`} className="block hover:opacity-75 transition-opacity">
@@ -517,13 +636,13 @@ export default function MessagesPage() {
                   </div>
                   <div className="relative flex-shrink-0">
                     <button 
-                      onClick={() => setShowHeaderMenu(!showHeaderMenu)}
-                      className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                    {showHeaderMenu && (
-                      <div className="absolute right-0 mt-2 w-48 md:w-56 bg-white rounded-lg shadow-lg z-30 border border-gray-200">
+                        onClick={() => setShowHeaderMenu(!showHeaderMenu)}
+                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {showHeaderMenu && (
+                        <div className="absolute right-2 md:right-0 mt-2 w-48 md:w-56 max-w-[90vw] bg-white rounded-lg shadow-lg z-[99999] border border-gray-200">
                         <button onClick={openContactInfo} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
                           Informations du contact
                         </button>
@@ -562,7 +681,7 @@ export default function MessagesPage() {
                       >
                         {/* Avatar */}
                         <Link href={`/users/${message.sender?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0 mb-1">
-                          <Avatar src={message.sender?.avatar || null} name={message.sender?.fullName} size="sm" className="w-10 h-10" />
+                          <Avatar src={message.sender?.avatar || null} name={message.sender?.fullName} size="sm" className="w-10 h-10" isOnline={isRecent(message.time)} showOnline={showOnline} />
                         </Link>
 
                         {/* Message Bubble */}
@@ -570,16 +689,20 @@ export default function MessagesPage() {
                           className={`max-w-xs md:max-w-sm ${message.isMine ? 'items-start' : 'items-end'} flex flex-col cursor-pointer`}
                           onClick={() => setSelectedMessageId(message.id)}
                         >
+                            <div className="relative">
+                                {/* kept legacy menu placeholder (fixed position) — actual per-bubble menu added inside bubble */}
+                            </div>
                           <p className={`text-xs font-semibold mb-1 ${message.isMine ? 'text-left text-primary' : 'text-right text-gray-600'}`}>
                             {message.isMine ? 'Vous' : message.sender?.fullName}
                           </p>
                           {message.content === '💙' ? (
-                            <div className="flex items-center justify-center">
+                            <div className="relative flex items-center justify-center">
+                              {/* per-message actions removed to simplify UI (no three-dot menu) */}
                               <HeartIcon className="w-12 h-12" fill={true} />
                             </div>
                           ) : message.isDeleted ? (
                             <div
-                              className={`px-4 py-3 rounded-2xl font-italic italic text-gray-500 transition-colors ${
+                              className={`relative px-4 py-3 rounded-2xl font-italic italic text-gray-500 transition-colors ${
                                 selectedMessageId === message.id ? 'ring-2 ring-primary' : ''
                               } ${
                                 message.isMine
@@ -587,6 +710,7 @@ export default function MessagesPage() {
                                   : 'bg-gray-100 rounded-br-md'
                               }`}
                             >
+                              {/* per-message actions removed to simplify UI (no three-dot menu) */}
                               <p className="text-xs md:text-sm">{message.content}</p>
                             </div>
                           ) : (
@@ -600,6 +724,7 @@ export default function MessagesPage() {
                               }`}
                               style={{ position: 'relative' }}
                             >
+                              {/* per-message actions removed to simplify UI (no three-dot menu) */}
                               <p className="text-xs md:text-sm">{message.content}</p>
                               {message.image && (
                                 <img src={message.image} alt="attachment" className="w-full mt-1 md:mt-2 rounded max-w-xs" />
@@ -654,7 +779,7 @@ export default function MessagesPage() {
                         className="flex items-end gap-3"
                       >
                         <Link href={`/users/${selectedUser?.id}`} className="hover:opacity-75 transition-opacity flex-shrink-0 mb-1">
-                          <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="sm" className="w-10 h-10" />
+                          <Avatar src={selectedUser?.avatar || null} name={selectedUser?.fullName} size="sm" className="w-10 h-10" isOnline={isRecent(latestMessageTime)} showOnline={showOnline} />
                         </Link>
                         <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-2">
                           <div className="flex space-x-1">
@@ -718,11 +843,7 @@ export default function MessagesPage() {
                       disabled={!newMessage.trim() || isSending}
                       className="flex-shrink-0 p-2 md:p-2.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 flex items-center justify-center"
                     >
-                      {isSending ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Send className="w-4 md:w-5 h-4 md:h-5" />
-                      )}
+                      <Send className="w-4 md:w-5 h-4 md:h-5" />
                     </button>
 
                     <button
@@ -781,7 +902,7 @@ export default function MessagesPage() {
 
         {/* Long-press action menu */}
               {longPressMessage && menuPos && (
-                <div style={{ position: 'fixed', left: menuPos.x, top: menuPos.y, zIndex: 9999 }}>
+                <div style={{ position: 'fixed', left: menuPos.x, top: menuPos.y, zIndex: 20 }}>
                   <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-xs md:max-w-sm">
                     <button onClick={() => reactToMessage(longPressMessage.id, '❤️')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">❤️ Aimer</button>
                     <button onClick={() => reactToMessage(longPressMessage.id, '👍')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">👍 J'aime</button>
@@ -804,7 +925,7 @@ export default function MessagesPage() {
               )}
       {/* Media Modal */}
       {showMediaModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40">
           <div className="bg-white w-[95%] md:w-[90%] max-w-3xl rounded-lg p-3 md:p-4 mx-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
               <h3 className="text-base md:text-lg font-semibold">Médias de la conversation</h3>
@@ -839,7 +960,7 @@ export default function MessagesPage() {
       )}
       {/* Toast */}
       {toast && (
-        <div className="fixed z-[20000] right-6 bottom-6">
+        <div className="fixed z-30 right-6 bottom-6">
           <div className={`px-4 py-2 rounded shadow-lg text-white ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}>
             {toast.message}
           </div>
@@ -852,7 +973,7 @@ export default function MessagesPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10001]"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-30"
           onClick={() => {
             setShowDeleteConfirmation(false);
             setDeleteConfirmationData(null);
@@ -911,6 +1032,72 @@ export default function MessagesPage() {
               >
                 Annuler
               </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* New Message Modal */}
+      {showNewMessageModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowNewMessageModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-gray-900">Nouveau message</h3>
+                <button
+                  onClick={() => setShowNewMessageModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Friends List */}
+            <div className="flex-1 overflow-y-auto">
+              {friendsLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-gray-500">Chargement...</div>
+                </div>
+              ) : friendsList.length === 0 ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-gray-500 text-center">Aucun ami trouvé</div>
+                </div>
+              ) : (
+                <div className="space-y-1 p-2">
+                  {friendsList.map((friend) => (
+                    <motion.button
+                      key={friend.id}
+                      whileHover={{ backgroundColor: '#f3f4f6' }}
+                      onClick={() => handleSelectFriendForMessage(friend.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left hover:bg-gray-100"
+                    >
+                      <img
+                        src={friend.avatar || '/placeholder-avatar.png'}
+                        alt={friend.fullName}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{friend.fullName}</p>
+                        <p className="text-sm text-gray-500 truncate">@{friend.username}</p>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>

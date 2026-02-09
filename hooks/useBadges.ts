@@ -48,8 +48,17 @@ export const useBadges = () => {
       });
 
       if (!response.ok) {
-        console.error('Badges API error:', response.status, response.statusText);
-        setError(`Error ${response.status}: ${response.statusText}`);
+        console.warn(`Badges API error: ${response.status} ${response.statusText}`);
+        setError(`Error ${response.status}`);
+        setBadges({
+          home: 0,
+          friends: 0,
+          messages: 0,
+          notifications: 0,
+          groups: 0,
+          pages: 0,
+          stats: { friends: 0, groups: 0 }
+        });
         return;
       }
 

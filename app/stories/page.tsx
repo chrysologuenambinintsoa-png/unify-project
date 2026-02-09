@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Stories from "@/components/Stories";
+import { LoadingPage } from "@/components/LoadingPage";
 import { Loader } from "lucide-react";
 
 interface Story {
@@ -59,14 +60,7 @@ export default function StoriesPage() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-white to-accent">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-gray-600 font-medium">Loading stories...</p>
-        </div>
-      </div>
-    );
+    return <LoadingPage message="Chargement des histoires..." />;
   }
 
   return (

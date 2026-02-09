@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { CopyrighFooter } from '@/components/CopyrighFooter';
-import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function TermsPage() {
@@ -80,11 +79,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark">
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
+        <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">
             Conditions d'utilisation 📋
           </h1>
@@ -94,18 +89,13 @@ export default function TermsPage() {
           <p className="text-white/60 text-sm mt-2">
             Dernière mise à jour : Février 2026
           </p>
-        </motion.div>
+        </div>
 
         {/* Terms Sections */}
         <div className="space-y-4 mb-12">
           {sections.map((section, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-colors">
+            <div key={index}>
+              <Card className="bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40">
                 <CardContent className="p-6">
                   <h3 className="text-white font-bold text-lg mb-3">
                     {section.title}
@@ -115,17 +105,12 @@ export default function TermsPage() {
                   </p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Acceptance Checkbox */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 mb-8"
-        >
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 mb-8">
           <label className="flex items-center space-x-4 cursor-pointer">
             <input
               type="checkbox"
@@ -137,27 +122,20 @@ export default function TermsPage() {
               J'accepte les conditions d'utilisation et je comprends que je dois respecter les règles de la communauté
             </span>
           </label>
-        </motion.div>
+        </div>
 
         {/* Navigation Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => router.back()}
-            className="px-8 py-3 bg-white/10 border-2 border-white/30 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
+            className="px-8 py-3 bg-white/10 border-2 border-white/30 text-white rounded-xl font-bold hover:bg-white/20"
           >
             Retour
           </button>
           <Link href={accepted ? '/' : '#'}>
-            <motion.button
-              whileHover={accepted ? { scale: 1.05 } : {}}
-              whileTap={accepted ? { scale: 0.95 } : {}}
+            <button
               disabled={!accepted}
-              className={`flex items-center justify-center space-x-2 px-8 py-3 rounded-xl font-bold transition-colors shadow-xl ${
+              className={`flex items-center justify-center space-x-2 px-8 py-3 rounded-xl font-bold shadow-xl ${
                 accepted
                   ? 'bg-white text-gray-900 hover:bg-gray-100 cursor-pointer'
                   : 'bg-gray-400 text-gray-600 cursor-not-allowed'
@@ -165,21 +143,16 @@ export default function TermsPage() {
             >
               <span>Acceder à Unify</span>
               <ArrowRight className="w-5 h-5" />
-            </motion.button>
+            </button>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Info Message */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-8 mb-12"
-        >
+        <div className="text-center mt-8 mb-12">
           <p className="text-white/60 text-sm">
             ✓ Vous pouvez modifier vos paramètres à tout moment dans les réglages de votre compte
           </p>
-        </motion.div>
+        </div>
 
         <CopyrighFooter />
       </div>

@@ -13,6 +13,7 @@ interface SuggestedFriend {
   avatar: string;
   mutualFriends?: number;
   mutualFriendsCount?: number;
+  friendsCount?: number;
 }
 
 interface FriendSuggestionsProps {
@@ -41,9 +42,17 @@ export function FriendSuggestions({ compact = false }: FriendSuggestionsProps) {
   const fetchSuggestions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/friends/suggestions');
+      const res = await fetch('/api/friends/suggestions', {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) {
+        console.warn(`Friends suggestions API error: ${res.status}`);
+        setSuggestions([]);
+        return;
+      }
       const data = await res.json();
-      // API returns { suggestions: [...] }
       setSuggestions(data?.suggestions ?? []);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -122,7 +131,7 @@ export function FriendSuggestions({ compact = false }: FriendSuggestionsProps) {
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Suggestions d'amis</h3>
         <div className="space-y-3 md:space-y-4">
           {suggestions.slice(0, compact ? 3 : 5).map((suggestion) => (
@@ -142,7 +151,11 @@ export function FriendSuggestions({ compact = false }: FriendSuggestionsProps) {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 dark:text-white text-sm md:text-base truncate">{suggestion.fullName}</p>
-                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">{(suggestion.mutualFriends ?? suggestion.mutualFriendsCount ?? 0)} amis</p>
+                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {(typeof suggestion.friendsCount === 'number'
+                      ? suggestion.friendsCount
+                      : (suggestion.mutualFriends ?? suggestion.mutualFriendsCount ?? 0))} amis
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">

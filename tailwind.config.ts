@@ -12,7 +12,7 @@ const config: Config = {
       colors: {
         primary: {
           dark: '#0A2342',    // Bleu foncé du logo
-          DEFAULT: '#0D2E5F',
+          DEFAULT: '#0A2342',
           light: '#1B3F7F',
         },
         accent: {

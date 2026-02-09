@@ -139,6 +139,7 @@ export const authOptions: NextAuthOptions = {
           session.user.username = dbUser.username || undefined;
           session.user.fullName = dbUser.fullName || undefined;
           session.user.image = dbUser.avatar || undefined;
+          session.user.avatar = dbUser.avatar || undefined;
         }
       }
       return session;

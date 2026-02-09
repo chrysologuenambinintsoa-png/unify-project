@@ -5,34 +5,22 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HomeActivityProvider } from '@/contexts/HomeActivityContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { SplashScreen } from './SplashScreen';
+import { PageProgressBar } from './PageProgressBar';
 import { useState, useEffect } from 'react';
 
 function ProvidersContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Show splash only if loading or unauthenticated (never for authenticated sessions)
+  const shouldShowSplash = status === 'loading';
+  const [isInitialLoad, setIsInitialLoad] = useState(!shouldShowSplash);
 
   useEffect(() => {
-    // Only show splash once per browser session. Use sessionStorage to persist flag.
-    try {
-      const shown = sessionStorage.getItem('unify:splashShown');
-      if (shown === '1') {
-        setIsInitialLoad(false);
-        return;
-      }
-    } catch (e) {
-      // ignore (SSR or restricted storage)
-    }
-
+    // When status changes from loading to anything else, hide splash
     if (status !== 'loading') {
       const timer = setTimeout(() => {
-        try {
-          sessionStorage.setItem('unify:splashShown', '1');
-        } catch (e) {
-          // ignore
-        }
         setIsInitialLoad(false);
       }, 500);
-
       return () => clearTimeout(timer);
     }
   }, [status]);
@@ -40,6 +28,7 @@ function ProvidersContent({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SplashScreen isLoading={isInitialLoad} />
+      <PageProgressBar />
       {children}
     </>
   );

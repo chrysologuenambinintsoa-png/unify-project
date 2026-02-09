@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion } from 'framer-motion';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { Search, TrendingUp, Users, Hash, Heart, MessageCircle, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -42,33 +42,101 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [trendingLoaded, setTrendingLoaded] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+  const [topicsLoaded, setTopicsLoaded] = useState(false);
+  const [activeTabLoading, setActiveTabLoading] = useState(false);
 
   useEffect(() => {
     fetchExploreData();
   }, []);
 
+  useEffect(() => {
+    // Load specific tab data when user switches tabs
+    if (activeTab === 'trending' && !trendingLoaded) {
+      loadTrendingData();
+    } else if (activeTab === 'people' && !usersLoaded) {
+      loadUsersData();
+    } else if (activeTab === 'topics' && !topicsLoaded) {
+      loadTopicsData();
+    }
+  }, [activeTab, trendingLoaded, usersLoaded, topicsLoaded]);
+
+  const loadTrendingData = async () => {
+    try {
+      setActiveTabLoading(true);
+      const response = await fetchWithTimeout('/api/explore', undefined, 10000);
+      if (response.ok) {
+        const data = await response.json();
+        setTrendingPosts(data.trendingPosts || []);
+        setTrendingLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error loading trending:', err);
+    } finally {
+      setActiveTabLoading(false);
+    }
+  };
+
+  const loadUsersData = async () => {
+    try {
+      setActiveTabLoading(true);
+      const response = await fetchWithTimeout('/api/explore', undefined, 10000);
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedUsers(data.suggestedUsers || []);
+        setUsersLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error loading users:', err);
+    } finally {
+      setActiveTabLoading(false);
+    }
+  };
+
+  const loadTopicsData = async () => {
+    try {
+      setActiveTabLoading(true);
+      const response = await fetchWithTimeout('/api/explore/trends', undefined, 10000);
+      if (response.ok) {
+        const data = await response.json();
+        setTrendingTopics(Array.isArray(data) ? data : []);
+        setTopicsLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error loading topics:', err);
+    } finally {
+      setActiveTabLoading(false);
+    }
+  };
+
   const fetchExploreData = async () => {
     try {
       setLoading(true);
       const [exploreRes, trendsRes] = await Promise.all([
-        fetch('/api/explore'),
-        fetch('/api/explore/trends'),
+        fetchWithTimeout('/api/explore', undefined, 10000),
+        fetchWithTimeout('/api/explore/trends', undefined, 10000),
       ]);
       
-      if (!exploreRes.ok) {
-        throw new Error('Erreur lors du chargement des données d\'exploration');
+      if (exploreRes.ok) {
+        const data = await exploreRes.json();
+        setTrendingPosts(data.trendingPosts || []);
+        setSuggestedUsers(data.suggestedUsers || []);
+        setTrendingLoaded(true);
+        setUsersLoaded(true);
       }
-      
-      const data = await exploreRes.json();
-      setTrendingPosts(data.trendingPosts || []);
-      setSuggestedUsers(data.suggestedUsers || []);
       
       if (trendsRes.ok) {
         const trendsData = await trendsRes.json();
         setTrendingTopics(Array.isArray(trendsData) ? trendsData : []);
+        setTopicsLoaded(true);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      if ((err as any)?.name === 'AbortError') {
+        setError('Le chargement a expiré. Vérifiez votre connexion et réessayez.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      }
     } finally {
       setLoading(false);
     }
@@ -92,11 +160,7 @@ export default function ExplorePage() {
 
   return (
     <MainLayout>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             {translation.nav.explore}
@@ -158,11 +222,9 @@ export default function ExplorePage() {
                 </div>
               ) : (
                 trendingPosts.map((post) => (
-                  <motion.div
+                  <div
                     key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition"
+                    className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md"
                   >
                     <div className="flex items-start space-x-4 mb-4">
                       <img
@@ -188,7 +250,7 @@ export default function ExplorePage() {
                         </span>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))
               )}
             </div>
@@ -215,10 +277,8 @@ export default function ExplorePage() {
                 </div>
               ) : (
                 suggestedUsers.map((user) => (
-                  <motion.div
+                  <div
                     key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-4 flex-1">
@@ -242,7 +302,7 @@ export default function ExplorePage() {
                     >
                       {followingIds.has(user.id) ? 'Demande envoyée' : 'Ajouter'}
                     </Button>
-                  </motion.div>
+                  </div>
                 ))
               )}
             </div>
@@ -280,17 +340,14 @@ export default function ExplorePage() {
                     const icon = icons[index % icons.length];
 
                     return (
-                      <motion.div
+                      <div
                         key={topic.name}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: (index % 4) * 0.1 }}
-                        className={`bg-gradient-to-br ${color} p-6 rounded-lg shadow-sm text-white cursor-pointer hover:shadow-lg transition transform hover:scale-105`}
+                        className={`bg-gradient-to-br ${color} p-6 rounded-lg shadow-sm text-white cursor-pointer hover:shadow-lg`}
                       >
                         <div className="text-3xl mb-3">{icon}</div>
                         <h3 className="font-bold text-lg">{topic.name}</h3>
                         <p className="text-white/80 text-sm">{topic.posts} publications</p>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
@@ -298,7 +355,7 @@ export default function ExplorePage() {
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </MainLayout>
   );
 }

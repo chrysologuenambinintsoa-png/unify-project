@@ -266,9 +266,9 @@ export function PostCard({ postId }: { postId: string }) {
     }
   };
 
-  if (loading) return <div className="p-4">Chargement du post...</div>;
+  if (loading) return null;
   if (error) return <div className="p-4 text-red-500">Erreur: {error}</div>;
-  if (!post) return <div className="p-4">Post non trouvé</div>;
+  if (!post) return null;
 
   return (
     <div className="border rounded-lg p-4 mb-4">
@@ -563,7 +563,7 @@ export function CreatePostForm({ onPostCreated }: { onPostCreated: () => void })
 export function PostsFeed() {
   const { posts, loading, error, refetch } = usePosts();
 
-  if (loading) return <div className="p-4">Chargement des posts...</div>;
+  if (loading) return null;
   if (error) return <div className="p-4 text-red-500">Erreur: {error}</div>;
 
   return (

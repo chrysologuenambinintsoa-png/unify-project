@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { X, Eye, Heart, Plus } from 'lucide-react';
@@ -124,10 +123,7 @@ export default function PublishedStoriesPage() {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des stories...</p>
-          </div>
+          <></>
         </div>
       </MainLayout>
     );
@@ -135,12 +131,7 @@ export default function PublishedStoriesPage() {
 
   return (
     <MainLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-7xl mx-auto"
-      >
+      <div className="max-w-7xl mx-auto">
         {/* En-tête */}
         <div className="mb-8 flex items-center justify-between">
           <div>
@@ -156,51 +147,45 @@ export default function PublishedStoriesPage() {
           </div>
           <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
             <Plus className="w-5 h-5" />
-            <span>Créer une story</span>
+            <span>{translation.story?.createStory || 'Create story'}</span>
           </Button>
         </div>
 
         {/* Erreur */}
         {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6"
           >
             {error}
-          </motion.div>
+          </div>
         )}
 
         {/* Grille de Stories */}
         {stories.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              <AnimatePresence>
+              <>
                 {stories.map((story, index) => (
-                  <motion.div
+                  <div
                     key={story.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
                     className="cursor-pointer group"
                     onClick={() => setSelectedStory(story)}
                   >
                     {/* Story Card */}
-                    <div className="relative h-96 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg hover:shadow-2xl transition-all duration-300">
+                    <div className="relative h-96 rounded-3xl overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-lg hover:shadow-2xl">
                       {/* Image/Video */}
                       {story.imageUrl && (
                         <Image
                           src={story.imageUrl}
                           alt="Story"
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover group-hover:scale-105"
                         />
                       )}
                       {story.videoUrl && !story.imageUrl && (
                         <video
                           src={story.videoUrl}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105"
                         />
                       )}
                       {story.text && !story.imageUrl && !story.videoUrl && (
@@ -212,11 +197,11 @@ export default function PublishedStoriesPage() {
                       )}
 
                       {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100" />
 
                       {/* Text overlay au survol */}
                       {story.text && (story.imageUrl || story.videoUrl) && (
-                        <div className="absolute inset-0 p-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute inset-0 p-4 flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <p className="text-white text-center line-clamp-3 font-semibold text-lg">
                             {story.text}
                           </p>
@@ -265,159 +250,147 @@ export default function PublishedStoriesPage() {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
-              </AnimatePresence>
+              </>
             </div>
 
             {/* Bouton Charger plus */}
             {pagination.hasMore && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={handleLoadMore}
                 disabled={loading}
-                className="w-full py-3 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Chargement...' : 'Charger plus'}
-              </motion.button>
+              </button>
             )}
           </>
         ) : (
           /* Aucune story */
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <div
             className="text-center py-12"
           >
             <div className="text-6xl mb-4">📖</div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Aucune story publiée
+              {translation.story?.noStoriesPublished || 'No stories published'}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Soyez le premier à partager une story !
+              {translation.story?.beFirstToShare || 'Be the first to share a story!'}
             </p>
-          </motion.div>
+          </div>
         )}
 
         {/* Modal de détail */}
-        <AnimatePresence>
-          {selectedStory && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedStory(null)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        {selectedStory && (
+          <div
+            onClick={() => setSelectedStory(null)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-gray-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
             >
-              <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-gray-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedStory(null)}
+                className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setSelectedStory(null)}
-                  className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <X className="w-6 h-6" />
+              </button>
 
-                {/* Image/Video */}
-                {selectedStory.imageUrl && (
-                  <div className="relative w-full h-96">
-                    <Image
-                      src={selectedStory.imageUrl}
-                      alt="Story detail"
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  </div>
-                )}
-                {selectedStory.videoUrl && (
-                  <video
-                    src={selectedStory.videoUrl}
-                    controls
-                    className="w-full h-96 object-cover"
-                    autoPlay
+              {/* Image/Video */}
+              {selectedStory.imageUrl && (
+                <div className="relative w-full h-96">
+                  <Image
+                    src={selectedStory.imageUrl}
+                    alt="Story detail"
+                    fill
+                    className="object-cover"
+                    priority
                   />
-                )}
-                {selectedStory.text && !selectedStory.imageUrl && !selectedStory.videoUrl && (
-                  <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
-                    <p className="text-white text-center text-2xl font-bold px-8">
-                      {selectedStory.text}
+                </div>
+              )}
+              {selectedStory.videoUrl && (
+                <video
+                  src={selectedStory.videoUrl}
+                  controls
+                  className="w-full h-96 object-cover"
+                  autoPlay
+                />
+              )}
+              {selectedStory.text && !selectedStory.imageUrl && !selectedStory.videoUrl && (
+                <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
+                  <p className="text-white text-center text-2xl font-bold px-8">
+                    {selectedStory.text}
+                  </p>
+                </div>
+              )}
+
+              {/* Contenu */}
+              <div className="p-6">
+                {/* Utilisateur */}
+                <Link
+                  href={`/users/${selectedStory.user.id}`}
+                  className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity"
+                >
+                  {selectedStory.user.avatar && (
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden border-3 border-gray-200 dark:border-gray-600">
+                      <Image
+                        src={selectedStory.user.avatar}
+                        alt={selectedStory.user.username}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                        {selectedStory.user.fullName || selectedStory.user.username}
+                      </h3>
+                      {selectedStory.user.isVerified && (
+                        <span className="text-blue-500">✓</span>
+                      )}
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      @{selectedStory.user.username}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                      {formatDate(selectedStory.createdAt)}
                     </p>
                   </div>
+                </Link>
+
+                {/* Texte */}
+                {selectedStory.text && (selectedStory.imageUrl || selectedStory.videoUrl) && (
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 whitespace-pre-wrap text-lg">
+                    {selectedStory.text}
+                  </p>
                 )}
 
-                {/* Contenu */}
-                <div className="p-6">
-                  {/* Utilisateur */}
-                  <Link
-                    href={`/users/${selectedStory.user.id}`}
-                    className="flex items-center gap-4 mb-6 hover:opacity-80 transition-opacity"
-                  >
-                    {selectedStory.user.avatar && (
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden border-3 border-gray-200 dark:border-gray-600">
-                        <Image
-                          src={selectedStory.user.avatar}
-                          alt={selectedStory.user.username}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          {selectedStory.user.fullName || selectedStory.user.username}
-                        </h3>
-                        {selectedStory.user.isVerified && (
-                          <span className="text-blue-500">✓</span>
-                        )}
-                      </div>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        @{selectedStory.user.username}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                        {formatDate(selectedStory.createdAt)}
-                      </p>
-                    </div>
-                  </Link>
-
-                  {/* Texte */}
-                  {selectedStory.text && (selectedStory.imageUrl || selectedStory.videoUrl) && (
-                    <p className="text-gray-700 dark:text-gray-300 mb-6 whitespace-pre-wrap text-lg">
-                      {selectedStory.text}
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {selectedStory.stats.viewCount}
                     </p>
-                  )}
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {selectedStory.stats.viewCount}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Vues</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {selectedStory.stats.reactionCount}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Réactions</p>
-                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Vues</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {selectedStory.stats.reactionCount}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Réactions</p>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+              </div>
+            </div>
+          </div>
+        )}
 
-      <CreateStoryModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateStory} />
+        <CreateStoryModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateStory} />
+      </div>
     </MainLayout>
   );
 }

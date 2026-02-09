@@ -1,36 +1,23 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import { Loader } from 'lucide-react';
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
-      <div className="text-center">
-        {/* Barre de progression simple */}
-        <motion.div
-          className="w-48 h-1 bg-gray-200 rounded-full overflow-hidden mb-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          <motion.div
-            className="h-full bg-gradient-to-r from-primary to-accent"
-            initial={{ width: 0 }}
-            animate={{ width: '100%' }}
-            transition={{ duration: 1.5, ease: 'easeInOut', repeat: Infinity }}
-          />
-        </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-1.5 h-96 bg-gradient-to-b from-blue-500/20 to-transparent blur-md animate-pulse" style={{ top: '20%', left: '15%' }} />
+        <div className="absolute w-1.5 h-96 bg-gradient-to-b from-purple-500/20 to-transparent blur-md animate-pulse" style={{ top: '20%', right: '15%' }} />
+      </div>
 
-        {/* Texte de chargement */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-gray-600 text-sm"
-        >
-          Chargement...
-        </motion.p>
+      {/* Content */}
+      <div className="relative z-10 text-center">
+        <div className="inline-flex items-center justify-center mb-6">
+          <Loader className="w-12 h-12 text-blue-500 animate-spin" />
+        </div>
+        <h2 className="text-xl font-semibold text-white mb-2">Chargement en cours...</h2>
+        <p className="text-slate-400 text-sm">Veuillez patienter</p>
       </div>
     </div>
   );

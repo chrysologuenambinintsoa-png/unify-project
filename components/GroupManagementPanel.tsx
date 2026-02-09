@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Settings, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { GroupMembers } from '@/components/GroupMembers';
@@ -36,6 +37,7 @@ export function GroupManagementPanel({
     visibility: groupData.visibility,
     isPrivate: groupData.isPrivate,
   });
+  const router = useRouter();
 
   const handleSaveSettings = async () => {
     try {
@@ -82,7 +84,7 @@ export function GroupManagementPanel({
 
       setSuccess('Group deleted successfully. Redirecting...');
       setTimeout(() => {
-        window.location.href = '/groups';
+        router.push('/groups');
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error deleting group');

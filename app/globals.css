@@ -136,20 +136,31 @@ body {
   animation: scaleIn 0.2s ease-out;
 }
 
-/* Progress bar animation used by Stories modal */
-@keyframes progress {
-  0% {
-    width: 0%;
+@layer components {
+  .sponsored-text {
+    @apply text-primary-dark font-bold text-xs inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary-dark/15 to-accent-dark/10 border border-primary-dark/20 backdrop-blur-sm;
   }
-  100% {
-    width: 100%;
+
+  .btn-primary-dark {
+    @apply bg-primary-dark text-white hover:bg-primary-light rounded-md;
   }
 }
 
-/* Fallback utility if needed */
-.animate-progress {
-  animation: progress 5s linear forwards;
+/* Text-post card styles for improved readability */
+@layer components {
+  .text-post-card {
+    @apply rounded-2xl overflow-hidden shadow-lg;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .text-post-shadow {
+    text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  }
 }
+
+/* Remove unused progress animation */
+/* Note: Real loading indicators now use tailwind's animate-spin */
 
 /* Utility classes */
 .no-scrollbar {
@@ -190,4 +201,31 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Universal, modern UI transitions
+   - Respects user `prefers-reduced-motion`
+   - Use `data-no-transition` on elements to opt-out when necessary
+   - Targets common visual properties only to avoid layout thrashing
+*/
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --ui-transition-duration: 200ms;
+    --ui-transition-ease: cubic-bezier(.2,.8,.2,1);
+  }
+
+  *:not([data-no-transition]) {
+    transition-property: background-color, color, border-color, box-shadow, transform, opacity, width, height, padding, margin, max-width, min-width, max-height, min-height, left, right, top, bottom, filter;
+    transition-duration: var(--ui-transition-duration);
+    transition-timing-function: var(--ui-transition-ease);
+    transition-delay: 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

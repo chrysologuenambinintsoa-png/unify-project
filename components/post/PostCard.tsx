@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HeartIcon } from '@/components/HeartIcon';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import ReactionPicker from './ReactionPicker';
 import ShareModal from './ShareModal';
 
@@ -32,6 +33,7 @@ interface Comment {
 }
 
 export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
+  const { translation } = useLanguage();
   const [liked, setLiked] = useState(false);
   const { incrementHomeActivity } = useHomeActivity();
   const [currentReaction, setCurrentReaction] = useState<string>('');
@@ -137,7 +139,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
 
   const handleDeletePost = () => {
     setShowOptionsMenu(false);
-    if (onDelete && window.confirm('Are you sure you want to delete this post?')) {
+    if (onDelete && window.confirm(translation.messages?.confirmDeletePost || 'Are you sure you want to delete this post?')) {
       onDelete(post.id);
     }
   };
@@ -212,14 +214,14 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
                   className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2"
                 >
                   <span>✏️</span>
-                  <span>Edit Post</span>
+                  <span>{translation.buttons?.editPost || 'Edit post'}</span>
                 </button>
                 <button
                   onClick={handleDeletePost}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition flex items-center space-x-2"
                 >
                   <span>🗑️</span>
-                  <span>Delete Post</span>
+                  <span>{translation.buttons?.deletePost || 'Delete post'}</span>
                 </button>
                 <div className="border-t my-1"></div>
                 <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
@@ -341,8 +343,8 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           )}
         </div>
         <div className="flex items-center space-x-4">
-          <span className="text-gray-600">{commentCount} commentaires</span>
-          <span className="text-gray-600">{shareCount} partages</span>
+          <span className="text-gray-600">{commentCount} {translation.messages?.comments || 'comments'}</span>
+          <span className="text-gray-600">{shareCount} {translation.messages?.shares || 'shares'}</span>
         </div>
       </div>
 
@@ -359,7 +361,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           <div className="text-2xl">
             {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : liked ? <HeartIcon className="w-6 h-6" fill={true} /> : <HeartIcon className="w-6 h-6" fill={false} />}
           </div>
-          <span className="font-semibold">{currentReaction || 'J\'aime'}</span>
+          <span className="font-semibold">{currentReaction || translation.buttons?.like || 'Like'}</span>
         </button>
 
         <button
@@ -367,7 +369,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
         >
           <span className="text-2xl">💬</span>
-          <span>Commenter</span>
+          <span>{translation.buttons?.comment || 'Comment'}</span>
         </button>
 
         <button
@@ -375,7 +377,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
           className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
         >
           <span className="text-2xl">🔄</span>
-          <span>Partager</span>
+          <span>{translation.buttons?.share || 'Share'}</span>
         </button>
 
         {/* Reaction Picker */}

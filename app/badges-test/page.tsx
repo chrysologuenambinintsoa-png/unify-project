@@ -1,69 +1,58 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useBadges } from '@/hooks/useBadges';
 import { SidebarBadge } from '@/components/SidebarBadge';
 import { BadgesOverview } from '@/components/BadgesOverview';
-import { motion } from 'framer-motion';
 
 /**
  * Page d'exemple pour tester le système de badges
  * Accessible via /badges-test
  */
 export default function BadgesTestPage() {
+  const router = useRouter();
   const { badges, loading, error, refetch } = useBadges();
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-2">🎯 Tests des Badges</h1>
           <p className="text-gray-600">Vérifiez le système de badges en temps réel</p>
-        </motion.div>
+        </div>
 
         {/* Errors */}
         {error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6"
           >
             Erreur: {error}
-          </motion.div>
+          </div>
         )}
 
         {/* Loading State */}
         {loading && !badges && (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          <div
             className="inline-block"
           >
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-          </motion.div>
+          </div>
         )}
 
         {/* Badges Overview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+        <div
           className="bg-white rounded-lg shadow-lg p-6 mb-8"
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-4">📊 Aperçu des Badges</h2>
           <BadgesOverview />
-        </motion.div>
+        </div>
 
         {/* Detailed Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
         >
           {/* Messages Card */}
@@ -131,13 +120,10 @@ export default function BadgesTestPage() {
               {badges.messages + badges.notifications + badges.friends + badges.groups}
             </p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        <div
           className="bg-white rounded-lg shadow-lg p-6 mb-8"
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-6">📈 Statistiques</h2>
@@ -153,34 +139,28 @@ export default function BadgesTestPage() {
               <p className="text-gray-600">Groupes rejoints</p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+        <div
           className="flex gap-4"
         >
           <button
             onClick={refetch}
-            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-lg"
           >
             🔄 Rafraîchir les données
           </button>
           <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
+            onClick={() => router.refresh()}
+            className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-lg"
           >
             ↻ Recharger la page
           </button>
-        </motion.div>
+        </div>
 
         {/* Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+        <div
           className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8"
         >
           <h3 className="text-lg font-semibold text-blue-900 mb-2">ℹ️ Informations</h3>
@@ -191,18 +171,15 @@ export default function BadgesTestPage() {
             <li>✓ Utilisez le hook useBadges() dans vos composants</li>
             <li>✓ Documentation complète disponible dans API_BADGES_DOCUMENTATION.md</li>
           </ul>
-        </motion.div>
+        </div>
 
         {/* Raw Data */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+        <div
           className="bg-gray-900 text-gray-100 rounded-lg p-6 mt-8 font-mono text-sm overflow-x-auto"
         >
           <h3 className="text-lg font-semibold text-white mb-4">📦 Données brutes</h3>
           <pre>{JSON.stringify(badges, null, 2)}</pre>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

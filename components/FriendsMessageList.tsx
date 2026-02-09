@@ -33,9 +33,16 @@ export function FriendsMessageList({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showOnline, setShowOnline] = useState<boolean>(true);
 
   useEffect(() => {
     fetchFriends();
+    try {
+      if (typeof window !== 'undefined') {
+        const v = localStorage.getItem('showOnlineStatus');
+        if (v !== null) setShowOnline(v === 'true');
+      }
+    } catch (e) {}
   }, []);
 
   const fetchFriends = async (search = '') => {
@@ -106,10 +113,7 @@ export function FriendsMessageList({
       {/* Friends List */}
       <div className={`flex-1 overflow-y-auto ${maxHeight}`}>
         {loading ? (
-          <div className="p-4 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-500">Chargement...</p>
-          </div>
+          <div className="p-4 text-center" />
         ) : error ? (
           <div className="p-4 text-center">
             <p className="text-sm text-red-500">{error}</p>
@@ -156,8 +160,14 @@ export function FriendsMessageList({
             >
               <div className="flex items-center space-x-3">
                 <div className="relative flex-shrink-0">
-                  <Avatar src={friend.avatar || null} name={friend.fullName} size="md" className="w-10 h-10" />
-                  {friend.unreadCount && friend.unreadCount > 0 && (
+                  {/* determine online if last message within 5 minutes */}
+                  {(() => {
+                    const isOnline = !!friend.lastMessageTime && (Date.now() - new Date(friend.lastMessageTime).getTime()) < 5 * 60 * 1000;
+                    return (
+                      <Avatar src={friend.avatar || null} name={friend.fullName} size="md" className="w-10 h-10" isOnline={isOnline} showOnline={showOnline} />
+                    );
+                  })()}
+                  {typeof friend.unreadCount === 'number' && friend.unreadCount > 0 && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                       {friend.unreadCount}
                     </div>
@@ -190,18 +200,7 @@ export function FriendsMessageList({
         )}
       </div>
 
-      {/* Start New Conversation Button */}
-      {friends.length > 0 && (
-        <div className="p-3 border-t border-gray-200">
-          <Link
-            href="/messages/new"
-            className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-primary-dark text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>Nouveau message</span>
-          </Link>
-        </div>
-      )}
+      {/* Start New Conversation Button removed — use header dropdown or modal */}
     </div>
   );
 }

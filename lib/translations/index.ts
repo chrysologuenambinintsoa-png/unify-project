@@ -4,8 +4,12 @@ import esTranslations from './es.json';
 import deTranslations from './de.json';
 import mgTranslations from './mg.json';
 import chTranslations from './ch.json';
+import ptTranslations from './pt.json';
+import itTranslations from './it.json';
+import arTranslations from './ar.json';
+import hiTranslations from './hi.json';
 
-export type Language = 'fr' | 'en' | 'es' | 'de' | 'mg' | 'ch';
+export type Language = 'fr' | 'en' | 'es' | 'de' | 'mg' | 'ch' | 'pt' | 'it' | 'ar' | 'hi';
 
 const translations: Record<Language, any> = {
   fr: frTranslations,
@@ -14,6 +18,10 @@ const translations: Record<Language, any> = {
   de: deTranslations,
   mg: mgTranslations,
   ch: chTranslations,
+  pt: ptTranslations,
+  it: itTranslations,
+  ar: arTranslations,
+  hi: hiTranslations,
 };
 
 export function getTranslations(language: Language = 'fr') {

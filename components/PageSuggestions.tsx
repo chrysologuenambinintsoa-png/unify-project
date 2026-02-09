@@ -146,7 +146,7 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
+    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Pages suggérées</h3>
       <div className="space-y-3 md:space-y-4">
         {pages.slice(0, compact ? 3 : 5).map((page) => (

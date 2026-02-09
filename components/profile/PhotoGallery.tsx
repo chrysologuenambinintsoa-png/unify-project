@@ -36,6 +36,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [settingAsProfile, setSettingAsProfile] = useState(false);
   const [settingAsCover, setSettingAsCover] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Filter photos to only show gallery type photos
+  const galleryPhotos = photos.filter((photo) => photo.type === 'gallery' || !photo.type);
 
   const handleDelete = async (photoId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette photo?')) {
@@ -51,6 +55,37 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       } catch (error) {
         console.error('Delete error:', error);
       }
+    }
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!isOwnProfile) return;
+    
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'gallery');
+
+      const response = await fetch(`/api/users/${userId}/photos/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        alert('Erreur lors de l\'upload de la photo');
+        return;
+      }
+
+      const data = await response.json();
+      if (data.photo) {
+        onPhotoUpload?.(data.photo);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Erreur lors de l\'upload de la photo');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -100,14 +135,44 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Upload Section for Own Profile */}
+      {isOwnProfile && (
+        <Card className="p-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <label className="flex flex-col items-center justify-center cursor-pointer">
+            <div className="flex flex-col items-center">
+              <ImageIcon className="w-8 h-8 text-blue-600 dark:text-blue-400 mb-2" />
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {uploading ? 'Upload en cours...' : 'Ajouter des photos'}
+              </p>
+              <p className="text-xs text-blue-500 dark:text-blue-300 mt-1">
+                Cliquez pour sélectionner des fichiers
+              </p>
+            </div>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                Array.from(e.target.files || []).forEach((file) => {
+                  handlePhotoUpload(file);
+                });
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </Card>
+      )}
+
       {/* All Photos Gallery */}
-      {photos.length > 0 && (
+      {galleryPhotos.length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
             Galerie photos
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {photos.map((photo, index) => (
+            {galleryPhotos.map((photo, index) => (
               <motion.div
                 key={photo.id}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -203,7 +268,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       </AnimatePresence>
 
       {/* Empty State */}
-      {photos.length === 0 && (
+      {galleryPhotos.length === 0 && (
         <Card className="p-12 text-center">
           <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">

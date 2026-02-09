@@ -60,6 +60,12 @@ export async function GET(request: NextRequest) {
             fullName: true,
             avatar: true,
             bio: true,
+            _count: {
+              select: {
+                friends1: true,
+                friends2: true,
+              },
+            },
           },
         },
       },
@@ -73,7 +79,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       requests: requests.map((r) => ({
         id: r.id,
-        fromUser: r.user1,
+        fromUser: {
+          id: r.user1.id,
+          username: r.user1.username,
+          fullName: r.user1.fullName,
+          avatar: r.user1.avatar,
+          bio: r.user1.bio,
+          friendsCount: (r.user1._count?.friends1 || 0) + (r.user1._count?.friends2 || 0),
+        },
         createdAt: r.createdAt.toISOString(),
       })),
       total,

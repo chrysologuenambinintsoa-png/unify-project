@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { MessageCircle, Share2, Bookmark, MoreVertical, X, Send } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MessageCircle, Share2, Bookmark, MoreVertical, X, Send, Flag } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
-import { motion } from 'framer-motion';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
+import { useSession } from 'next-auth/react';
 import ShareModal from '@/components/post/ShareModal';
-import { PostImageViewer } from '@/components/PostImageViewer';
+import { PublicationFullscreenViewer } from '@/components/PublicationFullscreenViewer';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { CommentThread } from '@/components/CommentThread';
 import { optimizeAvatarUrl, optimizeImageUrl } from '@/lib/cloudinaryOptimizer';
 import { Avatar } from '@/components/ui/Avatar';
+import { createPortal } from 'react-dom';
 
 interface PostProps {
   post: any;
@@ -21,6 +22,7 @@ interface PostProps {
 }
 
 export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }: PostProps) {
+  const { data: session } = useSession();
   const [liked, setLiked] = useState(!!post.liked);
   const { incrementHomeActivity } = useHomeActivity();
   const initialLikeCount: number = Array.isArray(post.likes)
@@ -48,17 +50,26 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showEmojiMenu, setShowEmojiMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({
     '❤️': 0,
     '😢': 0,
     '😮': 0,
     '🫂': 0,
   });
+  const [reactionUsers, setReactionUsers] = useState<Record<string, Array<{id: string; name: string; avatar?: string}>>>({});
+  const [selectedReactionEmoji, setSelectedReactionEmoji] = useState<string | null>(null);
   const [hoveredReaction, setHoveredReaction] = useState<string | null>(null);
   const [floatingEmoji, setFloatingEmoji] = useState<{ emoji: string; id: number } | null>(null);
   const floatingEmojiIdRef = useRef(0);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
   const likeButtonRef = useRef<HTMLDivElement>(null);
+  const emojiMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const touchPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [emojiPortalStyle, setEmojiPortalStyle] = useState<React.CSSProperties | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Enhanced emoji reactions with 10 emojis and auto-animation
   const reactionEmojis = [
@@ -79,12 +90,98 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       ...prev,
       [emojiData.emoji]: (prev[emojiData.emoji] || 0) + 1,
     }));
+    
+    // Add user to reaction users list
+    if (session?.user) {
+      setReactionUsers(prev => ({
+        ...prev,
+        [emojiData.emoji]: [
+          ...(prev[emojiData.emoji] || []),
+          {
+            id: session.user.id,
+            name: session.user.fullName || session.user.username || 'User',
+            avatar: session.user.avatar,
+          }
+        ]
+      }));
+    }
+    
     // Add floating emoji animation
     const newId = floatingEmojiIdRef.current++;
     setFloatingEmoji({ emoji: emojiData.emoji, id: newId });
     setTimeout(() => setFloatingEmoji(null), 1000);
     setShowEmojiMenu(false);
   };
+
+  const handleEmojiMenuLeave = () => {
+    emojiMenuTimeoutRef.current = setTimeout(() => {
+      setShowEmojiMenu(false);
+    }, 150);
+  };
+
+  const handleEmojiMenuEnter = () => {
+    if (emojiMenuTimeoutRef.current) {
+      clearTimeout(emojiMenuTimeoutRef.current);
+      emojiMenuTimeoutRef.current = null;
+    }
+    setShowEmojiMenu(true);
+  };
+
+  // Position the emoji menu in the document body to avoid clipping by overflow:hidden parents
+  useEffect(() => {
+    if (!showEmojiMenu || !likeButtonRef.current) {
+      setEmojiPortalStyle(null);
+      return;
+    }
+
+    const updatePos = () => {
+      try {
+        const r = likeButtonRef.current!.getBoundingClientRect();
+        const vw = window.innerWidth;
+        // determine menu width based on breakpoints (approximation for tailwind w-64/w-72/w-80)
+        let menuWidth = 320; // md
+        if (vw < 640) menuWidth = Math.min(280, vw - 32);
+        else if (vw < 768) menuWidth = 288;
+
+        const half = Math.round(menuWidth / 2);
+        let left = Math.round(r.left + r.width / 2);
+        // clamp left to keep menu inside viewport with a 12px margin
+        left = Math.min(Math.max(left, half + 12), vw - half - 12);
+
+        // estimate menu height (two rows) and choose whether to place above or below
+        const cell = Math.max(36, Math.round(menuWidth / 5));
+        const menuHeight = cell * 2 + 32; // rows * cell + padding
+        const preferredTop = Math.round(r.top - 8);
+        let top = preferredTop;
+        let transform = 'translate(-50%, -100%)';
+        if (preferredTop - menuHeight < 8) {
+          // not enough space above, place below
+          top = Math.round(r.bottom + 8);
+          transform = 'translate(-50%, 0)';
+        }
+
+        setEmojiPortalStyle({ position: 'fixed', left: `${left}px`, top: `${top}px`, transform, pointerEvents: 'auto', zIndex: 99999, width: `${menuWidth}px` });
+      } catch (e) {}
+    };
+
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos as any);
+    };
+  }, [showEmojiMenu]);
+
+  // detect touch devices (to enable long-press reaction UX)
+  useEffect(() => {
+    try {
+      const touch = typeof window !== 'undefined' && (('ontouchstart' in window) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches));
+      setIsTouchDevice(!!touch);
+    } catch (e) {
+      setIsTouchDevice(false);
+    }
+  }, []);
 
   const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
 
@@ -103,6 +200,38 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
   const handleSave = () => {
     setSaved(!saved);
+  };
+
+  const handleReportPost = async () => {
+    if (!reportReason.trim()) {
+      alert('Please provide a reason for reporting this post');
+      return;
+    }
+
+    setIsReporting(true);
+    try {
+      const response = await fetch(`/api/posts/${post.id}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reportReason }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to report post');
+      }
+
+      alert('Thank you for reporting this post. Our team will review it.');
+      setShowReportModal(false);
+      setReportReason('');
+      setShowOptionsMenu(false);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Error reporting post';
+      console.error('Report error:', errorMsg);
+      alert(errorMsg);
+    } finally {
+      setIsReporting(false);
+    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -154,6 +283,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
   // Normalize author/user and media for compatibility with different API shapes
   const author = post?.author ?? post?.user ?? { id: '', name: 'Unknown', avatar: undefined, username: undefined };
+  const isPostOwner = session?.user?.id === author.id;
   const images: string[] = (post?.images ?? (post?.media ? post.media.map((m: any) => m.type !== 'video' ? m.url : null).filter(Boolean) : []))
     .filter(Boolean)
     .map((u: string) => u as string);
@@ -161,16 +291,23 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
   const createdAt = post?.createdAt ?? post?.created_at ?? new Date();
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg md:rounded-lg shadow-sm mb-4 overflow-hidden hover:shadow-md transition-shadow duration-200 w-full">
+    <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-lg shadow-sm mb-4 hover:shadow-md w-full">
       {/* Post Header */}
-      <div className="p-3 md:p-4 flex items-center justify-between border-b border-border gap-2">
+      <div className="p-3 md:p-4 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
           {/* User Avatar */}
-          <Avatar src={optimizeAvatarUrl(author.avatar, 40) || author.avatar || null} name={author.name} size="md" className="w-10 h-10 flex-shrink-0" />
+          <Avatar src={optimizeAvatarUrl(author.avatar, 80) || author.avatar || null} name={author.name} size="md" className="w-10 h-10 flex-shrink-0" />
           {/* User Info */}
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base truncate">{author.name}</p>
-            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'} • {formatDate(createdAt)}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'} • {formatDate(createdAt)}</p>
+              {(post?.isSponsored || post?.sponsored) && (
+                <span className="sponsored-text">
+                  📢 Sponsorisé
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -178,33 +315,44 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
         <div className="relative flex-shrink-0" ref={optionsMenuRef}>
           <button
             onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors duration-200"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
           >
             <MoreVertical size={18} className="text-gray-600 dark:text-gray-400" />
           </button>
 
           {showOptionsMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 border border-border">
-              {onEdit && (
+            <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10">
+              {isPostOwner && onEdit && (
                 <button
                   onClick={() => {
                     setShowOptionsMenu(false);
                     onEdit(post);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors duration-200 text-sm"
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-sm"
                 >
                   Edit Post
                 </button>
               )}
-              {onDelete && (
+              {isPostOwner && onDelete && (
                 <button
                   onClick={() => {
                     setShowOptionsMenu(false);
                     onDelete(post.id);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 font-medium transition-colors duration-200 border-t border-border"
+                  className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 font-medium border-t"
                 >
                   Delete Post
+                </button>
+              )}
+              {!isPostOwner && (
+                <button
+                  onClick={() => {
+                    setShowReportModal(true);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-yellow-50 dark:hover:bg-gray-700 text-orange-600 font-medium flex items-center space-x-2 text-sm"
+                >
+                  <Flag size={16} />
+                  <span>Report Post</span>
                 </button>
               )}
             </div>
@@ -213,9 +361,61 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       </div>
 
       {/* Post Content */}
-      <div className="p-4">
-        <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">{post.content}</p>
-      </div>
+      {post.styling?.background ? (
+        (() => {
+          const BACKGROUNDS = [
+            { id: 'gradient-1', style: 'linear-gradient(to bottom right, rgb(251, 146, 60), rgb(239, 68, 68), rgb(126, 34, 206))' },
+            { id: 'gradient-2', style: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(34, 211, 238), rgb(20, 184, 166))' },
+            { id: 'gradient-3', style: 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(16, 185, 129), rgb(34, 211, 238))' },
+            { id: 'gradient-4', style: 'linear-gradient(to bottom right, rgb(192, 132, 250), rgb(236, 72, 153), rgb(239, 68, 68))' },
+            { id: 'gradient-5', style: 'linear-gradient(to bottom right, rgb(253, 224, 71), rgb(251, 146, 60), rgb(220, 38, 38))' },
+            { id: 'gradient-6', style: 'linear-gradient(to bottom right, rgb(196, 181, 253), rgb(168, 85, 247), rgb(99, 102, 241))' },
+          ];
+
+          const findBg = BACKGROUNDS.find((b) => b.id === (post.styling?.background || post.background)) || BACKGROUNDS[0];
+
+          const getVariants = (anim?: string) => {
+            if (!anim || anim === 'none') return { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: {} };
+            switch (anim) {
+              case 'bounce':
+                return { initial: { y: 0, opacity: 1 }, animate: { y: [0, -12, 0], opacity: [1, 1, 1] }, transition: { duration: 0.8, repeat: Infinity } };
+              case 'pulse':
+                return { initial: { scale: 1, opacity: 1 }, animate: { scale: [1, 1.05, 1], opacity: [1, 0.95, 1] }, transition: { duration: 2, repeat: Infinity } };
+              case 'shake':
+                return { initial: { x: 0 }, animate: { x: [-6, 6, -6, 6, 0] }, transition: { duration: 0.6, repeat: Infinity } };
+              case 'rotate':
+                return { initial: { rotate: 0 }, animate: { rotate: 360 }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
+              default:
+                return { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: {} };
+            }
+          };
+
+          const variants = getVariants(post.styling?.animation);
+
+          return (
+            <div className="p-4">
+              <div
+                className="text-post-card w-full"
+                style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.12), rgba(0,0,0,0.12)), ${findBg.style}` }}
+              >
+                <div className="py-6 md:py-8 lg:py-10 px-4 md:px-6 lg:px-8">
+                  <div className="max-w-[760px] mx-auto">
+                    <p className="text-center text-white font-semibold md:font-semibold text-base md:text-lg lg:text-xl leading-relaxed md:leading-snug break-words text-post-shadow">
+                      {post.content}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()
+      ) : (
+        <div className="p-4">
+          <div className="max-w-[760px] mx-auto">
+            <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">{post.content}</p>
+          </div>
+        </div>
+      )}
 
       {/* Post Media - Images */}
       {images && images.length > 0 && (
@@ -236,7 +436,9 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
               <img
                 src={optimizeImageUrl(image, 1200, 1200) || image}
                 alt={`Post media ${index + 1}`}
-                className={`w-full h-full ${images.length === 1 ? 'object-contain max-h-96 md:max-h-[500px]' : 'object-cover aspect-square'} group-hover:opacity-90 transition-opacity duration-200`}
+                className={`w-full h-full ${images.length === 1 ? 'object-contain max-h-96 md:max-h-[500px]' : 'object-cover aspect-square'} group-hover:opacity-90`}
+                loading="lazy"
+                decoding="async"
               />
             </div>
           ))}
@@ -260,7 +462,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       )}
 
       {/* Engagement Stats */}
-      <div className="px-3 md:px-4 py-2 border-t border-b border-border text-xs md:text-sm text-gray-600 dark:text-gray-400 flex justify-between">
+      <div className="px-3 md:px-4 py-2 border-t border-b text-xs md:text-sm text-gray-600 dark:text-gray-400 flex justify-between">
         <span>{likeCount} likes</span>
         <div className="flex space-x-2 md:space-x-4">
           <span>{commentCount} comments</span>
@@ -269,17 +471,34 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       </div>
 
       {/* Action Buttons */}
-      <div className="p-2 md:p-4 flex flex-wrap justify-between items-start relative gap-2">
+      <div className="p-2 md:p-4 flex flex-wrap justify-between items-start relative gap-2 overflow-visible">
         {/* Like Button with Facebook-style Emoji Menu */}
         <div
           ref={likeButtonRef}
           className="relative flex-1 min-w-max"
-          onMouseEnter={() => setShowEmojiMenu(true)}
-          onMouseLeave={() => setShowEmojiMenu(false)}
+          onMouseEnter={handleEmojiMenuEnter}
+          onMouseLeave={handleEmojiMenuLeave}
+          onTouchStart={(e) => {
+            if (isTouchDevice) {
+              touchPressTimeoutRef.current = setTimeout(() => setShowEmojiMenu(true), 400);
+            }
+          }}
+          onTouchEnd={() => {
+            if (touchPressTimeoutRef.current) {
+              clearTimeout(touchPressTimeoutRef.current);
+              touchPressTimeoutRef.current = null;
+            }
+          }}
+          onTouchMove={() => {
+            if (touchPressTimeoutRef.current) {
+              clearTimeout(touchPressTimeoutRef.current);
+              touchPressTimeoutRef.current = null;
+            }
+          }}
         >
           <button
             onClick={handleLike}
-            className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base transition-all duration-200 flex-shrink-0 ${
+            className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base flex-shrink-0 ${
               liked
                 ? 'text-primary'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -289,69 +508,81 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
             <span className="hidden sm:inline">Like</span>
           </button>
 
-          {/* Facebook-style Emoji Reaction Menu */}
-          {showEmojiMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-              className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-3xl px-2 py-2 flex gap-1 shadow-xl z-50 border border-gray-200 dark:border-gray-700"
-            >
-              {reactionEmojis.map((reactionData, idx) => (
-                <motion.button
-                  key={reactionData.emoji}
-                  onClick={() => handleEmojiReaction(reactionData)}
-                  onMouseEnter={() => setHoveredReaction(reactionData.emoji)}
-                  onMouseLeave={() => setHoveredReaction(null)}
-                  whileHover={{ scale: 1.4, y: -12 }}
-                  whileTap={{ scale: 0.85 }}
-                  initial={{ opacity: 0, y: 20, scale: 0 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0 }}
-                  transition={{ 
-                    type: 'spring', 
-                    stiffness: 300, 
-                    damping: 20,
-                    delay: idx * 0.05
-                  }}
-                  className="text-2xl md:text-3xl cursor-pointer p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative"
-                  title={reactionData.label}
-                >
-                  {reactionData.emoji}
-                  {hoveredReaction === reactionData.emoji && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap font-semibold z-10"
+          {/* Facebook-style Emoji Reaction Menu - portalized to document.body to avoid clipping */}
+          {showEmojiMenu && (typeof document !== 'undefined' && emojiPortalStyle ? createPortal(
+            <div style={emojiPortalStyle} onMouseEnter={handleEmojiMenuEnter} onMouseLeave={handleEmojiMenuLeave}>
+              <div style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.95), rgba(37,99,235,0.95))', backdropFilter: 'blur(8px)' }} className="rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl z-50">
+                <div className="grid grid-cols-5 gap-2 sm:gap-3 w-full">
+                  {reactionEmojis.map((reactionData) => (
+                    <button
+                      key={reactionData.emoji}
+                      onClick={() => handleEmojiReaction(reactionData)}
+                      onMouseEnter={() => setHoveredReaction(reactionData.emoji)}
+                      onMouseLeave={() => setHoveredReaction(null)}
+                      className="aspect-square flex items-center justify-center text-2xl sm:text-3xl md:text-4xl cursor-pointer rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-200 relative group"
+                      title={reactionData.label}
                     >
-                      {reactionData.label}
-                    </motion.div>
-                  )}
-                </motion.button>
-              ))}
-            </motion.div>
-          )}
+                      <span className="transform group-hover:scale-110 transition-transform duration-200">
+                        {reactionData.emoji}
+                      </span>
+                      {hoveredReaction === reactionData.emoji && (
+                        <div className="absolute -top-8 sm:-top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 sm:px-3 py-1 sm:py-2 whitespace-nowrap font-semibold z-50">
+                          {reactionData.label}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>,
+            document.body
+          ) : (
+            // fallback (if portal style not yet calculated) render inline menu
+            <div
+              className="absolute bottom-full mb-2 sm:mb-3 left-1/2 -translate-x-1/2 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xl z-50 w-64 sm:w-72 md:w-80"
+              onMouseEnter={handleEmojiMenuEnter}
+              onMouseLeave={handleEmojiMenuLeave}
+              style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.95), rgba(37,99,235,0.95))', backdropFilter: 'blur(8px)' }}
+            >
+              <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                {reactionEmojis.map((reactionData) => (
+                  <button
+                    key={reactionData.emoji}
+                    onClick={() => handleEmojiReaction(reactionData)}
+                    onMouseEnter={() => setHoveredReaction(reactionData.emoji)}
+                    onMouseLeave={() => setHoveredReaction(null)}
+                    className="aspect-square flex items-center justify-center text-2xl sm:text-3xl md:text-4xl cursor-pointer rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-200 relative group"
+                    title={reactionData.label}
+                  >
+                    <span className="transform group-hover:scale-110 transition-transform duration-200">
+                      {reactionData.emoji}
+                    </span>
+                    {hoveredReaction === reactionData.emoji && (
+                      <div className="absolute -top-8 sm:-top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded px-2 sm:px-3 py-1 sm:py-2 whitespace-nowrap font-semibold z-50">
+                        {reactionData.label}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* Floating Emoji Animation */}
           {floatingEmoji && (
-            <motion.div
+            <div
               key={floatingEmoji.id}
-              initial={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-              animate={{ opacity: 0, y: -40, scale: 1.2 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
               className="absolute pointer-events-none text-2xl md:text-3xl"
               style={{ left: '20px', bottom: '50px' }}
             >
               {floatingEmoji.emoji}
-            </motion.div>
+            </div>
           )}
         </div>
 
         <button
           onClick={() => setShowComments(!showComments)}
-          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 flex-shrink-0"
+          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
         >
           <MessageCircle size={18} />
           <span className="hidden sm:inline">Comment</span>
@@ -359,7 +590,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
         <button
           onClick={() => setShowShareModal(true)}
-          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 flex-shrink-0"
+          className="flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
         >
           <Share2 size={18} />
           <span className="hidden sm:inline">Share</span>
@@ -367,7 +598,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
 
         <button
           onClick={handleSave}
-          className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base transition-all duration-200 flex-shrink-0 ${
+          className={`flex items-center space-x-1 md:space-x-2 px-2 md:px-4 py-2 rounded-lg font-medium text-sm md:text-base flex-shrink-0 ${
             saved
               ? 'text-primary bg-primary/10'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -379,36 +610,103 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           />
           <span className="hidden sm:inline">Save</span>
         </button>
-      </div>      {/* Reaction Counter Display - Facebook style */}
+      </div>      {/* Reaction Counter Display - Compact style with modal */}
       {totalReactions > 0 && (
-        <div className="px-4 py-2 border-t border-gray-200 text-sm">
-          <div className="flex items-center gap-2 text-gray-700">
-            {/* Reaction pills */}
-            <div className="flex gap-1">
-              {Object.entries(reactionCounts)
-                .filter(([_, count]) => count > 0)
-                .sort((a, b) => b[1] - a[1])
-                .map(([emoji, count]) => (
-                  <motion.div
-                    key={emoji}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2 py-1 cursor-pointer transition-colors"
+        <>
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-gray-200 text-xs sm:text-sm">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Show top 4 reactions, overflow hidden */}
+              <div className="flex gap-1 sm:gap-1.5 overflow-x-hidden">
+                {Object.entries(reactionCounts)
+                  .filter(([_, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 4)
+                  .map(([emoji, count]) => (
+                    <button
+                      key={emoji}
+                      onClick={() => setSelectedReactionEmoji(emoji)}
+                      className="inline-flex items-center gap-0.5 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-full px-2 sm:px-2.5 py-1 cursor-pointer transition-all hover:scale-110 active:scale-95 flex-shrink-0 text-xs sm:text-sm"
+                    >
+                      <span>{emoji}</span>
+                      <span className="font-bold text-blue-700">{count}</span>
+                    </button>
+                  ))}
+                {/* If more than 4 reactions, show remaining count */}
+                {Object.entries(reactionCounts).filter(([_, count]) => count > 0).length > 4 && (
+                  <button
+                    onClick={() => {
+                      const moreReactions = Object.entries(reactionCounts)
+                        .filter(([_, count]) => count > 0)
+                        .slice(4);
+                      if (moreReactions.length > 0) {
+                        setSelectedReactionEmoji(moreReactions[0][0]);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 bg-gray-200 hover:bg-gray-300 rounded-full px-2 sm:px-2.5 py-1 cursor-pointer transition-all hover:scale-110 active:scale-95 flex-shrink-0 text-xs font-bold text-gray-700"
                   >
-                    <span className="text-base">{emoji}</span>
-                    <span className="text-xs font-semibold text-gray-700">{count}</span>
-                  </motion.div>
-                ))}
+                    +{Object.entries(reactionCounts)
+                      .filter(([_, count]) => count > 0)
+                      .slice(4)
+                      .reduce((sum, [_, count]) => sum + count, 0)}
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-gray-500 ml-auto flex-shrink-0">
+                {totalReactions}
+              </span>
             </div>
-            <span className="text-xs text-gray-500">
-              {totalReactions} {totalReactions === 1 ? 'reaction' : 'reactions'}
-            </span>
           </div>
-        </div>
+
+          {/* Reactions Modal - Blue Gradient Card */}
+          {selectedReactionEmoji && (
+            <div 
+              className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center p-3 sm:p-4"
+              onClick={() => setSelectedReactionEmoji(null)}
+            >
+              <div 
+                className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full max-h-[70vh] sm:max-h-96 overflow-hidden flex flex-col"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-300/30 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <span className="text-3xl sm:text-4xl flex-shrink-0">{selectedReactionEmoji}</span>
+                    <div className="min-w-0">
+                      <p className="text-white font-bold text-sm sm:text-base">Réactions</p>
+                      <p className="text-blue-100 text-xs sm:text-sm">{(reactionUsers[selectedReactionEmoji] || []).length} utilisateurs</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedReactionEmoji(null)}
+                    className="text-white hover:bg-blue-500/50 rounded-full p-1.5 sm:p-2 transition-colors flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Users List */}
+                <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4">
+                  <div className="space-y-2 sm:space-y-3">
+                    {(reactionUsers[selectedReactionEmoji] || []).map((user, idx) => (
+                      <div key={`${user.id}-${idx}`} className="flex items-center gap-2 sm:gap-3 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/30 transition-colors">
+                        <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white/40 flex items-center justify-center text-white font-bold flex-shrink-0 text-xs sm:text-sm">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium text-xs sm:text-sm truncate">{user.name}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
       {/* Comments Section - Inline */}
       {showComments && (
-        <div className="border-t border-border bg-gray-50">
+        <div className="border-t bg-gray-50">
           {/* Comments List */}
           <div className="p-4 max-h-96 overflow-y-auto">
             <CommentThread 
@@ -422,19 +720,19 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           </div>
 
           {/* Comment Input */}
-          <div className="border-t border-border p-4 bg-white">
+          <div className="border-t p-4 bg-white">
             <form onSubmit={handleSubmitComment} className="flex space-x-2">
               <input
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Write a comment..."
-                className="flex-1 px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               <button
                 type="submit"
                 disabled={!commentText.trim() || isSubmittingComment}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center space-x-2"
+                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 <Send size={16} />
               </button>
@@ -480,7 +778,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       />
 
       {/* Image Viewer */}
-      <PostImageViewer
+      <PublicationFullscreenViewer
         post={post}
         initialImageIndex={selectedImageIndex}
         isOpen={showImageViewer}
@@ -488,6 +786,60 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
         onLike={onLike}
         onDelete={onDelete}
       />
-    </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 sm:mx-0">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Flag size={24} className="text-orange-600" />
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Report Post</h2>
+              </div>
+              
+              <p className="text-gray-600 dark:text-gray-400 mb-4 text-xs sm:text-sm">
+                Help us understand why you're reporting this post. Your report is anonymous and will be reviewed by our team.
+              </p>
+
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Please describe why you're reporting this post..."
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-xs sm:text-sm"
+                rows={4}
+              />
+
+              <div className="mt-6 flex gap-2 sm:gap-3">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason('');
+                  }}
+                  className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 text-xs sm:text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReportPost}
+                  disabled={!reportReason.trim() || isReporting}
+                  className="flex-1 px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-xs sm:text-sm"
+                >
+                  {isReporting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      <span>Reporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Flag size={16} />
+                      <span>Report</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}    </div>
   );
 }

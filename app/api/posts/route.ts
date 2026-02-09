@@ -7,13 +7,25 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Only return posts from the last 72 hours
     const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000);
+
+    // Determine requester and their friends to enforce visibility
+    const requesterId = session?.user?.id || null;
+    let friendIds: string[] = [];
+    if (requesterId) {
+      const friendships = await prisma.friendship.findMany({
+        where: {
+          OR: [
+            { user1Id: requesterId },
+            { user2Id: requesterId },
+          ],
+          status: 'accepted',
+        },
+      });
+      friendIds = friendships.map((f) => (f.user1Id === requesterId ? f.user2Id : f.user1Id));
+    }
 
     const posts = await prisma.post.findMany({
       where: {
@@ -21,6 +33,13 @@ export async function GET(request: NextRequest) {
         createdAt: {
           gte: cutoff,
         },
+        OR: requesterId
+          ? [
+              { isPublic: true },
+              { userId: requesterId },
+              { userId: { in: friendIds } },
+            ]
+          : [{ isPublic: true }],
       },
       include: {
         user: {
@@ -109,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { content, background, media, isTextPost, styling } = body;
+    const { content, background, media, isTextPost, styling, isPublic } = body;
 
     if (!content?.trim() && !media?.length) {
       return NextResponse.json(
@@ -124,6 +143,7 @@ export async function POST(request: NextRequest) {
         background: isTextPost ? (styling?.background || 'gradient-1') : background,
         userId: session.user.id,
         styling: isTextPost ? styling : undefined,
+        isPublic: typeof isPublic === 'boolean' ? isPublic : false,
         media: media ? {
           create: media.map((m: any) => ({
             type: m.type,
@@ -151,6 +171,18 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // best-effort
       console.warn('Failed to publish post created event', e);
+    }
+
+    // Ensure uploaded images are saved to the user's photo gallery
+    try {
+      const imageMedia = (post.media || []).filter((m: any) => m.type === 'image');
+      if (imageMedia.length > 0) {
+        const data = imageMedia.map((m: any) => ({ userId: session.user.id, url: m.url, type: 'gallery', caption: null }));
+        // Use createMany as best-effort; skipDuplicates if available
+        await (prisma as any).photoGallery.createMany({ data, skipDuplicates: true });
+      }
+    } catch (e) {
+      console.warn('Failed to save images to photo gallery (non-fatal)', e);
     }
 
     return NextResponse.json(post, { status: 201 });

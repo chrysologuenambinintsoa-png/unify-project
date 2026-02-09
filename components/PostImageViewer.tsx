@@ -188,7 +188,7 @@ export function PostImageViewer({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-50 flex overflow-hidden pt-0">
+    <div className="fixed inset-0 bg-black/95 z-50 flex flex-col md:flex-row overflow-hidden pt-0">
       {/* Close Button */}
       <button
         onClick={onClose}
@@ -197,11 +197,61 @@ export function PostImageViewer({
         <X size={32} />
       </button>
 
+      {/* Mobile Header - Profile info at top */}
+      <div className="md:hidden w-full bg-black/70 backdrop-blur-sm p-3 border-b border-white/10 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 min-w-0 flex-1">
+            {/* User Avatar */}
+            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-xs overflow-hidden flex-shrink-0">
+              {author?.avatar && !avatarError ? (
+                <img
+                  src={author.avatar}
+                  alt={author?.name || 'User'}
+                  className="w-full h-full object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <span>{(author?.name || 'U').charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            {/* User Info */}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-white text-xs truncate">{author?.name || 'Unknown User'}</p>
+              <p className="text-xs text-gray-300 truncate">@{author?.username || 'username'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Left side - Image viewer */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex flex-col md:flex-row items-center justify-center relative md:min-h-screen order-1">
+        {/* Desktop Header - Profile info on top left */}
+        <div className="hidden md:flex w-full bg-black/70 backdrop-blur-sm p-3 md:p-4 border-b border-white/10 absolute top-0 left-0 right-0 z-10">
+          <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+            {/* User Avatar */}
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-xs md:text-sm overflow-hidden flex-shrink-0">
+              {author?.avatar && !avatarError ? (
+                <img
+                  src={author.avatar}
+                  alt={author?.name || 'User'}
+                  className="w-full h-full object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <span>{(author?.name || 'U').charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            {/* User Info */}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-white text-sm md:text-base truncate">{author?.name || 'Unknown User'}</p>
+              <p className="text-xs md:text-sm text-gray-300 truncate">@{author?.username || 'username'} • {formatDate(createdAt)}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Image */}
         <div
-          className="relative w-full h-screen flex items-center justify-center px-8"
+          className="relative w-full flex-1 flex items-center justify-center px-4 md:px-8 mt-12 md:mt-0"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -259,96 +309,71 @@ export function PostImageViewer({
         </div>
       </div>
 
-      {/* Right side - Post details panel */}
-      <div className="w-[420px] bg-white flex flex-col h-screen overflow-hidden">
+      {/* Right side - Post details panel (Desktop only) */}
+      <div className="hidden md:flex w-[380px] bg-white flex-col h-screen overflow-hidden border-l border-gray-200">
         {/* Header with author info */}
-        <div className="p-4 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {/* User Avatar */}
-              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
-                {author?.avatar && !avatarError ? (
-                  <img
-                    src={author.avatar}
-                    alt={author?.name || 'User'}
-                    className="w-full h-full object-cover"
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <span>{(author?.name || 'U').charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-              {/* User Info */}
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-gray-900 text-sm truncate">{author?.name || 'Unknown User'}</p>
-                <p className="text-xs text-gray-500 truncate">@{author?.username || 'username'}</p>
-              </div>
-            </div>
-            <button className="text-gray-500 hover:text-gray-700 flex-shrink-0">
-              <MoreVertical size={18} />
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">{formatDate(createdAt)}</p>
+        <div className="p-3 md:p-4 border-b border-gray-200 flex-shrink-0 pt-16">
+          <p className="text-xs text-gray-500 mb-2">{formatDate(createdAt)}</p>
         </div>
 
         {/* Post content */}
         {post.content && (
-          <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
-            <p className="text-sm text-gray-900">{post.content}</p>
+          <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200 flex-shrink-0">
+            <p className="text-xs md:text-sm text-gray-900 line-clamp-4">{post.content}</p>
           </div>
         )}
 
         {/* Engagement Stats */}
-        <div className="px-4 py-3 border-b border-gray-200 text-xs text-gray-600 flex justify-between flex-shrink-0">
-          <span>{likeCount} likes</span>
-          <div className="flex space-x-4">
+        <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200 text-xs text-gray-600 flex justify-between flex-shrink-0 overflow-x-auto">
+          <span className="whitespace-nowrap">{likeCount} likes</span>
+          <div className="flex space-x-2 md:space-x-4 whitespace-nowrap">
             <span>{commentCount} comments</span>
-            <span>{shareCount} shares</span>
+            <span className="hidden sm:inline">{shareCount} shares</span>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="px-4 py-3 border-b border-gray-200 flex gap-2 flex-shrink-0">
+        <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200 flex gap-1 md:gap-2 flex-shrink-0 overflow-x-auto">
           <button
             onClick={handleLike}
-            className={`flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg font-medium text-sm transition-colors duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-colors duration-200 whitespace-nowrap ${
               liked
                 ? 'text-red-500 bg-red-50'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <Heart size={16} className={liked ? 'fill-current' : ''} />
-            <span>Like</span>
+            <span className="hidden sm:inline">Like</span>
           </button>
 
-          <button className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200 text-sm">
+          <button className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 md:py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200 text-xs md:text-sm whitespace-nowrap">
             <MessageCircle size={16} />
-            <span>Comment</span>
+            <span className="hidden sm:inline">Comment</span>
           </button>
 
           <button
             onClick={() => setShowShareModal(true)}
-            className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200 text-sm"
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 md:py-2 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-colors duration-200 text-xs md:text-sm whitespace-nowrap"
           >
             <Share2 size={16} />
-            <span>Share</span>
+            <span className="hidden sm:inline">Share</span>
           </button>
 
           <button
             onClick={handleSave}
-            className={`flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-all duration-200 whitespace-nowrap ${
               saved
                 ? 'text-primary bg-primary/10'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <Bookmark size={16} className={saved ? 'fill-current' : ''} />
-            <span>Save</span>
+            <span className="hidden sm:inline">Save</span>
           </button>
         </div>
 
         {/* Comments section (scrollable) */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
+        <div className="flex-1 overflow-y-auto px-3 md:px-4 py-2 md:py-3 min-h-0">
           <div className="space-y-3">
             {/* Placeholder for existing comments */}
             <div className="text-xs text-gray-500 text-center py-8">
@@ -358,25 +383,35 @@ export function PostImageViewer({
         </div>
 
         {/* Comment input */}
-        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+        <div className="p-2 md:p-4 border-t border-gray-200 flex-shrink-0">
           <form onSubmit={handleCommentSubmit} className="space-y-2">
             <textarea
               ref={commentInputRef}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-lg text-xs md:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
               rows={2}
             />
             <button
               type="submit"
               disabled={!commentText.trim() || isSubmittingComment}
-              className="w-full px-3 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-2 md:px-3 py-1 md:py-2 bg-primary text-white rounded-lg font-medium text-xs md:text-sm hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmittingComment ? 'Posting...' : 'Post Comment'}
             </button>
           </form>
         </div>
+      </div>
+
+      {/* Mobile Bottom Panel - Post details */}
+      <div className="md:hidden w-full bg-white flex flex-col h-auto max-h-[45vh] overflow-hidden order-2 border-t border-gray-200">
+        {/* Post content */}
+        {post.content && (
+          <div className="px-3 py-2 border-b border-gray-200 flex-shrink-0">
+            <p className="text-xs text-gray-900">{post.content}</p>
+          </div>
+        )}
       </div>
 
       {/* Share Modal */}

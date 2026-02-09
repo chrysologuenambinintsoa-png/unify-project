@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Fetch all potential friend suggestions (all users except excluded)
+    // Include counts so the client can display real friends count without extra requests
     const allUsers = await prisma.user.findMany({
       where: {
         id: {
@@ -138,6 +139,12 @@ export async function GET(request: NextRequest) {
         fullName: true,
         avatar: true,
         bio: true,
+        _count: {
+          select: {
+            friends1: true,
+            friends2: true,
+          },
+        },
       },
       take: limit,
       skip: offset,
@@ -154,8 +161,13 @@ export async function GET(request: NextRequest) {
 
     // Return all users as suggestions (no mutual friends calculation needed)
     const suggestionsWithMutual = allUsers.map((user) => ({
-      ...user,
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      avatar: user.avatar,
+      bio: user.bio,
       mutualFriendsCount: 0,
+      friendsCount: (user._count?.friends1 || 0) + (user._count?.friends2 || 0),
     }));
 
     return NextResponse.json({

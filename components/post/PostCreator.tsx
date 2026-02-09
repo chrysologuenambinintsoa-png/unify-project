@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import Image from 'next/image';
+import NextImage from 'next/image';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PostCreatorProps {
   onCreatePost: (post: Post) => void;
@@ -18,6 +19,7 @@ interface Post {
 
 export default function PostCreator({ onCreatePost }: PostCreatorProps) {
   const { data: session } = useSession();
+  const { translation } = useLanguage();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [videos, setVideos] = useState<string[]>([]);
@@ -57,10 +59,106 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
+      // Get image dimensions
+      const getImageDimensions = async (file: File): Promise<{ width: number; height: number }> => {
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = String(reader.result);
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+      };
+
+      // Auto-resize image if dimensions exceed 1024x1024 while maintaining aspect ratio
+      const resizeImageIfNeeded = async (file: File): Promise<File> => {
+        try {
+          const dims = await getImageDimensions(file);
+          const MAX_DIM = 1024;
+
+          if (dims.width <= MAX_DIM && dims.height <= MAX_DIM) {
+            return file;
+          }
+
+          // Calculate new dimensions maintaining aspect ratio
+          let newWidth = dims.width;
+          let newHeight = dims.height;
+
+          if (dims.width > MAX_DIM || dims.height > MAX_DIM) {
+            const aspectRatio = dims.width / dims.height;
+            if (dims.width > dims.height) {
+              newWidth = MAX_DIM;
+              newHeight = Math.round(MAX_DIM / aspectRatio);
+            } else {
+              newHeight = MAX_DIM;
+              newWidth = Math.round(MAX_DIM * aspectRatio);
+            }
+          }
+
+          // Resize using canvas
+          return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                  reject(new Error('Failed to get canvas context'));
+                  return;
+                }
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                canvas.toBlob(
+                  (blob) => {
+                    if (!blob) {
+                      reject(new Error('Failed to create blob'));
+                      return;
+                    }
+                    const resizedFile = new File([blob], file.name, {
+                      type: 'image/jpeg',
+                      lastModified: Date.now(),
+                    });
+                    resolve(resizedFile);
+                  },
+                  'image/jpeg',
+                  0.95
+                );
+              };
+              img.onerror = () => reject(new Error('Failed to load image'));
+              img.src = String(reader.result);
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+          });
+        } catch (err) {
+          console.error('Error resizing image:', err);
+          return file;
+        }
+      };
+
+      // Process all files with auto-resize
+      const validFiles: File[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        try {
+          const resized = await resizeImageIfNeeded(file);
+          validFiles.push(resized);
+        } catch (err) {
+          console.warn('Failed to process image, using original:', file.name, err);
+          validFiles.push(file);
+        }
+      }
+
+      if (validFiles.length === 0) return;
+
       const formData = new FormData();
-      Array.from(files).forEach(file => {
-        formData.append('files', file);
-      });
+      validFiles.forEach(file => formData.append('files', file));
       formData.append('type', 'image');
 
       try {
@@ -198,8 +296,8 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
       <div className="flex items-start mb-4 space-x-2 md:space-x-3 gap-2">
         <div className="flex flex-col items-center flex-shrink-0">
           <div className="w-10 md:w-12 h-10 md:h-12 bg-primary-dark rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg border-2 border-accent-dark overflow-hidden">
-            {session?.user?.image ? (
-              <Image
+              {session?.user?.image ? (
+              <NextImage
                 src={session.user.image}
                 alt={session?.user?.name || 'User'}
                 width={48}
@@ -215,7 +313,7 @@ export default function PostCreator({ onCreatePost }: PostCreatorProps) {
           </p>
         </div>
         <textarea
-          placeholder="What's on your mind?"
+          placeholder={translation.post?.whatsOnMind || "What's on your mind?"}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={3}

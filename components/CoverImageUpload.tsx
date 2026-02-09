@@ -1,13 +1,10 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Camera, X, Upload, Loader2 } from 'lucide-react';
+import { Camera, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ImageCropModal } from '@/components/ImageCropModal';
-import { PreviewModal } from '@/components/PreviewModal';
 
 interface CoverImageUploadProps {
   currentCover?: string | null;
@@ -19,12 +16,90 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
   const { translation } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [imageToEdit, setImageToEdit] = useState<string | null>(null);
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get image dimensions
+  const getImageDimensions = async (file: File): Promise<{ width: number; height: number }> => {
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = String(reader.result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Auto-resize image if dimensions exceed 1024x1024 while maintaining aspect ratio
+  const resizeImageIfNeeded = async (file: File): Promise<File> => {
+    try {
+      const dims = await getImageDimensions(file);
+      const MAX_DIM = 1024;
+
+      if (dims.width <= MAX_DIM && dims.height <= MAX_DIM) {
+        return file;
+      }
+
+      // Calculate new dimensions maintaining aspect ratio
+      let newWidth = dims.width;
+      let newHeight = dims.height;
+
+      if (dims.width > MAX_DIM || dims.height > MAX_DIM) {
+        const aspectRatio = dims.width / dims.height;
+        if (dims.width > dims.height) {
+          newWidth = MAX_DIM;
+          newHeight = Math.round(MAX_DIM / aspectRatio);
+        } else {
+          newHeight = MAX_DIM;
+          newWidth = Math.round(MAX_DIM * aspectRatio);
+        }
+      }
+
+      // Resize using canvas
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Failed to get canvas context'));
+              return;
+            }
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to create blob'));
+                  return;
+                }
+                const resizedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(resizedFile);
+              },
+              'image/jpeg',
+              0.95
+            );
+          };
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = String(reader.result);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    } catch (err) {
+      console.error('Error resizing image:', err);
+      return file;
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,15 +117,16 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
       return;
     }
 
-    // Create preview for crop modal
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setImageToEdit(dataUrl);
-      setCropModalOpen(true);
-      setShowOptions(false);
-    };
-    reader.readAsDataURL(file);
+    // Auto-resize if needed and upload
+    (async () => {
+      try {
+        const resized = await resizeImageIfNeeded(file);
+        uploadCover(resized);
+      } catch (err) {
+        console.error('Error processing cover:', err);
+        uploadCover(file);
+      }
+    })();
   };
 
   const uploadCover = async (file: File) => {
@@ -68,7 +144,6 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
       if (response.ok) {
         const data = await response.json();
         onCoverChange?.(data.coverImage);
-        setPreview(null);
 
         // Update session
         await update({
@@ -88,30 +163,6 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
     } finally {
       setIsUploading(false);
     }
-  };
-
-
-  const handleCropSave = async (croppedImage: string, file: File) => {
-    // Show preview and wait for user confirmation
-    setPreview(croppedImage);
-    setPendingFile(file);
-    setPreviewModalOpen(true);
-    setCropModalOpen(false);
-    setImageToEdit(null);
-  };
-
-  const confirmPreviewUpload = async () => {
-    if (!pendingFile) return;
-    setPreviewModalOpen(false);
-    await uploadCover(pendingFile);
-    setPendingFile(null);
-    setPreview(null);
-  };
-
-  const cancelPreview = () => {
-    setPreviewModalOpen(false);
-    setPendingFile(null);
-    setPreview(null);
   };
 
   const removeCover = async () => {
@@ -148,31 +199,10 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
 
   return (
     <div className="relative">
-      {/* Crop Modal for Cover */}
-      <ImageCropModal
-        isOpen={cropModalOpen}
-        imageSrc={imageToEdit || ''}
-        onClose={() => {
-          setCropModalOpen(false);
-          setImageToEdit(null);
-        }}
-        onSave={handleCropSave}
-        aspectRatio={4} // 4:1 ratio for cover (Facebook style)
-        title="Ajuster photo de couverture"
-      />
-
-      <PreviewModal
-        isOpen={previewModalOpen}
-        imageSrc={preview}
-        title={translation.profile.changeCover}
-        onConfirm={confirmPreviewUpload}
-        onCancel={cancelPreview}
-      />
-
       <div
         className="relative group cursor-pointer w-full h-48 rounded-lg overflow-hidden bg-gradient-to-r from-primary-dark to-accent-dark"
         style={{
-          backgroundImage: (preview || currentCover) ? `url(${preview || currentCover})` : undefined,
+          backgroundImage: currentCover ? `url(${currentCover})` : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -180,49 +210,31 @@ export function CoverImageUpload({ currentCover, onCoverChange }: CoverImageUplo
         onMouseLeave={() => setShowOptions(false)}
       >
         {/* Upload overlay */}
-        <AnimatePresence>
-          {showOptions && !isUploading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-            >
-              <div className="flex space-x-2">
+        {showOptions && !isUploading && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 bg-white rounded-full text-gray-700 hover:bg-gray-100"
+                title={translation.profile.changeCover}
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+              {currentCover && (
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-3 bg-white rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-                  title={translation.profile.changeCover}
+                  onClick={removeCover}
+                  className="p-3 bg-white rounded-full text-red-600 hover:bg-red-100"
+                  title={translation.common.delete}
                 >
-                  <Camera className="w-5 h-5" />
+                  <X className="w-5 h-5" />
                 </button>
-                {currentCover && (
-                  <button
-                    onClick={removeCover}
-                    className="p-3 bg-white rounded-full text-red-600 hover:bg-red-100 transition-colors"
-                    title={translation.common.delete}
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              )}
+            </div>
+          </div>
+        )}
 
-        {/* Loading overlay */}
-        <AnimatePresence>
-          {isUploading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-            >
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+        {/* Loading overlay removed */}
       </div>
 
       {/* Hidden file input */}

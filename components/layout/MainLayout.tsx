@@ -23,10 +23,10 @@ export function MainLayout({ children }: MainLayoutProps) {
         
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
-          <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" 
+          <div className="fixed inset-0 z-[99997] bg-black/50 lg:hidden" 
                onClick={() => setSidebarOpen(false)} />
         )}
-        <nav className={`fixed left-0 top-16 bottom-0 w-3/4 max-w-xs bg-primary-dark z-40 lg:hidden transition-transform duration-300 overflow-y-auto ${
+        <nav className={`fixed left-0 top-16 bottom-0 w-3/4 max-w-xs bg-primary-dark z-[99998] lg:hidden transition-transform duration-300 overflow-y-auto ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
           <Sidebar onClose={() => setSidebarOpen(false)} />

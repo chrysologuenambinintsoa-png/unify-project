@@ -85,7 +85,10 @@
     "text": "Soratra",
     "imageUrl": "URL sary",
     "videoUrl": "URL vidio",
-    "atLeastOneRequired": "Mila soratra na media farafaharatsiny"
+    "atLeastOneRequired": "Mila soratra na media farafaharatsiny",
+    "discoverStories": "Tuklasin ang mga kwento na inilathala ng komunidad",
+    "noStoriesPublished": "Walang inilathaling kwento",
+    "beFirstToShare": "Maging una sa pagbabahagi ng kwento!"
   },
   "group": {
     "groups": "Vondrona",
@@ -97,7 +100,8 @@
     "groupName": "Anaran'ny vondrona",
     "groupDescription": "Fampitandremana momba ny vondrona",
     "privateGroup": "Vondrona tsirairay",
-    "publicGroup": "Vondrona ho an'ny rehetra"
+    "publicGroup": "Vondrona ho an'ny rehetra",
+    "joinCommunities": "Sumali sa mga komunidad na nakakaintereso sa iyo"
   },
   "page": {
     "pages": "Pejy",
@@ -159,8 +163,8 @@
     "saveChanges": "Raiketo ny fanovana",
     "fullName": "Anarana feno",
     "dateOfBirth": "Andro nahaterahana",
-    "originCity": "Tanàna niaviana",
-    "currentCity": "Tanàna ankehitriny",
+    "originCity": "TanÃƒÂ na niaviana",
+    "currentCity": "TanÃƒÂ na ankehitriny",
     "savingChanges": "Manao raiketo..."
   },
   "profile": {
@@ -248,7 +252,7 @@
     "appearance": "Endrika"
   },
   "settingsPage": {
-    "managePreferences": "Mandrindra ny iyong paramètres at akawonty",
+    "managePreferences": "Mandrindra ny iyong mombamomba at paramètre ny kaonty",
     "profilePhoto": "Sarin'ny olona",
     "coverPhoto": "Sary afara"
   },
@@ -291,8 +295,8 @@
     "storiesDesc": "Atsangana tantara mikitsika izay nalany rehefa 24 ora",
     "privacy": "Fiarovana",
     "privacyDesc": "Aseho ny iyong pamarihana miaro sy fiarovana",
-    "settings": "Paramètres",
-    "settingsDesc": "Ahitsarovy ny iyong olona sy ny iyong faniririna",
+    "settings": "Fikirana",
+    "settingsDesc": "Ahitsarovy ny iyong profil sy ny iyong faniririna",
     "faq": "Fanontaniana Matetika",
     "moreQuestions": "Misy fanontaniana koa?",
     "contactUs": "Mihaona Aminay"
@@ -303,5 +307,119 @@
     "privacyLink": "Fiarovana",
     "termsLink": "Teny",
     "helpLink": "Andrivandra"
+  },
+  "forms": {
+    "fullName": "Anarana feno",
+    "bio": "Bio",
+    "dateOfBirth": "Andro nahaterahana",
+    "originCity": "Tany niaviana",
+    "currentCity": "Tany ankehitriny"
+  },
+  "buttons": {
+    "saveChanges": "Raiketo ny fiovan'ny fisian'ny filo",
+    "changePassword": "Ovay ny teny miafina",
+    "deleteAccount": "Fafay ny kaonty",
+    "sendMessage": "Alefaso ny hafatra",
+    "editProfile": "Ovay ny profil",
+    "addFriend": "Manampy ho namako",
+    "removeFriend": "Esory amin'ny namana",
+    "add": "Manampy",
+    "send": "Ipadala",
+    "comment": "Teny fanampiny",
+    "editPost": "Ovay ny valiny",
+    "deletePost": "Fafay ny valiny",
+    "share": "Mizara",
+    "like": "Tia"
+  },
+  "pageLabels": {
+    "noPublications": "Walang publikasyon pa",
+    "noNotifications": "Walang notifikasyon"
+  },
+  "messages": {
+    "removingFriend": "Pag-aalis...",
+    "addingFriend": "Ipinapadala...",
+    "sendingComment": "Ipinapadala...",
+    "confirmDelete": "Manaporofo ang pagtanggal",
+    "confirmDeletePost": "Sigurado ka ring gusto mong alisin ang post na ito?",
+    "errorSendingComment": "Kamalian sa pagpapadala ng komento",
+    "errorSendingHeart": "Hindi maaaring magpadala ng puso",
+    "comments": "mga komento",
+    "shares": "mga pagbabahagi"
+  },
+  "alerts": {
+    "accountDeletedRedirecting": "Kaonty navoafina. Miverina...",
+    "errorDeletingAccount": "Hadisoana rehefa nafafa ny kaonty",
+    "confirmDelete": "Manaporofo ang pagtanggal"
+  },
+  "confirmations": {
+    "changesSaved": "Ny fiovana dia narakitra",
+    "passwordChanged": "Ny teny miafina dia nobaiky tsara",
+    "accountDeleted": "Kaonty navoafina. Miverina...",
+    "confirmPasswordMismatch": "Tsy mitovy ny teny miafina",
+    "confirmDelete": "Manaporofo ny fafana"
+  },
+  "settingsForm": {
+    "generalSettings": "Ny zava-dehibe",
+    "accountManagement": "Fitantanana kaonty",
+    "privateProfile": "Profil fiarovana",
+    "privateProfileDesc": "Ny ankohonany ihany no afaka mahita ny iyong hafatra",
+    "privateMessages": "Hafatra fiarovana",
+    "privateMessagesDesc": "Mandrindra hoe izehy no afaka mamitaka hafatra",
+    "onlineActivity": "Hetsika amin'ny Internet",
+    "onlineActivityDesc": "Asehoy raha akohonany aho",
+    "allUsers": "Ny mpampiasa rehetra",
+    "friendsOnly": "Ny namaka ihany",
+    "nobody": "Tsy misy",
+    "pushNotifications": "Fandraisana fampitandremana",
+    "pushNotificationsDesc": "Makatandrema amin'ny iyong fitaovana",
+    "likes": "Tiako",
+    "comments": "Fanamarihana",
+    "followers": "Ny mpanarakaraka"
+  },
+  "passwordSection": {
+    "changePassword": "Ovay ny teny miafina",
+    "currentPassword": "Teny miafina ankehitriny",
+    "newPassword": "Teny miafina vaovao",
+    "confirmPassword": "Porofeso ny teny miafina",
+    "passwordChangedSuccess": "Ny teny miafina dia nobaiky tsara",
+    "linkedAccounts": "Kaonty mifandray",
+    "linkAccountsDescription": "Ampifandray ny sandan'ny korapija amin'ny iyong profil Unify.",
+    "linkAccountsTip": "💡 Afaka manampy Google, Facebook na sandan'ny hafa ianao mahatanteraka ny fidirana.",
+    "deleteAccount": "Fafay ny kaonty",
+    "deleteAccountWarning": "⚠️ Ny fafesan'ny kaonty ay tsy voavoty. Ny angonao rehetra dia hofafana ary tsy hipanaritra.",
+    "deleteAccountConfirmation": "Dia tomoinina fa ny fafesan'ny kaonty dia tsy voavoty",
+    "password": "Teny miafina"
+  },
+  "theme": {
+    "light": "Mazava",
+    "dark": "Maizina",
+    "auto": "Amin'ny filafilanao",
+    "displayMode": "Fomba fampisehoana"
+  },
+  "notificationLabels": {
+    "pushNotifications": "Fandraisana fampitandremana",
+    "pushNotificationsDesc": "Makatandrema amin'ny iyong fitaovana",
+    "likes": "Tiako sy fihetiketan-tsaina",
+    "likesDesc": "Raha tia na mamaly amin'ny iyong hafatra ny olona",
+    "comments": "Fanamarihana",
+    "commentsDesc": "Raha manamarihana amin'ny iyong hafatra ny olona",
+    "followers": "Mpanarakaraka vaovao",
+    "followersDesc": "Raha hanomboka ny mpanarakaraka vaovao"
+  },
+  "privacyLabels": {
+    "privateProfile": "Profil fiarovana",
+    "privateProfileDesc": "Ny ankohonany ihany no afaka mahita ny iyong hafatra",
+    "privateMessages": "Hafatra fiarovana",
+    "privateMessagesDesc": "Mandrindra hoe izehy no afaka mamitaka hafatra",
+    "onlineActivity": "Hetsika amin'ny Internet",
+    "onlineActivityDesc": "Asehoy raha akohonany aho"
+  },
+  "sections": {
+    "generalSettings": "Ny zava-dehibe",
+    "accountManagement": "Fitantanana kaonty"
+  },
+  "storyForm": {
+    "createStoryTitle": "Hamorona Tantara",
+    "sendMessage": "Alefaso ny hafatra"
   }
 }

@@ -1,6 +1,7 @@
-'use client';
+ 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users, UserPlus, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
@@ -22,6 +23,7 @@ interface GroupSuggestionsProps {
 }
 
 export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
+  const router = useRouter();
   const [groups, setGroups] = useState<SuggestedGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
@@ -39,7 +41,16 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/groups?type=discover');
+      const res = await fetch('/api/groups?type=discover', {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) {
+        console.warn(`Groups discovery API error: ${res.status}`);
+        setGroups([]);
+        return;
+      }
       const data = await res.json();
       setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -86,7 +97,7 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
     try {
       // Navigate to messages or open contact modal
       // For now, just show a simple alert
-      window.location.href = `/messages?group=${groupId}`;
+      router.push(`/messages?group=${groupId}`);
     } catch (error) {
       console.error('Error contacting group:', error);
     }
@@ -103,7 +114,7 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-gray-200 dark:border-gray-800">
+    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Groupes suggérés</h3>
       <div className="space-y-3 md:space-y-4">
         {groups.slice(0, compact ? 3 : 5).map((group) => (

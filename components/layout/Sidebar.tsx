@@ -78,26 +78,27 @@ export function Sidebar({ onClose }: SidebarProps) {
                     : 'text-blue-100 hover:text-white'
                 )}
               >
-                <Icon className={cn('w-5 sm:w-6 h-5 sm:h-6 flex-shrink-0', isActive && 'scale-110')} />
+                <div className="relative flex-shrink-0">
+                  <Icon className={cn('w-5 sm:w-6 h-5 sm:h-6', isActive && 'scale-110')} />
+                  {/* Badge on icon */}
+                  <AnimatePresence>
+                    {badgeCount > 0 && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-2 -right-2"
+                      >
+                        <SidebarBadge
+                          count={badgeCount}
+                          variant={badgeCount > 0 ? 'error' : 'default'}
+                          size="sm"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
                 <span className="font-medium">{label}</span>
-                
-                {/* Badge */}
-                <AnimatePresence>
-                  {badgeCount > 0 && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className="ml-auto"
-                    >
-                      <SidebarBadge
-                        count={badgeCount}
-                        variant={badgeCount > 0 ? 'error' : 'default'}
-                        size="sm"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </Link>
             </motion.div>
           );

@@ -2,6 +2,7 @@
 
 import { Story } from '@prisma/client';
 import Image from 'next/image';
+import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -10,6 +11,7 @@ interface StoryCardProps {
 }
 
 export default function StoryCard({ story }: StoryCardProps) {
+  const { translation } = useLanguage();
   const createdTime = story.createdAt ? formatDistanceToNow(new Date(story.createdAt), { addSuffix: true }) : '';
 
   return (
@@ -26,7 +28,7 @@ export default function StoryCard({ story }: StoryCardProps) {
           </div>
         )}
         <div className="p-4">
-          <p className="text-sm text-gray-600 line-clamp-2">{story.text || 'No text'}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">{story.text || translation.pageLabels?.noPublications || 'No text'}</p>
           {story.user && (
             <div className="mt-3 flex items-center gap-2">
               {story.user.avatar && (

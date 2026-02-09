@@ -4,16 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
-import PostCreator from '@/components/post/PostCreator';
-import TextPostCreator from '@/components/post/TextPostCreator';
+import UnifiedPostCreator from '@/components/post/UnifiedPostCreator';
 import Stories from '@/components/Stories';
 import Post from '@/components/Post';
 import SponsoredPostCard from '@/components/SponsoredPostCard';
 import { FriendSuggestions } from '@/components/FriendSuggestions';
 import { PageSuggestions } from '@/components/PageSuggestions';
 import { GroupSuggestions } from '@/components/GroupSuggestions';
+import { LoadingPage } from '@/components/LoadingPage';
 import { PostWithDetails } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import { usePublishedStories } from '@/hooks/usePublishedStories';
 import { motion } from 'framer-motion';
@@ -27,6 +28,8 @@ export default function HomePage() {
   const [sponsoredPosts, setSponsoredPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [sponsoredLoaded, setSponsoredLoaded] = useState(false);
   
   // Utiliser le hook pour récupérer les stories publiées
   const { stories, loading: storiesLoading, refresh: refreshStories } = usePublishedStories({ limit: 50 });
@@ -43,54 +46,57 @@ export default function HomePage() {
     clearHomeActivity();
   }, [clearHomeActivity]);
 
-  // Charger les posts
+  // Charger les posts et sponsored posts en parallèle
   useEffect(() => {
     if (session) {
-      fetchPosts();
-      fetchSponsoredPosts();
+      fetchAllData();
     }
   }, [session]);
 
-  const fetchPosts = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/posts');
-      if (!response.ok) {
+      
+      // Charger les posts et sponsored posts en parallèle
+      const [postsRes, sponsoredRes] = await Promise.all([
+        fetchWithTimeout('/api/posts', undefined, 10000),
+        fetch('/api/sponsored?limit=5'),
+      ]);
+      
+      // Traiter les posts
+      if (postsRes.ok) {
+        const data = await postsRes.json();
+        setPosts(data);
+        setPostsLoaded(true);
+      } else {
         throw new Error('Failed to fetch posts');
       }
-      const data = await response.json();
-      setPosts(data);
+      
+      // Traiter les sponsored posts
+      if (sponsoredRes.ok) {
+        const data = await sponsoredRes.json();
+        setSponsoredPosts(Array.isArray(data) ? data : []);
+        setSponsoredLoaded(true);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      if ((err as any)?.name === 'AbortError') {
+        setError('Le chargement des publications a expiré. Vérifiez la connexion et réessayez.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Une erreur est survenue lors du chargement');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSponsoredPosts = async () => {
-    try {
-      const response = await fetch('/api/sponsored?limit=5');
-      if (response.ok) {
-        const data = await response.json();
-        setSponsoredPosts(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      console.error('Error fetching sponsored posts:', err);
-    }
-  };
-
   // Afficher un écran de chargement pendant la vérification de la session
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingPage message="Connexion en cours..." />;
   }
 
   // Ne pas afficher le contenu si l'utilisateur n'est pas authentifié
   if (!session) {
-    return null;
+    return <LoadingPage message="Redirection en cours..." />;
   }
   const handleLike = async (postId: string) => {
     try {
@@ -99,7 +105,7 @@ export default function HomePage() {
       });
       if (response.ok) {
         // Recharger les posts pour mettre à jour les likes
-        await fetchPosts();
+        await fetchAllData();
       }
     } catch (err) {
       console.error('Erreur lors du like:', err);
@@ -107,16 +113,30 @@ export default function HomePage() {
   };
 
   const handleDelete = async (postId: string) => {
+    // First, confirm with the user
+    if (!window.confirm('Are you sure you want to delete this post?')) {
+      return;
+    }
+
+    // Optimistic update - remove post from UI immediately
+    const previousPosts = posts;
+    setPosts(prev => prev.filter(p => p.id !== postId));
+
     try {
       const response = await fetch(`/api/posts/${postId}`, {
         method: 'DELETE',
       });
-      if (response.ok) {
-        // Recharger les posts après suppression
-        await fetchPosts();
+      if (!response.ok) {
+        // If deletion fails, restore the posts
+        setPosts(previousPosts);
+        const error = await response.json();
+        alert(error.error || 'Failed to delete post');
       }
     } catch (err) {
       console.error('Erreur lors de la suppression:', err);
+      // If deletion fails, restore the posts
+      setPosts(previousPosts);
+      alert('Error deleting post. Please try again.');
     }
   };
 
@@ -169,7 +189,7 @@ export default function HomePage() {
             }
           }
         }
-        await fetchPosts();
+        await fetchAllData();
       } else {
         const error = await response.json();
         console.error('Erreur lors de la création du post:', error);
@@ -194,11 +214,7 @@ export default function HomePage() {
             </h1>
 
             <div className="px-4 md:px-0">
-              <PostCreator onCreatePost={handleCreatePost} />
-            </div>
-
-            <div className="px-4 md:px-0">
-              <TextPostCreator onCreatePost={handleCreatePost} />
+              <UnifiedPostCreator onCreatePost={handleCreatePost} />
             </div>
 
             {/* Stories Section */}
@@ -223,8 +239,7 @@ export default function HomePage() {
             </div>
             {loading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-gray-500 text-sm md:text-base">Chargement des publications...</p>
+                <p className="text-gray-500 text-sm md:text-base">Chargement des publications...</p>
               </div>
             ) : error ? (
               <div className="text-center py-12">
@@ -244,7 +259,7 @@ export default function HomePage() {
                       post={post}
                       onLike={handleLike}
                       onDelete={handleDelete}
-                      onCommentAdded={fetchPosts}
+                      onCommentAdded={fetchAllData}
                     />
                     {/* Afficher une annonce tous les 3 posts */}
                     {sponsoredPosts.length > 0 && index > 0 && (index + 1) % 3 === 0 && (

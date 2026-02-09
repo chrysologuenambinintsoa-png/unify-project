@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 
@@ -30,6 +29,10 @@ export default function SearchPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'personnes' | 'groupes' | 'pages'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [personnesLoaded, setPersonnesLoaded] = useState(false);
+  const [groupesLoaded, setGroupesLoaded] = useState(false);
+  const [pagesLoaded, setPagesLoaded] = useState(false);
+  const [tabLoading, setTabLoading] = useState(false);
 
   useEffect(() => {
     if (!query) return;
@@ -41,6 +44,9 @@ export default function SearchPage() {
         if (response.ok) {
           const data = await response.json();
           setResults(data);
+          setPersonnesLoaded(true);
+          setGroupesLoaded(true);
+          setPagesLoaded(true);
         }
       } catch (error) {
         console.error('Search error:', error);
@@ -51,6 +57,31 @@ export default function SearchPage() {
 
     fetchResults();
   }, [query]);
+
+  useEffect(() => {
+    // Load specific tab data when user switches tabs
+    if (!query || loading) return;
+    
+    if (activeTab === 'personnes' && !personnesLoaded) {
+      setTabLoading(true);
+      setTimeout(() => {
+        setPersonnesLoaded(true);
+        setTabLoading(false);
+      }, 300);
+    } else if (activeTab === 'groupes' && !groupesLoaded) {
+      setTabLoading(true);
+      setTimeout(() => {
+        setGroupesLoaded(true);
+        setTabLoading(false);
+      }, 300);
+    } else if (activeTab === 'pages' && !pagesLoaded) {
+      setTabLoading(true);
+      setTimeout(() => {
+        setPagesLoaded(true);
+        setTabLoading(false);
+      }, 300);
+    }
+  }, [activeTab, query, loading, personnesLoaded, groupesLoaded, pagesLoaded]);
 
   // Add friend handler
   const handleAddFriend = async (e: React.MouseEvent, userId: string) => {
@@ -161,12 +192,7 @@ export default function SearchPage() {
 
   return (
     <MainLayout>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl mx-auto"
-      >
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -183,7 +209,7 @@ export default function SearchPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+              className={`px-4 py-3 font-medium border-b-2 ${
                 activeTab === tab
                   ? 'text-primary-dark border-primary-dark'
                   : 'text-gray-600 border-transparent hover:text-gray-900'
@@ -200,7 +226,7 @@ export default function SearchPage() {
         {/* Results */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark"></div>
+            <div className="rounded-full h-8 w-8 border-b-2 border-primary-dark"></div>
           </div>
         ) : totalResults === 0 ? (
           <Card className="p-8 text-center">
@@ -221,9 +247,8 @@ export default function SearchPage() {
                   {results.personnes.map((person) => (
                     <div key={person.id}>
                       <Link href={`/users/${person.id}/profile`}>
-                        <motion.div
-                          whileHover={{ x: 4 }}
-                          className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                        <div
+                          className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md cursor-pointer"
                         >
                           <div className="flex items-center space-x-3">
                             {person.avatar ? (
@@ -252,7 +277,7 @@ export default function SearchPage() {
                               <button
                                 onClick={(e) => handleAddFriend(e, person.id)}
                                 disabled={actionLoading === `friend-${person.id}`}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`px-4 py-2 rounded-lg font-medium ${
                                   actionSuccess === `friend-${person.id}`
                                     ? 'bg-green-100 text-green-700'
                                     : person.friendshipStatus === 'accepted'
@@ -263,7 +288,7 @@ export default function SearchPage() {
                                 }`}
                               >
                                 {actionLoading === `friend-${person.id}` ? (
-                                  <span className="inline-block animate-spin">⏳</span>
+                                  <span className="inline-block">⏳</span>
                                 ) : actionSuccess === `friend-${person.id}` ? (
                                   '✓ Ajouté'
                                 ) : person.friendshipStatus === 'accepted' ? (
@@ -271,12 +296,12 @@ export default function SearchPage() {
                                 ) : person.friendshipStatus === 'pending' ? (
                                   'En attente'
                                 ) : (
-                                  'Ajouter'
+                                  translation.buttons?.add || 'Add'
                                 )}
                               </button>
                             )}
                           </div>
-                        </motion.div>
+                        </div>
                       </Link>
                     </div>
                   ))}
@@ -294,10 +319,7 @@ export default function SearchPage() {
                   {results.groupes.map((groupe) => (
                     <div key={groupe.id}>
                       <Link href={`/groups/${groupe.id}`}>
-                        <motion.div
-                          whileHover={{ x: 4 }}
-                          className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                        >
+                        <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md cursor-pointer">
                           <div className="flex items-center space-x-3">
                             {groupe.image ? (
                               <img
@@ -327,14 +349,14 @@ export default function SearchPage() {
                               <button
                                 onClick={(e) => handleJoinGroup(e, groupe.id)}
                                 disabled={actionLoading === `group-${groupe.id}`}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`px-4 py-2 rounded-lg font-medium ${
                                   actionSuccess === `group-${groupe.id}`
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-blue-500 text-white hover:bg-blue-600'
                                 }`}
                               >
                                 {actionLoading === `group-${groupe.id}` ? (
-                                  <span className="inline-block animate-spin">⏳</span>
+                                  <span className="inline-block">⏳</span>
                                 ) : actionSuccess === `group-${groupe.id}` ? (
                                   '✓ Rejoint'
                                 ) : (
@@ -343,7 +365,7 @@ export default function SearchPage() {
                               </button>
                             )}
                           </div>
-                        </motion.div>
+                        </div>
                       </Link>
                     </div>
                   ))}
@@ -361,10 +383,7 @@ export default function SearchPage() {
                   {results.pages.map((page) => (
                     <div key={page.id}>
                       <Link href={`/pages/${page.id}`}>
-                        <motion.div
-                          whileHover={{ x: 4 }}
-                          className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                        >
+                        <div className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md cursor-pointer">
                           <div className="flex items-center space-x-3">
                             {page.coverImage ? (
                               <img
@@ -385,14 +404,14 @@ export default function SearchPage() {
                               <button
                                 onClick={(e) => handleFollowPage(e, page.id)}
                                 disabled={actionLoading === `page-${page.id}`}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                className={`px-4 py-2 rounded-lg font-medium ${
                                   actionSuccess === `page-${page.id}`
                                     ? 'bg-green-100 text-green-700'
                                     : 'bg-blue-500 text-white hover:bg-blue-600'
                                 }`}
                               >
                                 {actionLoading === `page-${page.id}` ? (
-                                  <span className="inline-block animate-spin">⏳</span>
+                                  <span className="inline-block">⏳</span>
                                 ) : actionSuccess === `page-${page.id}` ? (
                                   '✓ Suivi'
                                 ) : (
@@ -401,7 +420,7 @@ export default function SearchPage() {
                               </button>
                             )}
                           </div>
-                        </motion.div>
+                        </div>
                       </Link>
                     </div>
                   ))}
@@ -410,7 +429,7 @@ export default function SearchPage() {
             )}
           </div>
         )}
-      </motion.div>
+      </div>
     </MainLayout>
   );
 }

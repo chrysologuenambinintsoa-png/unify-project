@@ -65,17 +65,7 @@ export default function LoginHistoryView({ userId }: LoginHistoryViewProps) {
     return 'Autre navigateur';
   };
 
-  if (loading) {
-    return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      </Card>
-    );
-  }
+
 
   return (
     <div>

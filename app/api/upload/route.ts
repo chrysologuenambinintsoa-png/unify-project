@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import imageSize from 'image-size';
 import { authOptions } from '@/lib/auth';
 import { uploadImage, uploadVideo } from '@/lib/cloudinary';
 
@@ -76,9 +77,24 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        // Convert File to base64 for upload
-        const buffer = await file.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
+        // Convert File to buffer and validate dimensions (max 1024x1024)
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        try {
+          // @ts-ignore
+          const dims = imageSize(buffer);
+          if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
+            if (dims.width > 1024 || dims.height > 1024) {
+              errors.push({ file: file.name, message: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' });
+              continue;
+            }
+          }
+        } catch (err) {
+          errors.push({ file: file.name, message: 'Unable to read image dimensions.' });
+          continue;
+        }
+
+        const base64 = buffer.toString('base64');
         const mimeType = file.type;
         const dataUrl = `data:${mimeType};base64,${base64}`;
 

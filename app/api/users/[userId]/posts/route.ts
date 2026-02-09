@@ -14,12 +14,40 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
+    const session = await getServerSession(authOptions);
+    const requesterId = session?.user?.id || null;
+
+    // Determine if requester is friend of the profile owner
+    let isFriend = false;
+    if (requesterId && requesterId !== userId) {
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { user1Id: requesterId, user2Id: userId },
+            { user1Id: userId, user2Id: requesterId },
+          ],
+          status: 'accepted',
+        },
+      });
+      isFriend = !!friendship;
+    }
+
+    // Build visibility-aware where clause:
+    // - Owner: see all their non-deleted posts
+    // - Friend: see owner's posts (including non-public)
+    // - Other / anonymous: see only posts where isPublic = true
+    const baseWhere: any = { userId, isDeleted: false };
+    if (requesterId && requesterId === userId) {
+      // owner: no extra filter
+    } else if (isFriend) {
+      // friend: no extra filter
+    } else {
+      // not friend or anonymous: only public posts
+      baseWhere.isPublic = true;
+    }
 
     const posts = await prisma.post.findMany({
-      where: {
-        userId,
-        isDeleted: false,
-      },
+      where: baseWhere,
       include: {
         user: {
           select: {

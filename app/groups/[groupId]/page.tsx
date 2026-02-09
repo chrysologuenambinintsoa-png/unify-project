@@ -29,7 +29,7 @@ export default function GroupDetailPage() {
     if (groupId) fetchGroup();
   }, [groupId]);
 
-  if (loading) return <div className="p-6 text-center">Loading...</div>;
+  if (loading) return null;
   if (error) return <div className="p-6 text-center text-red-600">{error}</div>;
   if (!group) return <div className="p-6 text-center">Group not found</div>;
 

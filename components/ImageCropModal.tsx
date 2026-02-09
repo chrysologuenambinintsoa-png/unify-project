@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { X, ZoomIn, ZoomOut } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ImageCropModalProps {
   isOpen: boolean;
@@ -39,7 +38,8 @@ export function ImageCropModal({
     setIsMounted(true);
   }, []);
 
-  const containerWidth = isMounted ? Math.min(320, typeof window !== 'undefined' ? window.innerWidth - 40 : 320) : 320;
+  // Dimensions for crop preview (400px width for manageable interface, internal canvas will be larger for quality)
+  const containerWidth = isMounted ? Math.min(400, typeof window !== 'undefined' ? window.innerWidth - 80 : 400) : 400;
   const containerHeight = Math.round(containerWidth / aspectRatio);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -72,45 +72,77 @@ export function ImageCropModal({
   const handleSave = async () => {
     if (!canvasRef.current || !imgRef.current) return;
 
+    // Calculate output size - try 4x for quality, but cap at 1024px max
+    let outputWidth = containerWidth * 4;   // 4x larger for quality
+    let outputHeight = containerHeight * 4; // 4x larger for quality
+
+    // Cap to 1024x1024 maximum while maintaining aspect ratio
+    const MAX_DIM = 1024;
+    if (outputWidth > MAX_DIM || outputHeight > MAX_DIM) {
+      const scaleFactor = Math.min(MAX_DIM / outputWidth, MAX_DIM / outputHeight);
+      outputWidth = Math.round(outputWidth * scaleFactor);
+      outputHeight = Math.round(outputHeight * scaleFactor);
+    }
+
+    // Set canvas dimensions for high-quality output
+    canvasRef.current.width = outputWidth;
+    canvasRef.current.height = outputHeight;
+
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
     // Clear canvas
-    ctx.clearRect(0, 0, containerWidth, containerHeight);
+    ctx.clearRect(0, 0, outputWidth, outputHeight);
+
+    // Enable high-quality image rendering
+    (ctx as any).imageSmoothingEnabled = true;
+    (ctx as any).imageSmoothingQuality = 'high';
+
+    // Calculate scaling factor from preview to output canvas
+    const previewScale = outputWidth / containerWidth;
 
     // Draw image with transformations
     ctx.save();
-    ctx.translate(containerWidth / 2, containerHeight / 2);
+    
+    // Move to center of canvas
+    ctx.translate(outputWidth / 2, outputHeight / 2);
+    
+    // Apply user's zoom
     ctx.scale(scale, scale);
-    ctx.translate(offsetX / scale - containerWidth / (2 * scale), offsetY / scale - containerHeight / (2 * scale));
-    ctx.drawImage(imgRef.current, 0, 0);
+    
+    // Apply user's pan (scaled for the larger canvas)
+    ctx.translate(offsetX * previewScale / scale, offsetY * previewScale / scale);
+    
+    // Draw image centered on canvas
+    ctx.drawImage(
+      imgRef.current,
+      -imgRef.current.width / 2,
+      -imgRef.current.height / 2,
+      imgRef.current.width,
+      imgRef.current.height
+    );
+    
     ctx.restore();
 
-    // Convert canvas to file
+    // Convert canvas to file with maximum quality (98%)
     canvasRef.current.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
-        const dataUrl = canvasRef.current!.toDataURL('image/jpeg', 0.95);
+        const dataUrl = canvasRef.current!.toDataURL('image/jpeg', 0.98);
         onSave(dataUrl, file);
         onClose();
       }
-    }, 'image/jpeg', 0.95);
+    }, 'image/jpeg', 0.98);
   };
 
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={onClose}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+          <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -119,7 +151,7 @@ export function ImageCropModal({
               <h3 className="font-bold text-xl text-gray-900">{title}</h3>
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -167,7 +199,7 @@ export function ImageCropModal({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleZoomOut}
-                    className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 rounded-full"
                     title="Zoom out"
                   >
                     <ZoomOut className="w-4 h-4 text-gray-700" />
@@ -185,7 +217,7 @@ export function ImageCropModal({
                   
                   <button
                     onClick={handleZoomIn}
-                    className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 rounded-full"
                     title="Zoom in"
                   >
                     <ZoomIn className="w-4 h-4 text-gray-700" />
@@ -224,14 +256,14 @@ export function ImageCropModal({
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-gradient-to-r from-primary to-accent text-white hover:shadow-lg transition-shadow text-sm"
+                className="flex-1 bg-gradient-to-r from-primary to-accent text-white text-sm"
               >
                 Enregistrer
               </Button>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

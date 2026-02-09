@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, UserCheck, UserX, Search, RefreshCw, Check, X } from 'lucide-react';
-import { useFriendBadges, useFriendRequests, useFriendSuggestions, useFriendsList } from '@/hooks/useFriendBadges';
+import { Users, UserPlus, UserCheck, Search, RefreshCw, Check, X } from 'lucide-react';
+import { useFriendBadges, useFriendRequests, useFriendSuggestions } from '@/hooks/useFriendBadges';
 import { FriendEventBadges } from '@/components/FriendBadge';
 
 interface Person {
@@ -14,20 +14,25 @@ interface Person {
   fullName: string;
   avatar: string;
   bio: string;
+  mutualFriendsCount?: number;
+  friendsCount?: number;
 }
 
 export default function FriendsPage() {
   const { translation } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'suggestions'>('friends');
+  const [activeTab, setActiveTab] = useState<'requests' | 'suggestions'>('requests');
   const [searchQuery, setSearchQuery] = useState('');
   const [limit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [friendCounts, setFriendCounts] = useState<Record<string, number>>({});
+  const [requestsLoaded, setRequestsLoaded] = useState(false);
+  const [suggestionsLoaded, setSuggestionsLoaded] = useState(false);
+  const [tabLoading, setTabLoading] = useState(false);
 
   // Utiliser les nouveaux hooks
   const badgesData = useFriendBadges({ refetchInterval: 30000 });
-  const friendsData = useFriendsList({ refetchInterval: 60000 });
   const requestsData = useFriendRequests({ refetchInterval: 30000 });
   const suggestionsData = useFriendSuggestions({ refetchInterval: 60000 });
 
@@ -55,7 +60,6 @@ export default function FriendsPage() {
       // Rafraîchir les données
       await badgesData.refetch();
       await requestsData.refetch();
-      await friendsData.refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -138,9 +142,10 @@ export default function FriendsPage() {
         throw new Error('Erreur lors de la suppression de l\'ami');
       }
 
-      // Rafraîchir les données
+      // Rafraîchir les compteurs et listes visibles
       await badgesData.refetch();
-      await friendsData.refetch();
+      await requestsData.refetch();
+      await suggestionsData.refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -148,23 +153,21 @@ export default function FriendsPage() {
     }
   };
 
+  
+
   const getCurrentData = () => {
     switch (activeTab) {
-      case 'friends':
-        return friendsData.friends;
       case 'requests':
         return requestsData.requests.map((r: any) => r.fromUser);
       case 'suggestions':
         return suggestionsData.suggestions;
       default:
-        return friendsData.friends;
+        return requestsData.requests.map((r: any) => r.fromUser);
     }
   };
 
   const getLoading = () => {
     switch (activeTab) {
-      case 'friends':
-        return friendsData.loading;
       case 'requests':
         return requestsData.loading;
       case 'suggestions':
@@ -176,8 +179,6 @@ export default function FriendsPage() {
 
   const getError = () => {
     switch (activeTab) {
-      case 'friends':
-        return friendsData.error;
       case 'requests':
         return requestsData.error;
       case 'suggestions':
@@ -189,8 +190,6 @@ export default function FriendsPage() {
 
   const getTabIcon = (tab: string) => {
     switch (tab) {
-      case 'friends':
-        return <Users className="w-4 h-4" />;
       case 'requests':
         return <UserPlus className="w-4 h-4" />;
       case 'suggestions':
@@ -205,6 +204,50 @@ export default function FriendsPage() {
     person.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Fetch real friends count for visible users (cached per-session)
+  useEffect(() => {
+    const idsToFetch = filteredData
+      .map((p: any) => p.id)
+      .filter((id: string) => id && friendCounts[id] === undefined);
+
+    if (idsToFetch.length === 0) return;
+
+    let mounted = true;
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          idsToFetch.map(async (id: string) => {
+            try {
+              const res = await fetch(`/api/users/${id}/profile`);
+              if (!res.ok) return 0;
+              const json = await res.json();
+              return (json?.user?.friendsCount as number) || 0;
+            } catch (e) {
+              return 0;
+            }
+          })
+        );
+
+        if (!mounted) return;
+
+        setFriendCounts((prev) => {
+          const next = { ...prev };
+          idsToFetch.forEach((id, i) => {
+            next[id] = results[i];
+          });
+          return next;
+        });
+      } catch (e) {
+        // ignore individual fetch errors
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [filteredData]);
+
   return (
     <MainLayout>
       <motion.div
@@ -212,10 +255,8 @@ export default function FriendsPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            {translation.friends.friends}
-          </h1>
+        <div className="mb-6 max-w-4xl mx-auto px-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Demandes et suggestions</h1>
 
           {/* Error Message */}
           {actionError && (
@@ -225,7 +266,7 @@ export default function FriendsPage() {
           )}
 
           {/* Badges - Event Counters */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+          <div className="mb-6 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-gray-700 mb-2">Vue d'ensemble</h2>
@@ -244,7 +285,7 @@ export default function FriendsPage() {
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-blue-200 rounded-lg transition-colors disabled:opacity-50"
                 title="Rafraîchir les compteurs"
               >
-                <RefreshCw className={`w-5 h-5 ${badgesData.loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5`} />
               </button>
             </div>
           </div>
@@ -254,7 +295,7 @@ export default function FriendsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Rechercher des amis..."
+              placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -262,9 +303,8 @@ export default function FriendsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg" role="tablist" aria-label="Onglets Amis">
             {[
-              { key: 'friends', label: 'Amis', count: badgesData.badges.friends },
               { key: 'requests', label: 'Demandes', count: badgesData.badges.pendingRequests },
               { key: 'suggestions', label: 'Suggestions', count: badgesData.badges.suggestions },
             ].map((tab) => (
@@ -274,7 +314,9 @@ export default function FriendsPage() {
                   setActiveTab(tab.key as any);
                   setOffset(0);
                 }}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-all relative ${
+                role="tab"
+                aria-pressed={activeTab === tab.key}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-md text-sm font-medium transition-all relative focus:outline-none focus:ring-2 focus:ring-primary ${
                   activeTab === tab.key
                     ? 'bg-white text-primary shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -292,114 +334,106 @@ export default function FriendsPage() {
           </div>
 
           {/* Content */}
-          {getLoading() ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-gray-500">Chargement...</p>
-            </div>
-          ) : getError() ? (
+          {getError() ? (
             <div className="text-center py-12">
               <p className="text-red-500">{getError()}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredData.map((person, index) => (
-                <motion.div
-                  key={person.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-                >
-                  <a href={`/users/${person.id}`} className="flex items-center space-x-3 mb-3 hover:opacity-80 transition-opacity">
-                    <div className="relative">
-                      <img
-                        src={person.avatar}
-                        alt={person.fullName}
-                        className="w-12 h-12 rounded-full"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 truncate">{person.fullName}</h3>
-                      <p className="text-sm text-gray-500 truncate">@{person.username}</p>
-                    </div>
-                  </a>
-
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{person.bio}</p>
-
-                  {activeTab === 'friends' && (
-                    <button 
-                      onClick={() => {
-                        const friendship = requestsData.requests.find((r: any) => r.fromUser.id === person.id);
-                        if (friendship) {
-                          handleRemoveFriend(friendship.id);
-                        }
-                      }}
-                      disabled={actionLoading !== null}
-                      className="w-full px-3 py-1 text-sm text-white bg-primary-dark hover:bg-primary-light rounded-lg transition-colors disabled:opacity-50"
+            <>
+              
+                <div className="flex flex-col space-y-4">
+                  {filteredData.map((person, index) => (
+                    <motion.div
+                      key={person.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="w-full bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:-translate-y-1 transition-transform transition-shadow"
                     >
-                      {actionLoading === person.id ? 'Suppression...' : 'Retirer'}
-                    </button>
-                  )}
+                      <a href={`/users/${person.id}`} className="flex items-center space-x-3 mb-3 hover:opacity-80 transition-opacity">
+                        <div className="relative">
+                          <img
+                            src={person.avatar}
+                            alt={person.fullName}
+                            className="w-12 h-12 rounded-full"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">{person.fullName}</h3>
+                          <p className="text-sm text-gray-500 truncate">@{person.username}</p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {typeof friendCounts[person.id] === 'number'
+                              ? `${friendCounts[person.id]} amis`
+                              : (person.mutualFriendsCount ?? person.friendsCount ?? 0) + ' amis'}
+                          </p>
+                        </div>
+                      </a>
 
-                  {activeTab === 'requests' && (
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => {
-                          const friendship = requestsData.requests.find((r: any) => r.fromUser.id === person.id);
-                          if (friendship) {
-                            handleAcceptRequest(friendship.id, person.id);
-                          }
-                        }}
-                        disabled={actionLoading !== null}
-                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-1 text-sm text-white bg-primary-dark hover:bg-primary-light rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>{actionLoading === person.id ? 'Acceptation...' : 'Accepter'}</span>
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const friendship = requestsData.requests.find((r: any) => r.fromUser.id === person.id);
-                          if (friendship) {
-                            handleDeclineRequest(friendship.id);
-                          }
-                        }}
-                        disabled={actionLoading !== null}
-                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-1 text-sm text-primary-dark border-2 border-primary-dark rounded-lg hover:bg-primary-dark hover:text-white transition-colors disabled:opacity-50"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>{actionLoading === person.id ? 'Refus...' : 'Refuser'}</span>
-                      </button>
-                    </div>
-                  )}
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{person.bio}</p>
 
-                  {activeTab === 'suggestions' && (
-                    <button 
-                      onClick={() => handleAddFriend(person.id)}
-                      disabled={actionLoading !== null}
-                      className="w-full px-3 py-1 text-sm bg-primary-dark text-white hover:bg-primary-light rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {actionLoading === person.id ? 'Ajout en cours...' : 'Ajouter'}
-                    </button>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+                      {activeTab === 'requests' && (
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => {
+                              const friendship = requestsData.requests.find((r: any) => r.fromUser.id === person.id);
+                              if (friendship) {
+                                handleAcceptRequest(friendship.id, person.id);
+                              }
+                            }}
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center justify-center space-x-2 px-3 py-1.5 text-sm text-white bg-primary-dark hover:bg-primary-light rounded-md min-w-[96px] transition-colors disabled:opacity-50"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>{actionLoading === person.id ? 'Acceptation...' : 'Accepter'}</span>
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const friendship = requestsData.requests.find((r: any) => r.fromUser.id === person.id);
+                              if (friendship) {
+                                handleDeclineRequest(friendship.id);
+                              }
+                            }}
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center justify-center space-x-2 px-3 py-1.5 text-sm text-primary-dark border-2 border-primary-dark rounded-md hover:bg-primary-dark hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            <X className="w-4 h-4" />
+                            <span>{actionLoading === person.id ? 'Refus...' : 'Refuser'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {activeTab === 'suggestions' && (
+                        <button 
+                          onClick={() => handleAddFriend(person.id)}
+                          disabled={actionLoading !== null}
+                          className="inline-flex items-center justify-center px-3 py-1.5 text-sm bg-primary-dark text-white hover:bg-primary-light rounded-md min-w-[96px] transition-colors disabled:opacity-50"
+                          aria-label={`Ajouter ${person.fullName}`}
+                        >
+                          {actionLoading === person.id ? 'Ajout...' : 'Ajouter'}
+                        </button>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+            </>
           )}
 
           {filteredData.length === 0 && !getLoading() && !getError() && (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {activeTab === 'friends' && 'Aucun ami trouvé'}
                 {activeTab === 'requests' && 'Aucune demande d\'ami'}
                 {activeTab === 'suggestions' && 'Aucune suggestion'}
               </h3>
-              <p className="text-gray-500">
-                {activeTab === 'friends' && 'Vous n\'avez pas encore d\'amis.'}
+              <p className="text-gray-500 mb-4">
                 {activeTab === 'requests' && 'Vous n\'avez pas de demandes d\'ami en attente.'}
                 {activeTab === 'suggestions' && 'Aucune suggestion d\'ami pour le moment.'}
               </p>
+              {activeTab === 'suggestions' && (
+                <div className="flex justify-center">
+                  <a href="/explore" className="px-4 py-2 bg-primary-dark text-white rounded-md hover:bg-primary-light">Trouver des utilisateurs</a>
+                </div>
+              )}
             </div>
           )}
         </div>

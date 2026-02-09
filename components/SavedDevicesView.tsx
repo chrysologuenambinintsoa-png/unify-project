@@ -58,7 +58,7 @@ export default function SavedDevicesView({ userId }: { userId: string | undefine
     <div>
       <h2 className="text-lg font-semibold mb-4">Appareils enregistrés</h2>
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-600"><Loader2 className="animate-spin" /> Chargement...</div>
+        <></>
       ) : devices.length === 0 ? (
         <p className="text-sm text-gray-600">Aucun appareil enregistré.</p>
       ) : (

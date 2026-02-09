@@ -4,9 +4,13 @@ import en from './translations/en.json';
 import es from './translations/es.json';
 import de from './translations/de.json';
 import ch from './translations/ch.json';
+import pt from './translations/pt.json';
+import hi from './translations/hi.json';
+import ar from './translations/ar.json';
+import it from './translations/it.json';
 
 export type Translation = typeof fr;
-export type Language = 'fr' | 'mg' | 'en' | 'es' | 'de' | 'ch';
+export type Language = 'fr' | 'mg' | 'en' | 'es' | 'de' | 'ch' | 'pt' | 'hi' | 'ar' | 'it';
 
 const translations: Record<Language, Translation> = {
   fr,
@@ -15,6 +19,10 @@ const translations: Record<Language, Translation> = {
   es,
   de,
   ch,
+  pt,
+  hi,
+  ar,
+  it,
 };
 
 export function getTranslation(lang: Language = 'fr'): Translation {
@@ -44,4 +52,8 @@ export const languages = [
   { code: 'es' as Language, name: 'Español', flag: '🇪🇸' },
   { code: 'de' as Language, name: 'Deutsch', flag: '🇩🇪' },
   { code: 'ch' as Language, name: '中文', flag: '🇨🇳' },
+  { code: 'pt' as Language, name: 'Português', flag: '🇵🇹' },
+  { code: 'hi' as Language, name: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ar' as Language, name: 'العربية', flag: '🇸🇦' },
+  { code: 'it' as Language, name: 'Italiano', flag: '🇮🇹' },
 ];

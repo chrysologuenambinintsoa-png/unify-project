@@ -82,7 +82,7 @@ export function SearchBar() {
   const totalResults = results.personnes.length + results.groupes.length + results.pages.length;
 
   return (
-    <div className="relative flex-1 max-w-xs md:max-w-md lg:max-w-md mx-2 lg:mx-8" ref={searchRef}>
+    <div className="relative flex-1 w-full min-w-0 max-w-sm md:max-w-md" ref={searchRef}>
       <form onSubmit={handleSearch}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 sm:w-5 h-4 sm:h-5" />

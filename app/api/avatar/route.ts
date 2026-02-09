@@ -87,7 +87,9 @@ export async function POST(request: NextRequest) {
         select: { user1Id: true, user2Id: true },
       });
 
-      const friendIds = friendships.map(f => f.user1Id === session.user.id ? f.user2Id : f.user1Id);
+      const friendIds = friendships
+        .map(f => f.user1Id === session.user.id ? f.user2Id : f.user1Id)
+        .filter(id => id !== session.user.id); // Exclude the user from their own notifications
 
       if (friendIds.length > 0) {
         const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';

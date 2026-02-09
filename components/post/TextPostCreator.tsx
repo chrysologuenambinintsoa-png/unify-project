@@ -10,12 +10,12 @@ interface TextPostCreatorProps {
 }
 
 const BACKGROUNDS = [
-  { id: 'gradient-1', name: 'Sunset', class: 'bg-gradient-to-br from-orange-400 via-red-500 to-purple-700' },
-  { id: 'gradient-2', name: 'Ocean', class: 'bg-gradient-to-br from-blue-400 via-cyan-500 to-teal-700' },
-  { id: 'gradient-3', name: 'Forest', class: 'bg-gradient-to-br from-green-400 via-emerald-500 to-cyan-700' },
-  { id: 'gradient-4', name: 'Aurora', class: 'bg-gradient-to-br from-purple-400 via-pink-500 to-red-500' },
-  { id: 'gradient-5', name: 'Gold', class: 'bg-gradient-to-br from-yellow-300 via-orange-400 to-red-600' },
-  { id: 'gradient-6', name: 'Lavender', class: 'bg-gradient-to-br from-purple-300 via-purple-500 to-indigo-700' },
+  { id: 'gradient-1', name: 'Sunset', style: 'linear-gradient(to bottom right, rgb(251, 146, 60), rgb(239, 68, 68), rgb(126, 34, 206))' },
+  { id: 'gradient-2', name: 'Ocean', style: 'linear-gradient(to bottom right, rgb(96, 165, 250), rgb(34, 211, 238), rgb(20, 184, 166))' },
+  { id: 'gradient-3', name: 'Forest', style: 'linear-gradient(to bottom right, rgb(74, 222, 128), rgb(16, 185, 129), rgb(34, 211, 238))' },
+  { id: 'gradient-4', name: 'Aurora', style: 'linear-gradient(to bottom right, rgb(192, 132, 250), rgb(236, 72, 153), rgb(239, 68, 68))' },
+  { id: 'gradient-5', name: 'Gold', style: 'linear-gradient(to bottom right, rgb(253, 224, 71), rgb(251, 146, 60), rgb(220, 38, 38))' },
+  { id: 'gradient-6', name: 'Lavender', style: 'linear-gradient(to bottom right, rgb(196, 181, 253), rgb(168, 85, 247), rgb(99, 102, 241))' },
 ];
 
 const ANIMATIONS = [
@@ -35,54 +35,62 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
   const [selectedBackground, setSelectedBackground] = useState('gradient-1');
   const [selectedAnimation, setSelectedAnimation] = useState('none');
   const [isCreating, setIsCreating] = useState(false);
-  const [showTextCreator, setShowTextCreator] = useState(false);
 
-  const getAnimationVariants = () => {
+  const getAnimationVariants = (): { initial: any; animate: any; transition?: any } => {
+    const baseVariants = {
+      initial: { opacity: 0, scale: 0.9 },
+      animate: { opacity: 1, scale: 1 },
+    };
+    
+    if (selectedAnimation === 'none') {
+      return baseVariants;
+    }
+    
     switch (selectedAnimation) {
       case 'bounce':
         return {
-          initial: { y: 0 },
-          animate: { y: [0, -20, 0] },
-          transition: { duration: 0.8, repeat: Infinity },
+          initial: { y: 0, opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1, y: [0, -20, 0] },
+          transition: { duration: 0.8, repeat: Infinity, delay: 0.2 },
         };
       case 'pulse':
         return {
-          initial: { scale: 1, opacity: 1 },
-          animate: { scale: [1, 1.05, 1], opacity: [1, 0.9, 1] },
-          transition: { duration: 2, repeat: Infinity },
+          initial: { scale: 0.9, opacity: 0 },
+          animate: { opacity: 1, scale: [0.9, 1.05, 0.9] },
+          transition: { duration: 2, repeat: Infinity, delay: 0.2 },
         };
       case 'rotate':
         return {
-          initial: { rotate: 0 },
-          animate: { rotate: 360 },
-          transition: { duration: 4, repeat: Infinity, ease: 'linear' },
+          initial: { rotate: 0, opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1, rotate: 360 },
+          transition: { duration: 4, repeat: Infinity, ease: 'linear', delay: 0.2 },
         };
       case 'wave':
         return {
-          initial: { skewY: 0 },
-          animate: { skewY: [0, 2, -2, 0] },
-          transition: { duration: 2, repeat: Infinity },
+          initial: { skewY: 0, opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1, skewY: [0, 2, -2, 0] },
+          transition: { duration: 2, repeat: Infinity, delay: 0.2 },
         };
       case 'shake':
         return {
-          initial: { x: 0 },
-          animate: { x: [-5, 5, -5, 5, 0] },
-          transition: { duration: 0.5, repeat: Infinity },
+          initial: { x: 0, opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1, x: [-5, 5, -5, 5, 0] },
+          transition: { duration: 0.5, repeat: Infinity, delay: 0.2 },
         };
       case 'glow':
         return {
-          initial: { textShadow: '0 0 10px rgba(255,255,255,0.5)' },
-          animate: { textShadow: ['0 0 10px rgba(255,255,255,0.5)', '0 0 20px rgba(255,255,255,0.8)', '0 0 10px rgba(255,255,255,0.5)'] },
-          transition: { duration: 1.5, repeat: Infinity },
+          initial: { opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1 },
+          transition: { delay: 0.2 },
         };
       case 'scale':
         return {
-          initial: { scale: 1 },
-          animate: { scale: [1, 1.1, 1] },
-          transition: { duration: 1.5, repeat: Infinity },
+          initial: { scale: 0.8, opacity: 0 },
+          animate: { opacity: 1, scale: [0.8, 1.1, 0.8] },
+          transition: { duration: 1.5, repeat: Infinity, delay: 0.2 },
         };
       default:
-        return {};
+        return baseVariants;
     }
   };
 
@@ -115,7 +123,6 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
       setText('');
       setSelectedBackground('gradient-1');
       setSelectedAnimation('none');
-      setShowTextCreator(false);
     } catch (error) {
       console.error('Error creating text post:', error);
       alert('Failed to create text post');
@@ -124,82 +131,59 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
     }
   };
 
-  if (!showTextCreator) {
-    return (
-      <button
-        onClick={() => setShowTextCreator(true)}
-        className="w-full bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 mb-4 text-left hover:shadow-lg transition"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-dark rounded-full flex items-center justify-center text-white flex-shrink-0">
-            {session?.user?.image ? (
-              <Image
-                src={session.user.image}
-                alt={session?.user?.name || 'User'}
-                width={40}
-                height={40}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <span className="font-bold">{session?.user?.name?.[0]?.toUpperCase() || 'U'}</span>
-            )}
-          </div>
-          <span className="text-gray-500 dark:text-gray-400">Créer une publication texte...</span>
-        </div>
-      </button>
-    );
-  }
-
-  const bgClass = BACKGROUNDS.find(bg => bg.id === selectedBackground)?.class || BACKGROUNDS[0].class;
-
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-4 mb-4 w-full">
+    <div className="w-full">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Créer une publication texte</h3>
+        <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-4">Créer une publication texte</h3>
 
         {/* Text Input */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Écrivez votre message..."
-          rows={4}
-          className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none mb-4"
+          rows={3}
+          className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg px-3 md:px-4 py-2 md:py-3 text-sm md:text-base text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none mb-4"
         />
 
         {/* Preview Section */}
         {text.trim() && (
-          <div className="mb-4 p-6 rounded-lg min-h-[200px] flex items-center justify-center">
-            <div className={`${bgClass} p-8 rounded-lg w-full min-h-[200px] flex items-center justify-center transform transition-all duration-300`}>
-              <motion.div
-                {...getAnimationVariants()}
-                className="text-center"
-              >
-                <p className="text-white text-2xl md:text-4xl font-bold leading-tight break-words">
-                  {text}
-                </p>
-              </motion.div>
-            </div>
+          <div className="mb-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 p-3 md:p-4 bg-gray-50 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+            <motion.div
+              key={selectedAnimation}
+              initial={getAnimationVariants().initial}
+              animate={getAnimationVariants().animate}
+              transition={getAnimationVariants().transition}
+              className="p-4 md:p-8 rounded-lg w-full min-h-[150px] md:min-h-[200px] flex items-center justify-center transform transition-all duration-300 shadow-lg"
+              style={{ background: BACKGROUNDS.find(bg => bg.id === selectedBackground)?.style || BACKGROUNDS[0].style }}
+            >
+              <p className="text-lg md:text-3xl lg:text-4xl font-bold leading-tight break-words text-white drop-shadow-lg text-center px-4">
+                {text}
+              </p>
+            </motion.div>
           </div>
         )}
 
         {/* Background Selection */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          <label className="block text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
             Fond
           </label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {BACKGROUNDS.map((bg) => (
               <button
                 key={bg.id}
                 onClick={() => setSelectedBackground(bg.id)}
-                className={`p-3 rounded-lg transition border-2 ${
+                className={`p-2 rounded-lg transition border-2 ${
                   selectedBackground === bg.id
                     ? 'border-primary-dark scale-105'
                     : 'border-gray-300 dark:border-gray-600'
                 }`}
                 title={bg.name}
               >
-                <div className={`w-full h-12 rounded ${bg.class}`} />
+                <div 
+                  className="w-full h-8 md:h-12 rounded"
+                  style={{ background: bg.style }}
+                />
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-center truncate">
                   {bg.name}
                 </p>
@@ -210,21 +194,21 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
 
         {/* Animation Selection */}
         <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+          <label className="block text-xs md:text-sm font-semibold text-gray-900 dark:text-white mb-2">
             Animation
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {ANIMATIONS.map((anim) => (
               <button
                 key={anim.id}
                 onClick={() => setSelectedAnimation(anim.id)}
-                className={`p-3 rounded-lg transition border-2 ${
+                className={`p-2 md:p-3 rounded-lg transition border-2 ${
                   selectedAnimation === anim.id
                     ? 'border-primary-dark bg-primary-dark/10'
                     : 'border-gray-300 dark:border-gray-600 hover:border-primary-dark'
                 }`}
               >
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                <p className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate">
                   {anim.name}
                 </p>
               </button>
@@ -234,17 +218,21 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 md:gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
-          onClick={() => setShowTextCreator(false)}
-          className="flex-1 px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          onClick={() => {
+            setText('');
+            setSelectedBackground('gradient-1');
+            setSelectedAnimation('none');
+          }}
+          className="flex-1 px-3 md:px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm md:text-base"
         >
           Annuler
         </button>
         <button
           onClick={handleCreatePost}
           disabled={!text.trim() || isCreating}
-          className="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition"
+          className="flex-1 px-3 md:px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition text-sm md:text-base"
         >
           {isCreating ? 'Création...' : 'Publier'}
         </button>

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Bell, Mail, Settings, Menu } from 'lucide-react';
+import LiveIcon from '@/components/layout/LiveIcon';
 import { Badge } from '@/components/ui/Badge';
 import { SearchBar } from '@/components/SearchBar';
 import { UserMenu } from '@/components/layout/UserMenu';
@@ -22,16 +23,16 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] bg-white shadow-sm">
-      <div className="px-3 sm:px-4 lg:px-8 h-16">
-        <div className="flex items-center justify-between h-full gap-2 sm:gap-4">
+      <div className="px-2 sm:px-4 lg:px-8 h-16">
+        <div className="flex items-center justify-between h-full gap-1 sm:gap-4">
           {/* Menu Button - Mobile Only */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
           >
-            <Menu className="w-6 h-6 text-gray-600" />
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
           </motion.button>
 
           {/* Logo */}
@@ -59,9 +60,9 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
                 >
-                  <Mail className="w-5 sm:w-6 h-5 sm:h-6 text-gray-600" />
+                  <Mail className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                   <Badge count={counts.messages} />
                 </motion.button>
               </Link>
@@ -70,10 +71,20 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
                 >
-                  <Bell className="w-5 sm:w-6 h-5 sm:h-6 text-gray-600" />
+                  <Bell className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                   <Badge count={counts.notifications} />
+                </motion.button>
+              </Link>
+
+              <Link href="/live">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
+                >
+                  <LiveIcon />
                 </motion.button>
               </Link>
 
@@ -81,9 +92,9 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
                 >
-                  <Settings className="w-5 sm:w-6 h-5 sm:h-6 text-gray-600" />
+                  <Settings className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                 </motion.button>
               </Link>
             </nav>

@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { motion } from 'framer-motion';
-import { Settings, User, Bell, Shield, Palette, Globe, Loader2, CheckCircle, Lock, Smartphone, LogOut, Key, Plus, Trash2 } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, Globe, CheckCircle, Lock, Smartphone, LogOut, Key, Plus, Trash2 } from 'lucide-react';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { CoverImageUpload } from '@/components/CoverImageUpload';
 import { useSession, signOut } from 'next-auth/react';
@@ -90,9 +90,9 @@ export default function SettingsPage() {
   ];
 
   const accountTabs = [
-    { key: 'password', icon: Key, label: 'Changer le mot de passe' },
-    { key: 'linked-accounts', icon: Plus, label: 'Comptes liés' },
-    { key: 'delete-account', icon: Trash2, label: 'Supprimer le compte' },
+    { key: 'password', icon: Key, label: translation.buttons?.changePassword || 'Change password' },
+    { key: 'linked-accounts', icon: Plus, label: 'Linked accounts' },
+    { key: 'delete-account', icon: Trash2, label: translation.buttons?.deleteAccount || 'Delete account' },
     { key: 'login-history', icon: Lock, label: translation.tabLabels.loginHistory },
     { key: 'saved-devices', icon: Smartphone, label: translation.tabLabels.savedDevices },
   ];
@@ -104,6 +104,10 @@ export default function SettingsPage() {
     { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
     { code: 'mg', name: 'Malagasy', flag: '🇲🇬' },
     { code: 'ch', name: '中文', flag: '🇨🇳' },
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+    { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
   ];
 
   const handleInputChange = (field: string, value: any) => {
@@ -111,8 +115,29 @@ export default function SettingsPage() {
   };
 
   const handlePrivacyChange = (field: string, value: any) => {
-    setPrivacySettings(prev => ({ ...prev, [field]: value }));
+    setPrivacySettings(prev => {
+      const next = { ...prev, [field]: value };
+      // persist showOnlineStatus to localStorage so other components can read it
+      try {
+        if (field === 'showOnlineStatus') {
+          if (typeof window !== 'undefined') localStorage.setItem('showOnlineStatus', JSON.stringify(!!value));
+        }
+      } catch (e) {}
+      return next;
+    });
   };
+
+  // Initialize privacy settings from localStorage (showOnlineStatus)
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const v = localStorage.getItem('showOnlineStatus');
+        if (v !== null) {
+          setPrivacySettings(prev => ({ ...prev, showOnlineStatus: v === 'true' }));
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   const handleNotificationChange = (field: string, value: any) => {
     setNotificationSettings(prev => ({ ...prev, [field]: value }));
@@ -205,7 +230,7 @@ export default function SettingsPage() {
       setDeleteAccountLoading(true);
 
       if (!deleteConfirm.confirmDelete) {
-        alert('Veuillez confirmer la suppression');
+        alert(translation.messages?.confirmDelete || 'Please confirm deletion');
         return;
       }
 
@@ -221,14 +246,14 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Compte supprimé. Redirection...');
+        alert(translation.alerts?.accountDeletedRedirecting || 'Account deleted. Redirecting...');
         await signOut({ redirect: true, callbackUrl: '/' });
       } else {
-        alert(data.error || 'Erreur lors de la suppression du compte');
+        alert(data.error || translation.alerts?.errorDeletingAccount || 'Error deleting account');
       }
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Erreur lors de la suppression du compte');
+      alert(translation.alerts?.errorDeletingAccount || 'Error deleting account');
     } finally {
       setDeleteAccountLoading(false);
     }
@@ -266,7 +291,7 @@ export default function SettingsPage() {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    Paramètres généraux
+                    {translation.sections?.generalSettings || 'General settings'}
                   </button>
                   <div className="space-y-1">
                     {activeSection === 'general' && generalTabs.map((tab) => {
@@ -299,7 +324,7 @@ export default function SettingsPage() {
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    Gestion de compte
+                    {translation.sections?.accountManagement || 'Account management'}
                   </button>
                   <div className="space-y-1">
                     {activeSection === 'account' && accountTabs.map((tab) => {
@@ -328,8 +353,8 @@ export default function SettingsPage() {
             <div className="lg:hidden p-4 border-b border-gray-100">
               <div className="flex flex-col sm:flex-row gap-2">
                 <select value={activeSection} onChange={(e) => setActiveSection(e.target.value as any)} className="w-full px-3 py-2 border rounded-lg">
-                  <option value="general">Paramètres</option>
-                  <option value="account">Compte</option>
+                  <option value="general">{translation.sections?.generalSettings || 'Settings'}</option>
+                  <option value="account">{translation.sections?.accountManagement || 'Account'}</option>
                 </select>
                 <select value={activeTab} onChange={(e) => setActiveTab(e.target.value as any)} className="w-full px-3 py-2 border rounded-lg">
                   {(activeSection === 'general' ? generalTabs : accountTabs).map(t => (
@@ -398,7 +423,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nom complet
+                        {translation.forms?.fullName || 'Full name'}
                       </label>
                       <input
                         type="text"
@@ -410,7 +435,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bio
+                        {translation.forms?.bio || 'Bio'}
                       </label>
                       <textarea
                         rows={3}
@@ -422,7 +447,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date de naissance
+                        {translation.forms?.dateOfBirth || 'Date of birth'}
                       </label>
                       <input
                         type="date"
@@ -434,7 +459,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ville d'origine
+                        {translation.forms?.originCity || 'City of origin'}
                       </label>
                       <input
                         type="text"
@@ -446,7 +471,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ville actuelle
+                        {translation.forms?.currentCity || 'Current city'}
                       </label>
                       <input
                         type="text"
@@ -463,14 +488,7 @@ export default function SettingsPage() {
                       disabled={loading}
                       className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Enregistrement...
-                        </>
-                      ) : (
-                        'Enregistrer les modifications'
-                      )}
+                      {translation.buttons?.saveChanges || 'Save changes'}
                     </button>
                     {saveSuccess && (
                       <motion.div
@@ -501,10 +519,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Profil privé
+                          {translation.privacyLabels?.privateProfile || 'Private profile'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Seules les personnes que vous approuvez peuvent voir vos publications
+                          {translation.privacyLabels?.privateProfileDesc || 'Only people you approve can see your posts'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -521,10 +539,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Messages privés
+                          {translation.privacyLabels?.privateMessages || 'Private messages'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Contrôler qui peut vous envoyer des messages
+                          {translation.privacyLabels?.privateMessagesDesc || 'Control who can send you messages'}
                         </p>
                       </div>
                       <select
@@ -532,19 +550,19 @@ export default function SettingsPage() {
                         onChange={(e) => handlePrivacyChange('allowMessages', e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                       >
-                        <option value="everyone">Tous les utilisateurs</option>
-                        <option value="friends">Amis uniquement</option>
-                        <option value="none">Personne</option>
+                        <option value="everyone">{translation.settingsForm?.allUsers || 'All users'}</option>
+                        <option value="friends">{translation.settingsForm?.friendsOnly || 'Friends only'}</option>
+                        <option value="none">{translation.settingsForm?.nobody || 'Nobody'}</option>
                       </select>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Activité en ligne
+                          {translation.privacyLabels?.onlineActivity || 'Online activity'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Afficher quand vous êtes en ligne
+                          {translation.privacyLabels?.onlineActivityDesc || 'Show when you are online'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -575,10 +593,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Notifications push
+                          {translation.notificationLabels?.pushNotifications || 'Push notifications'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Recevoir des notifications sur votre appareil
+                          {translation.notificationLabels?.pushNotificationsDesc || 'Receive notifications on your device'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -595,10 +613,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Likes et réactions
+                          {translation.notificationLabels?.likes || 'Likes and reactions'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Quand quelqu'un aime ou réagit à vos publications
+                          {translation.notificationLabels?.likesDesc || 'When someone likes or reacts to your posts'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -615,10 +633,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Commentaires
+                          {translation.notificationLabels?.comments || 'Comments'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Quand quelqu'un commente vos publications
+                          {translation.notificationLabels?.commentsDesc || 'When someone comments on your posts'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -635,10 +653,10 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">
-                          Nouveaux abonnés
+                          {translation.notificationLabels?.followers || 'New followers'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          Quand quelqu'un commence à vous suivre
+                          {translation.notificationLabels?.followersDesc || 'When someone starts following you'}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -668,7 +686,7 @@ export default function SettingsPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
-                        Mode d'affichage
+                        {translation.theme?.displayMode || 'Display mode'}
                       </label>
                       <div className="grid grid-cols-3 gap-3">
                         <button
@@ -680,7 +698,7 @@ export default function SettingsPage() {
                           }`}
                         >
                           <div className="w-full h-16 bg-white border border-gray-200 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Clair</span>
+                          <span className="text-sm font-medium">{translation.theme?.light || 'Light'}</span>
                         </button>
                         <button
                           onClick={() => setTheme('dark')}
@@ -691,7 +709,7 @@ export default function SettingsPage() {
                           }`}
                         >
                           <div className="w-full h-16 bg-gray-900 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Sombre</span>
+                          <span className="text-sm font-medium">{translation.theme?.dark || 'Dark'}</span>
                         </button>
                         <button
                           onClick={() => setTheme('auto')}
@@ -702,7 +720,7 @@ export default function SettingsPage() {
                           }`}
                         >
                           <div className="w-full h-16 bg-gradient-to-r from-white to-gray-900 rounded mb-2"></div>
-                          <span className="text-sm font-medium">Auto</span>
+                          <span className="text-sm font-medium">{translation.theme?.auto || 'Auto'}</span>
                         </button>
                       </div>
                     </div>
@@ -718,13 +736,13 @@ export default function SettingsPage() {
                   className="space-y-6"
                 >
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Changer le mot de passe
+                    {translation.passwordSection?.changePassword || 'Change password'}
                   </h2>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Mot de passe actuel
+                        {translation.passwordSection?.currentPassword || 'Current password'}
                       </label>
                       <input
                         type="password"
@@ -736,7 +754,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nouveau mot de passe
+                        {translation.passwordSection?.newPassword || 'New password'}
                       </label>
                       <input
                         type="password"
@@ -748,7 +766,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirmer le mot de passe
+                        {translation.passwordSection?.confirmPassword || 'Confirm password'}
                       </label>
                       <input
                         type="password"
@@ -763,17 +781,8 @@ export default function SettingsPage() {
                       disabled={passwordChangeLoading}
                       className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      {passwordChangeLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Changement en cours...
-                        </>
-                      ) : (
-                        <>
-                          <Key className="w-4 h-4" />
-                          Changer le mot de passe
-                        </>
-                      )}
+                      <Key className="w-4 h-4" />
+                      {translation.passwordSection?.changePassword || 'Change password'}
                     </button>
                     {saveSuccess && (
                       <motion.div
@@ -783,7 +792,7 @@ export default function SettingsPage() {
                         className="flex items-center gap-2 text-green-600"
                       >
                         <CheckCircle className="w-5 h-5" />
-                        <span className="text-sm">Mot de passe changé avec succès</span>
+                        <span className="text-sm">{translation.passwordSection?.passwordChangedSuccess || 'Password changed successfully'}</span>
                       </motion.div>
                     )}
                   </div>
@@ -798,16 +807,16 @@ export default function SettingsPage() {
                   className="space-y-6"
                 >
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Comptes liés
+                    {translation.passwordSection?.linkedAccounts || 'Linked accounts'}
                   </h2>
 
                   <div className="space-y-4">
                     <p className="text-sm text-gray-600">
-                      Liez d'autres comptes de réseaux sociaux à votre profil Unify.
+                      {translation.passwordSection?.linkAccountsDescription || 'Link other social media accounts to your Unify profile.'}
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        💡 Vous pouvez ajouter Google, Facebook ou d'autres comptes pour faciliter la connexion.
+                        {translation.passwordSection?.linkAccountsTip || '💡 You can add Google, Facebook or other accounts to make logging in easier.'}
                       </p>
                     </div>
                   </div>
@@ -822,19 +831,19 @@ export default function SettingsPage() {
                   className="space-y-6"
                 >
                   <h2 className="text-lg font-semibold text-red-600">
-                    Supprimer le compte
+                    {translation.passwordSection?.deleteAccount || 'Delete account'}
                   </h2>
 
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p className="text-sm text-red-800">
-                      ⚠️ La suppression de votre compte est permanente. Toutes vos données seront effacées et ne pourront pas être récupérées.
+                      {translation.passwordSection?.deleteAccountWarning || '⚠️ Deleting your account is permanent. All your data will be erased and cannot be recovered.'}
                     </p>
                   </div>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Mot de passe
+                        {translation.passwordSection?.password || 'Password'}
                       </label>
                       <input
                         type="password"
@@ -853,7 +862,7 @@ export default function SettingsPage() {
                         className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                       />
                       <label htmlFor="confirmDelete" className="text-sm text-gray-700">
-                        Je comprends que ma suppression est définitive
+                        {translation.passwordSection?.deleteAccountConfirmation || 'I understand that my deletion is permanent'}
                       </label>
                     </div>
 
@@ -862,17 +871,8 @@ export default function SettingsPage() {
                       disabled={deleteAccountLoading || !deleteConfirm.confirmDelete || !deleteConfirm.password}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      {deleteAccountLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Suppression en cours...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4" />
-                          Supprimer mon compte
-                        </>
-                      )}
+                      <Trash2 className="w-4 h-4" />
+                      {translation.passwordSection?.deleteAccount || 'Delete account'}
                     </button>
                   </div>
                 </motion.div>

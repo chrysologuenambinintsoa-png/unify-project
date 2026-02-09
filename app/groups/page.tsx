@@ -32,6 +32,9 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-groups' | 'discover'>('my-groups');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [myGroupsLoaded, setMyGroupsLoaded] = useState(false);
+  const [discoverGroupsLoaded, setDiscoverGroupsLoaded] = useState(false);
+  const [tabLoading, setTabLoading] = useState(false);
 
   useEffect(() => {
     fetchGroups();
@@ -39,17 +42,24 @@ export default function GroupsPage() {
 
   const fetchGroups = async () => {
     try {
-      setLoading(true);
+      setTabLoading(true);
       const endpoint = activeTab === 'my-groups' ? '/api/groups?type=my' : '/api/groups?type=discover';
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
         setGroups(data);
+        
+        if (activeTab === 'my-groups') {
+          setMyGroupsLoaded(true);
+        } else {
+          setDiscoverGroupsLoaded(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
       setLoading(false);
+      setTabLoading(false);
     }
   };
 
@@ -108,12 +118,12 @@ export default function GroupsPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Groupes</h1>
-              <p className="text-gray-600">Rejoignez des communautés qui vous intéressent</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{translation.group?.groups || 'Groups'}</h1>
+              <p className="text-gray-600">{translation.group?.joinCommunities || 'Join communities that interest you'}</p>
             </div>
             <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
               <Plus className="w-5 h-5" />
-              <span>Créer un groupe</span>
+              <span>{translation.group?.createGroup || 'Create group'}</span>
             </Button>
           </div>
         </div>
@@ -146,23 +156,7 @@ export default function GroupsPage() {
 
         {/* Groups Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <Card className="overflow-hidden">
-                  <div className="h-32 bg-gray-200"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded mb-4"></div>
-                    <div className="flex justify-between items-center">
-                      <div className="h-3 bg-gray-200 rounded w-16"></div>
-                      <div className="h-3 bg-gray-200 rounded w-12"></div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            ))
-          ) : groups.length === 0 ? (
+          {groups.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">

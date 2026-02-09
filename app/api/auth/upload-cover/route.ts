@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import imageSize from 'image-size';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -46,6 +47,19 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Validate image dimensions (max 1024x1024)
+    try {
+      // @ts-ignore
+      const dims = imageSize(buffer);
+      if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
+        if (dims.width > 1024 || dims.height > 1024) {
+          return NextResponse.json({ error: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' }, { status: 400 });
+        }
+      }
+    } catch (err) {
+      return NextResponse.json({ error: 'Unable to read image dimensions.' }, { status: 400 });
+    }
 
     // Upload to Cloudinary with timeout
     const uploadResult = await withTimeout(

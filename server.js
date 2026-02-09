@@ -16,9 +16,116 @@ app.prepare().then(() => {
 
   // Broadcast helper
   const clients = new Set();
-  wss.on('connection', (ws) => {
+
+  // Live room management
+  const { createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms');
+
+  wss.on('connection', (ws, request) => {
     clients.add(ws);
-    ws.on('close', () => clients.delete(ws));
+    ws._joinedRooms = new Set();
+
+    ws.on('message', (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        const { type, roomId, payload, to } = msg;
+
+        switch (type) {
+          case 'listRooms': {
+            const data = { type: 'roomsList', rooms: listRooms() };
+            ws.send(JSON.stringify(data));
+            break;
+          }
+          case 'createRoom': {
+            const room = createRoom({ id: roomId, title: payload?.title, hostId: payload?.hostId });
+            const data = { type: 'roomCreated', room: { id: room.id, title: room.title } };
+            ws.send(JSON.stringify(data));
+            break;
+          }
+          case 'joinRoom': {
+            const participant = payload || { id: null, name: 'Anon', role: 'participant' };
+            const room = getRoom(roomId);
+            if (room) {
+              joinRoom(roomId, ws, participant);
+              ws._joinedRooms.add(roomId);
+              // send current participants list to the joining socket
+              try {
+                const pList = getParticipants(roomId);
+                ws.send(JSON.stringify({ type: 'participantsList', roomId, participants: pList }));
+              } catch (e) {}
+              // notify existing participants
+              for (const [s, p] of room.participants) {
+                if (s !== ws) {
+                  try { s.send(JSON.stringify({ type: 'participantJoined', roomId, participant })); } catch (e) {}
+                }
+              }
+              ws.send(JSON.stringify({ type: 'joinedRoom', roomId, room: { id: room.id, title: room.title } }));
+
+              // If the joining participant is a viewer, notify hosts/streamers so they create offers to this viewer
+              if (participant.role === 'viewer') {
+                for (const [s, p] of room.participants) {
+                  if (p && p.role && (p.role === 'host' || p.role === 'participant') && s !== ws) {
+                    try { s.send(JSON.stringify({ type: 'viewerJoined', roomId, payload: { participant } })); } catch (e) {}
+                  }
+                }
+              }
+            } else {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
+            }
+            break;
+          }
+          case 'leaveRoom': {
+            const room = getRoom(roomId);
+            if (room) {
+              leaveRoom(roomId, ws);
+              ws._joinedRooms.delete(roomId);
+              for (const [s] of room.participants) {
+                s.send(JSON.stringify({ type: 'participantLeft', roomId, payload }));
+              }
+            }
+            break;
+          }
+          // Signaling and real-time events: forward to target or broadcast to room
+          case 'offer':
+          case 'answer':
+          case 'ice': {
+            // if 'to' provided, forward only to that socket (match by participant id)
+            const room = getRoom(roomId);
+            if (!room) break;
+            for (const [s, p] of room.participants) {
+              if (to && p && p.id === to) {
+                s.send(JSON.stringify(msg));
+                break;
+              }
+            }
+            break;
+          }
+          case 'comment':
+          case 'reaction': {
+            // broadcast to all participants in the room
+            const room = getRoom(roomId);
+            if (!room) break;
+            for (const [s] of room.participants) {
+              try { s.send(JSON.stringify(msg)); } catch (e) {}
+            }
+            break;
+          }
+          default: {
+            // unknown message - ignore
+            break;
+          }
+        }
+      } catch (err) {
+        console.error('WS message error', err);
+      }
+    });
+
+    ws.on('close', () => {
+      // cleanup from rooms
+      for (const roomId of Array.from(ws._joinedRooms || [])) {
+        try { leaveRoom(roomId, ws); } catch (e) {}
+      }
+      clients.delete(ws);
+    });
   });
 
   // integrate with in-process postEvents

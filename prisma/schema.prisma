@@ -88,6 +88,7 @@ model User {
   groupPollsCreated GroupPoll[]        @relation("GroupPollCreator")
   pollVotes     PollVote[]
   adminMessages AdminMessage[]
+  postReports   PostReport[]          @relation("PostReports")
 
   @@map("users")
 }
@@ -153,6 +154,7 @@ model Post {
   background  String?     // Background style for text posts
   styling     Json?       // JSON metadata for text post styling (animation, gradients, etc.)
   userId      String
+  isPublic    Boolean     @default(false) // Post visibility: public=true, friends-only=false
   sharedPostId String?    // For shared posts
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -167,11 +169,33 @@ model Post {
   reactions   Reaction[]
   media       PostMedia[]
   bookmarks   Bookmark[]
+  reports     PostReport[]
 
   @@index([userId])
   @@index([createdAt])
   @@map("posts")
 }
+
+// PostReport Model for user reports
+model PostReport {
+  id        String   @id @default(cuid())
+  postId    String
+  reporterId String
+  reason    String
+  status    String   @default("pending") // pending, reviewed, dismissed, action_taken
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter  User     @relation("PostReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, reporterId])
+  @@index([postId])
+  @@index([reporterId])
+  @@index([status])
+  @@map("post_reports")
+}
+
 
 // Comment Model
 model Comment {

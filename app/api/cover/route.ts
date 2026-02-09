@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { v2 as cloudinary } from 'cloudinary';
+import imageSize from 'image-size';
 import { getNotificationMessage, getNotificationTitle } from '@/lib/translations';
 import { publishNotificationToUsers } from '@/app/api/realtime/broadcast';
 
@@ -54,6 +55,19 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Validate image dimensions (max 1024x1024)
+    try {
+      // @ts-ignore
+      const dims = imageSize(buffer);
+      if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
+        if (dims.width > 1024 || dims.height > 1024) {
+          return NextResponse.json({ error: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' }, { status: 400 });
+        }
+      }
+    } catch (err) {
+      return NextResponse.json({ error: 'Unable to read image dimensions.' }, { status: 400 });
+    }
 
     // Upload to Cloudinary with timeout
     const uploadResult = await withTimeout(
@@ -129,7 +143,9 @@ export async function POST(request: NextRequest) {
         select: { user1Id: true, user2Id: true },
       });
 
-      const friendIds = friendships.map(f => f.user1Id === session.user.id ? f.user2Id : f.user1Id);
+      const friendIds = friendships
+        .map(f => f.user1Id === session.user.id ? f.user2Id : f.user1Id)
+        .filter(id => id !== session.user.id); // Exclude the user from their own notifications
 
       if (friendIds.length > 0) {
         const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Story from './Story';
 import { Send, SmilePlus } from 'lucide-react';
 
@@ -31,6 +32,7 @@ interface User {
 }
 
 export default function Stories({ stories, currentUser, onCreated }: StoriesProps) {
+  const router = useRouter();
   const [activeStory, setActiveStory] = useState<Story | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -319,7 +321,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       if (typeof onCreated === 'function') {
         try { onCreated(); } catch {}
       } else {
-        window.location.reload();
+        router.refresh();
       }
     } catch (err) {
       console.error('Create story failed', err);
@@ -457,6 +459,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
               timestamp: new Date(),
             }}
             isUserStory={true}
+            currentUser={currentUser}
             onCreateStory={openCreate}
           />
         )}

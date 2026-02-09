@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import Image from 'next/image';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CreateStoryModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface CreateStoryModalProps {
 
 export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateStoryModalProps) {
   const { data: session } = useSession();
+  const { translation } = useLanguage();
   const [formData, setFormData] = useState({ text: '', imageUrl: '', videoUrl: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +24,7 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim() && !formData.imageUrl.trim() && !formData.videoUrl.trim()) {
-      setError('At least text or media is required');
+      setError(translation.story?.atLeastOneRequired || 'At least text or media is required');
       return;
     }
     try {
@@ -32,7 +34,7 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
       setError('');
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create story');
+      setError(err instanceof Error ? err.message : translation.errors?.saveError || 'Failed to create story');
     } finally {
       setLoading(false);
     }
@@ -62,8 +64,8 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
               </div>
             )}
             <div className="flex-1">
-              <h2 className="text-lg font-bold">{session?.user?.name || 'Créer une story'}</h2>
-              <p className="text-xs text-gray-500">Votre story</p>
+              <h2 className="text-lg font-bold">{session?.user?.name || translation.story?.createStory || 'Create story'}</h2>
+              <p className="text-xs text-gray-500">{translation.story?.yourStory || 'Your story'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
@@ -75,11 +77,11 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Text</label>
+            <label className="block text-sm font-medium mb-1">{translation.story?.text || 'Text'}</label>
             <textarea
               value={formData.text}
               onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-              placeholder="What's on your mind?"
+              placeholder={translation.post?.whatsOnMind || "What's on your mind?"}
               disabled={loading}
               className="w-full p-2 border border-gray-300 rounded text-sm"
               rows={3}
@@ -87,7 +89,7 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
+            <label className="block text-sm font-medium mb-1">{translation.story?.imageUrl || 'Image URL (optional)'}</label>
             <Input
               type="url"
               value={formData.imageUrl}
@@ -98,7 +100,7 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Video URL (optional)</label>
+            <label className="block text-sm font-medium mb-1">{translation.story?.videoUrl || 'Video URL (optional)'}</label>
             <Input
               type="url"
               value={formData.videoUrl}
@@ -110,10 +112,10 @@ export default function CreateStoryModal({ isOpen, onClose, onCreate }: CreateSt
 
           <div className="flex gap-2 pt-4">
             <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1">
-              Cancel
+              {translation.common?.cancel || 'Cancel'}
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Creating...' : 'Create'}
+              {loading ? translation.messages?.sendingComment || 'Creating...' : translation.story?.createStory || 'Create'}
             </Button>
           </div>
         </form>

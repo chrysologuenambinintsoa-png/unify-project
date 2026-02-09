@@ -172,7 +172,7 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-gray-500">Chargement...</p>
         </div>
       </MainLayout>
     );
@@ -341,7 +341,7 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
                 disabled={commentLoading || !commentText.trim()}
                 className="w-full mt-2 p-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 transition"
               >
-                {commentLoading ? 'Envoi...' : 'Envoyer'}
+                {commentLoading ? (translation.messages?.sendingComment || 'Sending...') : (translation.buttons?.send || 'Send')}
               </button>
             </div>
 

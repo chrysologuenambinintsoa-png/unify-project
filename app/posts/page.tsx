@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Post from "@/components/Post";
+import { LoadingPage } from "@/components/LoadingPage";
 import { Loader } from "lucide-react";
 
 interface PostData {
@@ -31,6 +32,7 @@ export default function PostsPage() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [postsLoaded, setPostsLoaded] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -51,6 +53,7 @@ export default function PostsPage() {
       if (!response.ok) throw new Error("Failed to fetch posts");
       const data = await response.json();
       setPosts(data || []);
+      setPostsLoaded(true);
       setError(null);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -89,14 +92,7 @@ export default function PostsPage() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-white to-accent">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-gray-600 font-medium">Loading posts...</p>
-        </div>
-      </div>
-    );
+    return <LoadingPage message="Chargement des publications..." />;
   }
 
   return (

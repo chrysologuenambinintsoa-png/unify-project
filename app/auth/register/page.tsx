@@ -85,7 +85,15 @@ export default function RegisterPage() {
         });
 
         if (signInResult?.ok) {
-          // Redirect to welcome page for onboarding
+          // Mark that we should show the onboarding/welcome flow once,
+          // then redirect to the welcome page.
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('unify:showOnboard', 'true');
+            } catch (e) {
+              // ignore storage errors
+            }
+          }
           router.push('/welcome');
         } else {
           // If auto-login fails, redirect to login page

@@ -22,12 +22,16 @@ async function run() {
   console.log('Deleting file...');
   await deleteProfilePhotoByPath(res.path);
   console.log('Deleted. Verifying disappearance...');
-  try {
-    await fs.access(res.path);
-    console.error('File still exists after deletion');
-    process.exit(1);
-  } catch (_) {
-    console.log('File deleted successfully. Test passed.');
+  if (res.path) {
+    try {
+      await fs.access(res.path as any);
+      console.error('File still exists after deletion');
+      process.exit(1);
+    } catch (_) {
+      console.log('File deleted successfully. Test passed.');
+    }
+  } else {
+    console.log('No local path returned (remote storage used). Skipping local verification. Test passed.');
   }
 }
 

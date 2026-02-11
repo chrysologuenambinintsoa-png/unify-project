@@ -61,6 +61,7 @@ model User {
   pageAdmins             PageAdmin[]
   pageInvites            PageInvite[]
   pageMembers            PageMember[]
+  pageLikes              PageLike[]
   pagePollsCreated       PagePoll[]        @relation("PagePollCreator")
   photoGallery           PhotoGallery[]
   pollVotes              PollVote[]
@@ -423,6 +424,7 @@ model Page {
   admins        PageAdmin[]
   invites       PageInvite[]
   members       PageMember[]
+  pageLikes     PageLike[]
   polls         PagePoll[]
   posts         PagePost[]
 

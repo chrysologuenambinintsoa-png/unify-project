@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       const popular = await prisma.group.findMany({
         where: { isPrivate: false },
-        orderBy: { membersCount: 'desc' },
         skip: offset,
         take: limit,
         select: {
@@ -34,6 +33,8 @@ export async function GET(request: NextRequest) {
           _count: { select: { members: true } },
         },
       });
+      // sort by member count descending (Prisma type issues with _count in orderBy)
+      popular.sort((a, b) => (b._count?.members || 0) - (a._count?.members || 0));
 
       return NextResponse.json({ suggestions: popular, total: await prisma.group.count({ where: { isPrivate: false } }), limit, offset });
     }
@@ -115,7 +116,6 @@ export async function GET(request: NextRequest) {
       const exclude = new Set([...userGroupIds, ...candidateGroupIds]);
       const more = await prisma.group.findMany({
         where: { isPrivate: false, id: { notIn: Array.from(exclude) } },
-        orderBy: { _count: { members: 'desc' } },
         select: {
           id: true,
           name: true,
@@ -129,6 +129,8 @@ export async function GET(request: NextRequest) {
         take: limit - suggestions.length,
         skip: offset,
       });
+      // sort fallback groups by member count desc
+      more.sort((a, b) => (b._count?.members || 0) - (a._count?.members || 0));
 
       suggestions = suggestions.concat(
         more.map((g) => ({

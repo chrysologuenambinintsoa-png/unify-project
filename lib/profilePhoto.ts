@@ -1,12 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
 import imageSize from 'image-size';
+import { v4 as uuidv4 } from 'uuid';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_DIM = 1024; // 1024 px
 
-type SaveResult = { url: string; path: string; filename: string };
+type SaveResult = { url: string; path?: string | null; filename?: string | null };
 
 async function ensureUploadDir() {
   try {
@@ -16,6 +17,7 @@ async function ensureUploadDir() {
   }
 }
 
+// Upload avatar to Cloudinary (server-side) and return public URL.
 export async function saveProfilePhoto(userId: string, buffer: Buffer, originalName: string, mimeType: string): Promise<SaveResult> {
   // Validate MIME
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
@@ -46,26 +48,52 @@ export async function saveProfilePhoto(userId: string, buffer: Buffer, originalN
       throw new Error(`Image dimensions too large. Maximum allowed is ${MAX_DIM}x${MAX_DIM} px.`);
     }
   }
+  // Prefer uploading to Cloudinary if configured
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || process.env.CLOUDINARY_UPLOAD_PRESET || 'unify_uploads';
 
+  if (cloudName) {
+    // Build form data with base64 data URI for the file
+    const dataUri = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const form = new (global as any).FormData();
+    form.append('file', dataUri);
+    form.append('upload_preset', uploadPreset);
+    form.append('folder', 'unify/avatars');
+    form.append('public_id', `user_${userId}_${uuidv4()}`);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: form as any,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Cloud upload failed: ${err}`);
+    }
+
+    const json = await res.json();
+    return { url: json.secure_url, path: null, filename: json.public_id };
+  }
+
+  // Fallback: write to local uploads directory (only for writable filesystems)
   await ensureUploadDir();
-
-  // Preserve original extension
   const ext = path.extname(originalName) || (mimeType === 'image/png' ? '.png' : mimeType === 'image/webp' ? '.webp' : '.jpg');
   const filename = `user_${userId}_${Date.now()}${ext}`;
   const destPath = path.join(UPLOAD_DIR, filename);
-
-  // Write file as-is, no resizing or compression
   await fs.writeFile(destPath, buffer, { encoding: 'binary' });
-
   const url = `/uploads/avatars/${filename}`;
   return { url, path: destPath, filename };
 }
 
 export async function deleteProfilePhotoByPath(filePath: string) {
   try {
-    // Only allow deletion inside our upload dir
-    if (!filePath.startsWith(UPLOAD_DIR)) return;
-    await fs.unlink(filePath).catch(() => {});
+    // If it's a local path, only allow deletion inside our upload dir
+    if (filePath && filePath.startsWith && filePath.startsWith(UPLOAD_DIR)) {
+      await fs.unlink(filePath).catch(() => {});
+      return;
+    }
+
+    // If it's a Cloudinary URL or public id, we don't delete here (requires API key/secret). No-op.
   } catch (err) {
     // ignore
   }
@@ -84,6 +112,7 @@ export async function getProfilePhoto(urlOrPath: string) {
     const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
     return { buffer, mime, path: absolutePath };
   } catch (err) {
+    // If not found locally, return null. Cloudinary-hosted images should be served via URL.
     return null;
   }
 }

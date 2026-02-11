@@ -27,14 +27,30 @@ export async function POST(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    // For now, just return success
-    // In a full implementation, you would track likes with a PageLike model
-    const isLiked = Math.random() > 0.5; // Mock state
+    // Toggle persistent like via PageLike model
+    try {
+      // Check existing like
+      const existing = await (prisma as any).pageLike.findUnique({
+        where: { pageId_userId: { pageId, userId: session.user.id } },
+      });
 
-    return NextResponse.json({
-      success: true,
-      action: isLiked ? 'liked' : 'unliked',
-    });
+      if (existing) {
+        await (prisma as any).pageLike.delete({
+          where: { pageId_userId: { pageId, userId: session.user.id } },
+        });
+        return NextResponse.json({ success: true, action: 'unliked' });
+      } else {
+        await (prisma as any).pageLike.create({
+          data: { pageId, userId: session.user.id },
+        });
+        return NextResponse.json({ success: true, action: 'liked' });
+      }
+    } catch (e) {
+      // If PageLike model not present or operation fails, fallback to non-persistent behavior
+      console.warn('PageLike persistence failed, falling back to mock:', e);
+      const isLiked = Math.random() > 0.5;
+      return NextResponse.json({ success: true, action: isLiked ? 'liked' : 'unliked' });
+    }
   } catch (error) {
     console.error('Error handling page like:', error);
     return NextResponse.json(

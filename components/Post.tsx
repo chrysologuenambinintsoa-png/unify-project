@@ -85,7 +85,8 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
     { emoji: '🫂', label: 'Solidarity', color: 'from-pink-400 to-purple-500' },
   ];
 
-  const handleEmojiReaction = (emojiData: { emoji: string; label: string }) => {
+  const handleEmojiReaction = async (emojiData: { emoji: string; label: string }) => {
+    // Optimistic update first
     setReactionCounts(prev => ({
       ...prev,
       [emojiData.emoji]: (prev[emojiData.emoji] || 0) + 1,
@@ -111,6 +112,47 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
     setFloatingEmoji({ emoji: emojiData.emoji, id: newId });
     setTimeout(() => setFloatingEmoji(null), 1000);
     setShowEmojiMenu(false);
+    
+    // Save reaction to database
+    try {
+      const response = await fetch(`/api/posts/${post.id}/reactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji: emojiData.emoji }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to save reaction:', response.status);
+        // Revert optimistic update on error
+        setReactionCounts(prev => ({
+          ...prev,
+          [emojiData.emoji]: Math.max(0, (prev[emojiData.emoji] || 1) - 1),
+        }));
+      } else {
+        // Refresh reactions to ensure consistency
+        const reactionsRes = await fetch(`/api/posts/${post.id}/reactions`);
+        if (reactionsRes.ok) {
+          const data = await reactionsRes.json();
+          const counts: Record<string, number> = {};
+          const users: Record<string, any[]> = {};
+          
+          data.reactions?.forEach((r: any) => {
+            counts[r.emoji] = r.count;
+            users[r.emoji] = r.users || [];
+          });
+          
+          setReactionCounts(counts);
+          setReactionUsers(users);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving reaction:', error);
+      // Revert optimistic update on error
+      setReactionCounts(prev => ({
+        ...prev,
+        [emojiData.emoji]: Math.max(0, (prev[emojiData.emoji] || 1) - 1),
+      }));
+    }
   };
 
   const handleEmojiMenuLeave = () => {

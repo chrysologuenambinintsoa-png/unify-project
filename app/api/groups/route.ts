@@ -15,7 +15,10 @@ export async function GET(request: NextRequest) {
     if (type === 'my' && session?.user?.id) {
       const groups = await prisma.group.findMany({
         where: {
-          members: { some: { userId: session.user.id } },
+          OR: [
+            { members: { some: { userId: session.user.id } } },
+            { adminId: session.user.id },
+          ],
         },
         orderBy: { createdAt: 'desc' },
         skip: offset,
@@ -39,7 +42,10 @@ export async function GET(request: NextRequest) {
     if (session?.user?.id) {
       const userGroups = await prisma.group.findMany({
         where: {
-          members: { some: { userId: session.user.id } },
+          OR: [
+            { members: { some: { userId: session.user.id } } },
+            { adminId: session.user.id },
+          ],
         },
         select: { id: true },
       });

@@ -274,8 +274,15 @@ export default function UserProfilePage() {
       }
       
       const friendsData = await friendsResponse.json();
-      const pendingRequest = friendsData.requests?.find((r: any) => r.fromUser.id === userId);
-      
+
+      // API returns { friends: [...] } where each item has a `friend` field (for pending: friend = user1)
+      // keep backwards compatibility with older response shapes that used `requests` or `fromUser`
+      const list = friendsData.friends ?? friendsData.requests ?? [];
+      const pendingRequest = list.find((r: any) => {
+        const requester = r.friend || r.user1 || r.fromUser;
+        return requester?.id === userId;
+      });
+
       if (!pendingRequest) {
         throw new Error('Friend request not found');
       }

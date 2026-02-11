@@ -1,6 +1,7 @@
  'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useGroupSuggestions } from '@/hooks/useGroupSuggestions';
 import { useRouter } from 'next/navigation';
 import { Users, UserPlus, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -24,42 +25,18 @@ interface GroupSuggestionsProps {
 
 export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
   const router = useRouter();
-  const [groups, setGroups] = useState<SuggestedGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set());
-  const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
+  const { items: groups, loading, error, refresh } = useGroupSuggestions();
+  const [joinedIds, setJoinedIds] = React.useState<Set<string>>(new Set());
+  const [actionLoading, setActionLoading] = React.useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchGroups();
-    
-    // Synchronisation automatique toutes les 30 secondes
-    const interval = setInterval(fetchGroups, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchGroups = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/groups?type=discover', {
-        method: 'GET',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!res.ok) {
-        console.warn(`Groups discovery API error: ${res.status}`);
-        setGroups([]);
-        return;
-      }
-      const data = await res.json();
-      setGroups(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching groups:', error);
-      setGroups([]); // Fallback to empty groups
-    } finally {
-      setLoading(false);
-    }
-  };
+  React.useEffect(() => {
+    if (!groups || groups.length === 0) return;
+    const initial = new Set<string>();
+    groups.forEach((g: any) => {
+      if (g.isMember) initial.add(g.id);
+    });
+    setJoinedIds(initial);
+  }, [groups]);
 
   const handleJoin = async (groupId: string) => {
     try {
@@ -103,21 +80,14 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
     }
   };
 
-  if (loading) {
-    // Don't show loading skeleton - just return null to avoid visual loading indicators
-    return null;
-  }
-
-  if (groups.length === 0) {
-    // No groups -> do not render
-    return null;
-  }
+  if (loading || error) return null;
+  if (!groups || groups.length === 0) return null;
 
   return (
     <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Groupes suggérés</h3>
       <div className="space-y-3 md:space-y-4">
-        {groups.slice(0, compact ? 3 : 5).map((group) => (
+        {groups.slice(0, compact ? 3 : 5).map((group: any) => (
           <motion.div
             key={group.id}
             initial={{ opacity: 0, y: 20 }}
@@ -169,6 +139,15 @@ export function GroupSuggestions({ compact = false }: GroupSuggestionsProps) {
                     <MessageCircle className="w-3 h-3 flex-shrink-0" />
                     <span className="hidden sm:inline">Contacter</span>
                     <span className="sm:hidden">💬</span>
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/groups/${group.id}`)}
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 whitespace-nowrap"
+                  >
+                    <span className="hidden sm:inline">Explorer</span>
+                    <span className="sm:hidden">🔍</span>
                   </Button>
                 </div>
               </div>

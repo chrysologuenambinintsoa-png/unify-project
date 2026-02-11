@@ -122,60 +122,101 @@ export async function GET(request: NextRequest) {
       ...requestedUserIds,
     ]);
 
-    // Fetch all potential friend suggestions (all users except excluded)
-    // Include counts so the client can display real friends count without extra requests
-    const allUsers = await prisma.user.findMany({
-      where: {
-        id: {
-          notIn: Array.from(excludedUserIds),
-        },
-      },
-      orderBy: [
-        { createdAt: 'desc' }, // Newest users first
-      ],
-      select: {
-        id: true,
-        username: true,
-        fullName: true,
-        avatar: true,
-        bio: true,
-        _count: {
-          select: {
-            friends1: true,
-            friends2: true,
-          },
-        },
-      },
-      take: limit,
-      skip: offset,
-    });
+    // Calculate mutual friends (friends-of-friends) efficiently
+    const mutualCounts = new Map<string, number>();
+    const friendIdsArray = Array.from(friendIds);
 
-    // Get total count of all available suggestions
+    if (friendIdsArray.length > 0) {
+      const friendsOfFriends = await prisma.friendship.findMany({
+        where: {
+          status: 'accepted',
+          OR: [
+            { user1Id: { in: friendIdsArray } },
+            { user2Id: { in: friendIdsArray } },
+          ],
+        },
+        select: { user1Id: true, user2Id: true },
+      });
+
+      friendsOfFriends.forEach((f) => {
+        let candidateId: string | null = null;
+        if (friendIds.has(f.user1Id)) candidateId = f.user2Id;
+        else if (friendIds.has(f.user2Id)) candidateId = f.user1Id;
+
+        if (!candidateId) return;
+        if (excludedUserIds.has(candidateId)) return;
+
+        mutualCounts.set(candidateId, (mutualCounts.get(candidateId) || 0) + 1);
+      });
+    }
+
+    // Build suggestion list from mutuals first (sorted by mutual count)
+    const candidateIds = Array.from(mutualCounts.keys());
+    let suggestions: Array<any> = [];
+
+    if (candidateIds.length > 0) {
+      const candidates = await prisma.user.findMany({
+        where: { id: { in: candidateIds } },
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          avatar: true,
+          bio: true,
+          _count: { select: { friends1: true, friends2: true } },
+        },
+      });
+
+      suggestions = candidates.map((u) => ({
+        id: u.id,
+        username: u.username,
+        fullName: u.fullName,
+        avatar: u.avatar,
+        bio: u.bio,
+        mutualFriendsCount: mutualCounts.get(u.id) || 0,
+        friendsCount: (u._count?.friends1 || 0) + (u._count?.friends2 || 0),
+      }));
+
+      // Sort by mutual friends desc
+      suggestions.sort((a, b) => b.mutualFriendsCount - a.mutualFriendsCount);
+    }
+
+    // If not enough suggestions, append newest/popular users excluding already excluded ones
+    if (suggestions.length < limit) {
+      const toExclude = new Set([...Array.from(excludedUserIds), ...candidateIds]);
+      const more = await prisma.user.findMany({
+        where: { id: { notIn: Array.from(toExclude) } },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          avatar: true,
+          bio: true,
+          _count: { select: { friends1: true, friends2: true } },
+        },
+        take: limit - suggestions.length,
+        skip: offset,
+      });
+
+      suggestions = suggestions.concat(
+        more.map((u) => ({
+          id: u.id,
+          username: u.username,
+          fullName: u.fullName,
+          avatar: u.avatar,
+          bio: u.bio,
+          mutualFriendsCount: 0,
+          friendsCount: (u._count?.friends1 || 0) + (u._count?.friends2 || 0),
+        }))
+      );
+    }
+
     const totalCount = await prisma.user.count({
-      where: {
-        id: {
-          notIn: Array.from(excludedUserIds),
-        },
-      },
+      where: { id: { notIn: Array.from(excludedUserIds) } },
     });
 
-    // Return all users as suggestions (no mutual friends calculation needed)
-    const suggestionsWithMutual = allUsers.map((user) => ({
-      id: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      avatar: user.avatar,
-      bio: user.bio,
-      mutualFriendsCount: 0,
-      friendsCount: (user._count?.friends1 || 0) + (user._count?.friends2 || 0),
-    }));
-
-    return NextResponse.json({
-      suggestions: suggestionsWithMutual,
-      total: totalCount,
-      limit,
-      offset,
-    });
+    return NextResponse.json({ suggestions: suggestions.slice(0, limit), total: totalCount, limit, offset });
   } catch (error) {
     console.error('Error fetching friend suggestions:', error);
     // Return safe empty response to prevent client fetch failures

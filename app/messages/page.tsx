@@ -26,7 +26,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
-  const { translation } = useLanguage();
+  const { translation, language } = useLanguage();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -328,7 +328,7 @@ export default function MessagesPage() {
       setDeleteConfirmationData(null);
     } catch (e) {
       console.error('Delete message failed', e);
-      alert('Impossible de supprimer le message');
+      alert(translation.message.deleteMessageError);
     }
   };
 
@@ -448,7 +448,7 @@ export default function MessagesPage() {
 
   const deleteConversationHandler = async () => {
     if (!selectedConversation) return;
-    const ok = window.confirm('Supprimer cette conversation ? Cette action est irréversible.');
+    const ok = window.confirm(translation.message.deleteConversationConfirm);
     if (!ok) return;
     try {
       const url = typeof window !== 'undefined' ? `${window.location.origin}/api/messages/conversation?partnerId=${selectedConversation}` : `/api/messages/conversation?partnerId=${selectedConversation}`;
@@ -458,12 +458,12 @@ export default function MessagesPage() {
       setSelectedConversation(null);
       setSelectedUser(null);
       if (UI_CONFIG.SHOW_SUCCESS_TOAST) {
-        setToast({ message: 'Conversation supprimée', type: 'success' });
+        setToast({ message: translation.message.conversationDeleted, type: 'success' });
         setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
       }
     } catch (e) {
       console.error('Delete conversation failed', e);
-      alert('Impossible de supprimer la conversation');
+      alert(translation.message.deleteConversationError);
     } finally {
       setShowHeaderMenu(false);
     }
@@ -478,19 +478,19 @@ export default function MessagesPage() {
       });
       if (!res.ok) throw new Error('Failed to mark as read');
       if (UI_CONFIG.SHOW_SUCCESS_TOAST) {
-        setToast({ message: 'Toutes les conversations marquées comme lues', type: 'success' });
+        setToast({ message: translation.message.markAllAsReadSuccess, type: 'success' });
         setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
       }
     } catch (e) {
       console.error('Mark as read failed:', e);
-      alert('Impossible de marquer les conversations comme lues');
+      alert(translation.message.markAllAsReadError);
     } finally {
       setShowConversationMenu(false);
     }
   };
 
   const clearAllConversations = async () => {
-    const ok = window.confirm('Supprimer toutes les conversations ? Cette action est irréversible.');
+    const ok = window.confirm(translation.message.deleteAllConversationsConfirm);
     if (!ok) return;
     try {
       const res = await fetch('/api/messages/clear-all', {
@@ -503,12 +503,12 @@ export default function MessagesPage() {
       setSelectedUser(null);
       setConversations([]);
       if (UI_CONFIG.SHOW_SUCCESS_TOAST) {
-        setToast({ message: 'Toutes les conversations supprimées', type: 'success' });
+        setToast({ message: translation.message.deleteAllConversationsSuccess, type: 'success' });
         setTimeout(() => setToast(null), UI_CONFIG.TOAST_DURATION || 3000);
       }
     } catch (e) {
       console.error('Clear conversations failed:', e);
-      alert('Impossible de supprimer les conversations');
+      alert(translation.message.deleteAllConversationsError);
     } finally {
       setShowConversationMenu(false);
     }
@@ -526,7 +526,7 @@ export default function MessagesPage() {
       }
     } catch (e) {
       console.error('Error loading friends:', e);
-      setToast({ message: 'Erreur au chargement de la liste d\'amis', type: 'error' });
+      setToast({ message: translation.message.errorLoadingFriends, type: 'error' });
       setTimeout(() => setToast(null), 3000);
     } finally {
       setFriendsLoading(false);
@@ -582,13 +582,13 @@ export default function MessagesPage() {
                 {showConversationMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-yellow-50 rounded-lg shadow-xl z-50 border border-yellow-200">
                     <button onClick={createNewMessage} className="w-full text-left px-4 py-2 hover:bg-yellow-100 text-gray-700 text-sm border-b border-yellow-200 transition-colors">
-                      ✏️ Nouveau message
+                      ✏️ {translation.message.newMessageMenu}
                     </button>
                     <button onClick={markAllAsRead} className="w-full text-left px-4 py-2 hover:bg-yellow-100 text-gray-700 text-sm border-b border-yellow-200 transition-colors">
-                      ✓ Marquer tout comme lu
+                      ✓ {translation.message.markAllAsRead}
                     </button>
                     <button onClick={clearAllConversations} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm transition-colors">
-                      🗑️ Effacer les conversations
+                      🗑️ {translation.message.clearConversations}
                     </button>
                   </div>
                 )}
@@ -631,7 +631,7 @@ export default function MessagesPage() {
                       <h2 className="font-600 text-gray-900 truncate text-base md:text-lg">
                         {selectedUser?.fullName || 'Conversation'}
                       </h2>
-                      <p className="text-xs md:text-sm text-gray-500">Actif maintenant</p>
+                      <p className="text-xs md:text-sm text-gray-500">{translation.message.activeNow}</p>
                     </Link>
                   </div>
                   <div className="relative flex-shrink-0">
@@ -644,16 +644,16 @@ export default function MessagesPage() {
                       {showHeaderMenu && (
                         <div className="absolute right-2 md:right-0 mt-2 w-48 md:w-56 max-w-[90vw] bg-white rounded-lg shadow-lg z-[99999] border border-gray-200">
                         <button onClick={openContactInfo} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
-                          Informations du contact
+                          {translation.message.contactInfo}
                         </button>
                         <button onClick={searchMessages} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
-                          Rechercher des messages
+                          {translation.message.searchMessages}
                         </button>
                         <button onClick={showMedia} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-700 text-xs md:text-sm border-b border-gray-200 transition-colors">
-                          Médias
+                          {translation.message.media}
                         </button>
                         <button onClick={deleteConversationHandler} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-xs md:text-sm transition-colors">
-                          Supprimer la conversation
+                          {translation.message.deleteConversation}
                         </button>
                       </div>
                     )}
@@ -665,7 +665,7 @@ export default function MessagesPage() {
               <div className="flex-1 p-3 md:p-4 overflow-y-auto space-y-3 md:space-y-4 flex flex-col">
                 {messages.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center text-gray-400">
-                    <p className="text-sm md:text-base">Aucun message. Commencez la conversation!</p>
+                    <p className="text-sm md:text-base">{translation.message.noMessages}</p>
                   </div>
                 ) : (
                   <>
@@ -744,14 +744,14 @@ export default function MessagesPage() {
                                     }}
                                     className="text-xs text-blue-600 underline hover:text-blue-800"
                                   >
-                                    Télécharger la pièce jointe
+                                    {translation.message.downloadAttachment}
                                   </button>
                                 </div>
                               )}
                               <p className={`text-xs mt-1 opacity-70 ${
                                 message.isMine ? 'text-primary-light' : 'text-gray-600'
                               }`}>
-                                {new Date(message.time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(message.time).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
                               </p>
 
                               {/* Reactions preview */}
@@ -816,7 +816,7 @@ export default function MessagesPage() {
 
                 {selectedMessageId && (
                   <div className="mb-2 md:mb-3 p-2 bg-blue-50 rounded-lg text-xs md:text-sm border border-blue-200 flex items-center justify-between">
-                    <span className="text-blue-700">Message sélectionné</span>
+                    <span className="text-blue-700">{translation.message.messageSelected}</span>
                     <button 
                       onClick={() => setSelectedMessageId(null)}
                       className="text-blue-600 hover:text-blue-800 text-xl"
@@ -850,7 +850,7 @@ export default function MessagesPage() {
                       onClick={handleLikeClickNearSend}
                       disabled={isSending}
                       className="flex-shrink-0 p-2 rounded-full transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Envoyer un cœur"
+                      title={translation.message.sendHeart}
                     >
                       <Heart className="w-4 md:w-5 h-4 md:h-5 text-gray-600" fill="none" stroke="currentColor" />
                     </button>
@@ -866,8 +866,8 @@ export default function MessagesPage() {
                           else setAttachment({ type: 'document', dataUrl: data });
                         };
                         reader.readAsDataURL(f);
-                      }} />
-                      <label htmlFor="attachmentInput" className="p-2 hover:bg-gray-100 rounded-full cursor-pointer" title="Joindre un fichier">
+                        }} />
+                      <label htmlFor="attachmentInput" className="p-2 hover:bg-gray-100 rounded-full cursor-pointer" title={translation.message.addAttachment}>
                         <Paperclip className="w-4 md:w-5 h-4 md:h-5 text-gray-600" />
                       </label>
                     </div>
@@ -878,9 +878,9 @@ export default function MessagesPage() {
                       {attachment.type === 'image' ? (
                         <img src={attachment.dataUrl || ''} alt="preview" className="w-16 md:w-24 h-16 md:h-24 object-cover rounded" />
                       ) : (
-                        <div className="px-3 py-2 bg-gray-100 rounded text-xs md:text-sm">Fichier joint</div>
+                        <div className="px-3 py-2 bg-gray-100 rounded text-xs md:text-sm">{translation.message.attachmentAdded}</div>
                       )}
-                      <button onClick={() => setAttachment(null)} className="text-sm text-red-500">Suppr.</button>
+                      <button onClick={() => setAttachment(null)} className="text-sm text-red-500">{translation.common.delete}</button>
                     </div>
                   )}
                 </div>
@@ -889,12 +889,12 @@ export default function MessagesPage() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500">
               <h3 className="text-3xl md:text-4xl font-semibold mb-2">📎</h3>
-              <p className="text-gray-500 text-sm md:text-base px-4">Choisissez un ami pour commencer à discuter</p>
-              <button
+              <p className="text-gray-500 text-sm md:text-base px-4">{translation.message.chooseConversation}</p>
+                <button
                 onClick={() => setShowConversationList(true)}
                 className="md:hidden mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm transition-colors hover:bg-primary-dark"
               >
-                Voir les conversations
+                {translation.message.viewConversations}
               </button>
             </div>
           )}
@@ -904,12 +904,12 @@ export default function MessagesPage() {
               {longPressMessage && menuPos && (
                 <div style={{ position: 'fixed', left: menuPos.x, top: menuPos.y, zIndex: 20 }}>
                   <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-xs md:max-w-sm">
-                    <button onClick={() => reactToMessage(longPressMessage.id, '❤️')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">❤️ Aimer</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '👍')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">👍 J'aime</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😂')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😂 Amusant</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😢')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😢 Triste</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '😮')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😮 Surpris</button>
-                    <button onClick={() => reactToMessage(longPressMessage.id, '🔥')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">🔥 Chaud</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '❤️')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">❤️ {translation.message.likeEmoji}</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '👍')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">👍 {translation.message.thumpEmoji}</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😂')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😂 {translation.message.funnyEmoji}</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😢')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😢 {translation.message.sadEmoji}</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '😮')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">😮 {translation.message.surprisedEmoji}</button>
+                    <button onClick={() => reactToMessage(longPressMessage.id, '🔥')} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50">🔥 {translation.message.hotEmoji}</button>
                     <button 
                       onClick={() => {
                         setDeleteConfirmationData({ messageId: longPressMessage.id, isMine: longPressMessage.isMine });
@@ -917,9 +917,9 @@ export default function MessagesPage() {
                       }}
                       className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm text-red-600 hover:bg-red-50 border-t"
                     >
-                      🗑️ Supprimer
+                      🗑️ {translation.message.deleteMessageOption}
                     </button>
-                    <button onClick={closeLongPressMenu} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50 border-t">Annuler</button>
+                    <button onClick={closeLongPressMenu} className="block w-full text-left px-3 md:px-4 py-2 text-xs md:text-sm hover:bg-gray-50 border-t">{translation.message.cancelButton}</button>
                   </div>
                 </div>
               )}
@@ -928,28 +928,28 @@ export default function MessagesPage() {
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40">
           <div className="bg-white w-[95%] md:w-[90%] max-w-3xl rounded-lg p-3 md:p-4 mx-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
-              <h3 className="text-base md:text-lg font-semibold">Médias de la conversation</h3>
+              <h3 className="text-base md:text-lg font-semibold">{translation.message.mediaTitle}</h3>
               <div className="flex items-center gap-2">
                 {originalMessages && (
-                  <button onClick={() => { setMessages(originalMessages); setOriginalMessages(null); }} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">Réinitialiser la recherche</button>
+                  <button onClick={() => { setMessages(originalMessages); setOriginalMessages(null); }} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">{translation.message.resetSearch}</button>
                 )}
-                <button onClick={() => setShowMediaModal(false)} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">Fermer</button>
+                <button onClick={() => setShowMediaModal(false)} className="text-xs md:text-sm px-3 py-1 bg-gray-100 rounded">{translation.message.closeButton}</button>
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 max-h-[60vh] overflow-auto">
               {messages.filter(m => m.image || m.document).length === 0 ? (
-                <div className="text-gray-500 text-sm col-span-2 md:col-span-3">Aucun média trouvé.</div>
+                <div className="text-gray-500 text-sm col-span-2 md:col-span-3">{translation.message.noMediaFound}</div>
               ) : (
                 messages.filter(m => m.image || m.document).map(m => (
                   <div key={m.id} className="border rounded p-1 md:p-2 flex flex-col items-start">
                     {m.image ? (
                       <img src={m.image} className="w-full h-20 md:h-36 object-cover rounded mb-1 md:mb-2" />
                     ) : (
-                      <div className="w-full h-20 md:h-36 flex items-center justify-center bg-gray-50 rounded mb-1 md:mb-2 text-xs">Fichier</div>
+                      <div className="w-full h-20 md:h-36 flex items-center justify-center bg-gray-50 rounded mb-1 md:mb-2 text-xs">{translation.message.fileLabel}</div>
                     )}
                     <div className="text-xs text-gray-600 mb-1 line-clamp-2">{m.content?.slice(0,60)}</div>
                     {m.document && (
-                      <a href={m.document} target="_blank" rel="noreferrer" className="text-xs md:text-sm text-blue-600 underline">Télécharger</a>
+                      <a href={m.document} target="_blank" rel="noreferrer" className="text-xs md:text-sm text-blue-600 underline">{translation.message.downloadAttachment}</a>
                     )}
                   </div>
                 ))
@@ -988,11 +988,11 @@ export default function MessagesPage() {
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="text-2xl md:text-3xl">🗑️</div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Supprimer le message?</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">{translation.message.deleteMessageTitle}</h3>
             </div>
 
             <p className="text-sm md:text-base text-gray-600 mb-6">
-              Comment souhaitez-vous supprimer ce message?
+              {translation.message.deleteMessageQuestion}
             </p>
 
             <div className="space-y-3">
@@ -1004,8 +1004,8 @@ export default function MessagesPage() {
                 }}
                 className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg font-medium transition-colors text-left"
               >
-                <div className="font-semibold text-sm md:text-base">📋 Pour moi uniquement</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">Seul vous verrez le message supprimé</div>
+                <div className="font-semibold text-sm md:text-base">📋 {translation.message.deleteForMeOnly}</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">{translation.message.deleteForMeDescription}</div>
               </motion.button>
 
               <motion.button
@@ -1016,8 +1016,8 @@ export default function MessagesPage() {
                 }}
                 className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 text-red-900 rounded-lg font-medium transition-colors text-left border-2 border-red-200"
               >
-                <div className="font-semibold text-sm md:text-base">🔴 Pour tout le monde</div>
-                <div className="text-xs md:text-sm text-red-700 mt-1">Tout le monde verra le message comme supprimé</div>
+                <div className="font-semibold text-sm md:text-base">🔴 {translation.message.deleteForEveryone}</div>
+                <div className="text-xs md:text-sm text-red-700 mt-1">{translation.message.deleteForEveryoneDescription}</div>
               </motion.button>
 
               <motion.button
@@ -1030,7 +1030,7 @@ export default function MessagesPage() {
                 }}
                 className="w-full px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-colors"
               >
-                Annuler
+                {translation.message.cancelButton}
               </motion.button>
             </div>
           </motion.div>
@@ -1056,7 +1056,7 @@ export default function MessagesPage() {
             {/* Header */}
             <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">Nouveau message</h3>
+                <h3 className="text-lg font-bold text-gray-900">{translation.message.newMessageMenu}</h3>
                 <button
                   onClick={() => setShowNewMessageModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
@@ -1070,11 +1070,11 @@ export default function MessagesPage() {
             <div className="flex-1 overflow-y-auto">
               {friendsLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="text-gray-500">Chargement...</div>
+                  <div className="text-gray-500">{translation.message.loading}</div>
                 </div>
               ) : friendsList.length === 0 ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="text-gray-500 text-center">Aucun ami trouvé</div>
+                  <div className="text-gray-500 text-center">{translation.message.noFriendsFound}</div>
                 </div>
               ) : (
                 <div className="space-y-1 p-2">

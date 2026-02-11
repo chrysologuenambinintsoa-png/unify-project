@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { usePageSuggestions } from '@/hooks/usePageSuggestions';
 import { Users, ExternalLink } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
 import { Button } from '@/components/ui/Button';
@@ -21,55 +23,34 @@ interface PageSuggestionsProps {
 }
 
 export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
-  const [pages, setPages] = useState<SuggestedPage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items: pages, loading, error, refresh } = usePageSuggestions();
+  const router = useRouter();
+  const [followingInitialized, setFollowingInitialized] = useState(false);
+  const [likedInitialized, setLikedInitialized] = useState(false);
+
+  React.useEffect(() => {
+    if (!pages || pages.length === 0) return;
+    const initial = new Set<string>();
+    pages.forEach((p: any) => {
+      if (p.isFollowing || p.isAdmin) initial.add(p.id);
+    });
+    setFollowingIds(initial);
+    setFollowingInitialized(true);
+  }, [pages]);
+
+  React.useEffect(() => {
+    if (!pages || pages.length === 0) return;
+    const initialLikes = new Set<string>();
+    pages.forEach((p: any) => {
+      if (p.isLiked) initialLikes.add(p.id);
+    });
+    setLikedIds(initialLikes);
+    setLikedInitialized(true);
+  }, [pages]);
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    fetchPages();
-    
-    // Synchronisation automatique toutes les 30 secondes
-    const interval = setInterval(fetchPages, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchPages = async () => {
-    try {
-      setLoading(true);
-      let res: Response | null = null;
-      try {
-        res = await fetch('/api/pages?type=discover');
-      } catch (networkErr) {
-        console.debug('Network error fetching pages:', networkErr);
-        setPages([]);
-        return;
-      }
-
-      if (!res || !res.ok) {
-        let errBody: any = null;
-        try { errBody = await res?.json(); } catch (_) { try { errBody = await res?.text(); } catch {} }
-        console.debug('Failed to fetch pages', res?.status, errBody);
-        setPages([]);
-        return;
-      }
-
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setPages(data);
-      } else if (Array.isArray((data as any).pages)) {
-        setPages((data as any).pages);
-      } else {
-        setPages([]);
-      }
-    } catch (error) {
-      console.debug('Error fetching pages:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleLike = async (pageId: string) => {
     try {
@@ -149,7 +130,7 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
     <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Pages suggérées</h3>
       <div className="space-y-3 md:space-y-4">
-        {pages.slice(0, compact ? 3 : 5).map((page) => (
+        {pages.slice(0, compact ? 3 : 5).map((page: any) => (
           <motion.div
             key={page.id}
             initial={{ opacity: 0, y: 20 }}
@@ -194,6 +175,15 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     <span className="hidden sm:inline">{followingIds.has(page.id) ? 'Suivi' : 'Suivre'}</span>
                     <span className="sm:hidden">{followingIds.has(page.id) ? '✓' : '+'}</span>
+                  </Button>
+                  <Button
+                    onClick={() => router.push(`/pages/${page.id}`)}
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
+                  >
+                    <span className="hidden sm:inline">Explorer</span>
+                    <span className="sm:hidden">🔍</span>
                   </Button>
                 </div>
               </div>

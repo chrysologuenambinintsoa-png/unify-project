@@ -82,7 +82,7 @@ export default function LivePage() {
                   {/* Info */}
                   <div className="p-4">
                     <h3 className="font-semibold text-slate-900 line-clamp-2">{room.title}</h3>
-                    <p className="text-xs text-slate-500 mt-2">👥 {room.participantCount || 0} {translation.live.watching}</p>
+                    <p className="text-xs text-slate-500 mt-2">�️ {room.participantCount || 0} {translation.live.watching}</p>
 
                     <button
                       onClick={() => setSelectedRoomId(room.id)}
@@ -111,7 +111,7 @@ export default function LivePage() {
 
       {/* Live Streamer Modal / Component */}
       {showLiveModal && (
-        <LiveStreamer displayName={displayName} role={role === 'host' ? 'host' : role} onClose={() => setShowLiveModal(false)} />
+        <LiveStreamer displayName={displayName} role={role === 'host' ? 'host' : role} autoStart={true} onClose={() => setShowLiveModal(false)} />
       )}
 
       {/* Viewer Mode: Open Selected Room */}
@@ -122,6 +122,7 @@ export default function LivePage() {
               roomId={selectedRoomId}
               displayName={displayName}
               role="viewer"
+              autoStart={true}
               onClose={() => setSelectedRoomId(null)}
             />
           </div>

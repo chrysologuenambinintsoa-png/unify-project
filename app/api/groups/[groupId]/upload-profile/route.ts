@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 // POST /api/groups/[groupId]/upload-profile - Upload profile image
@@ -61,18 +59,32 @@ export async function POST(
       );
     }
 
-    // Create uploads directory
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'groups');
-    await mkdir(uploadsDir, { recursive: true });
+    // Upload to Cloudinary instead of local filesystem (for Vercel compatibility)
+    const cloudinaryFormData = new FormData();
+    cloudinaryFormData.append('file', file);
+    cloudinaryFormData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'unify_uploads');
+    cloudinaryFormData.append('folder', 'unify/groups');
+    cloudinaryFormData.append('public_id', `group_${groupId}_${uuidv4()}`);
 
-    // Generate filename
-    const filename = `${groupId}-${uuidv4()}-${Date.now()}.${file.name.split('.').pop()}`;
-    const filepath = join(uploadsDir, filename);
-    const publicUrl = `/uploads/groups/${filename}`;
+    const cloudinaryResponse = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        body: cloudinaryFormData,
+      }
+    );
 
-    // Write file
-    const bytes = await file.arrayBuffer();
-    await writeFile(filepath, Buffer.from(bytes));
+    if (!cloudinaryResponse.ok) {
+      const error = await cloudinaryResponse.json();
+      console.error('Cloudinary upload error:', error);
+      return NextResponse.json(
+        { error: 'Failed to upload image to cloud storage' },
+        { status: 500 }
+      );
+    }
+
+    const cloudinaryData = await cloudinaryResponse.json();
+    const publicUrl = cloudinaryData.secure_url;
 
     // Update group
     const updatedGroup = await (prisma as any).group.update({

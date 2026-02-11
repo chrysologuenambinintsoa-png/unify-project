@@ -21,13 +21,25 @@ app.prepare().then(() => {
   const { createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms');
 
   wss.on('connection', (ws, request) => {
+    console.log('[WS] New connection established, setting up handlers');
     clients.add(ws);
     ws._joinedRooms = new Set();
 
+    // Send initial room list immediately upon connection
+    try {
+      const initialData = { type: 'roomsList', rooms: listRooms() };
+      ws.send(JSON.stringify(initialData));
+      console.log('[WS] Sent initial roomsList on connection');
+    } catch (e) {
+      console.error('[WS] Failed to send initial roomsList:', e);
+    }
+
     ws.on('message', (raw) => {
       try {
+        console.log('[WS] Message received:', raw.toString().substring(0, 100));
         const msg = JSON.parse(raw.toString());
         const { type, roomId, payload, to } = msg;
+        console.log('[WS] Parsed message type:', type);
 
         switch (type) {
           case 'listRooms': {
@@ -120,11 +132,16 @@ app.prepare().then(() => {
     });
 
     ws.on('close', () => {
+      console.log('[WS] Connection closed');
       // cleanup from rooms
       for (const roomId of Array.from(ws._joinedRooms || [])) {
         try { leaveRoom(roomId, ws); } catch (e) {}
       }
       clients.delete(ws);
+    });
+
+    ws.on('error', (err) => {
+      console.error('[WS] WebSocket error:', err);
     });
   });
 
@@ -146,13 +163,17 @@ app.prepare().then(() => {
   server.on('upgrade', (request, socket, head) => {
     // Only handle ws upgrades to our path
     const { url } = request;
+    console.log('[WS] Upgrade request:', { url, hasHead: !!head });
     if (url && url.startsWith('/ws')) {
+      console.log('[WS] Handling upgrade for /ws path');
       wss.handleUpgrade(request, socket, head, (ws) => {
+        console.log('[WS] Connection established');
         wss.emit('connection', ws, request);
       });
     } else {
       // Do not destroy other upgrade sockets (e.g. Next's HMR websocket).
       // Let other upgrade listeners (registered by Next) handle them.
+      console.log('[WS] Ignoring upgrade for path:', url);
       return;
     }
   });

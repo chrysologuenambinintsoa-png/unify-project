@@ -12,9 +12,10 @@ type Props = {
   role?: Role;
   myId?: string;
   onClose?: () => void;
+  autoStart?: boolean;
 };
 
-export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Guest', role = 'participant', myId: initialMyId, onClose }: Props) {
+export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Guest', role = 'participant', myId: initialMyId, onClose, autoStart = false }: Props) {
   const { send, onMessage, rooms } = useLive();
   const { translation } = useLanguage();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -32,7 +33,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
   const [micOn, setMicOn] = useState(true);
   const [messages, setMessages] = useState<Array<{ id: string; from: string; text: string }>>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [reactions, setReactions] = useState(0);
+  const [reactions, setReactions] = useState<Array<{ id: string; emoji: string; timestamp: number }>>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
   const [canPreview, setCanPreview] = useState(false);
@@ -67,12 +68,6 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     }
     if (role === 'viewer') {
       console.log('[LiveStreamer] Skipping: user is viewer');
-      return;
-    }
-    
-    // Don't try to setup if there's already an error from diagnostic
-    if (cameraError) {
-      console.log('[LiveStreamer] Skipping setup: camera error already detected');
       return;
     }
     
@@ -112,7 +107,8 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
       } catch (e: any) {
         console.error('[LiveStreamer] Camera access failed in setupPreview:', e.name, e.message);
         if (mounted) {
-          setCameraError(`Camera setup failed: ${e.message}`);
+          // Don't block — just log the error and continue with black screen
+          console.log('[LiveStreamer] Proceeding without camera');
         }
       }
     }
@@ -133,7 +129,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     };
 
     return cleanup;
-  }, [canPreview, camOn, micOn, role, step, cameraError]);
+  }, [canPreview, camOn, micOn, role, step]);
 
   // WebRTC signaling and message handling
   useEffect(() => {
@@ -148,7 +144,14 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
       }
 
       if (m.type === 'reaction') {
-        setReactions((r) => r + 1);
+        const reactId = `react_${Date.now()}_${Math.random()}`;
+        const emoji = m.payload?.reaction || '❤️';
+        setReactions((prev) => [...prev, { id: reactId, emoji, timestamp: Date.now() }]);
+        
+        // Remove reaction animation after 2 seconds
+        setTimeout(() => {
+          setReactions((prev) => prev.filter((r) => r.id !== reactId));
+        }, 2000);
       }
 
       if (m.type === 'offer') {
@@ -249,48 +252,39 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
   const startSession = async () => {
     console.log('[LiveStreamer] startSession clicked', { availableDevices });
     
-    if (!availableDevices.video) {
-      alert('❌ No camera detected on your device.\n\nMake sure:\n1. A USB camera is connected\n2. Your laptop/device has a built-in camera\n3. No other app is currently using the camera');
-      return;
+    // Don't block if no camera — just attempt to preview
+    if (availableDevices.video) {
+      console.log('[LiveStreamer] Camera available, attempting to access...');
+      try {
+        const testStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        console.log('[LiveStreamer] ✅ Video access successful!');
+        testStream.getTracks().forEach(t => t.stop());
+        setCameraError(null);
+      } catch (e: any) {
+        console.error('[LiveStreamer] Camera access failed:', e.name, e.message);
+        setCameraError(`Camera blocked: ${e.message}. Proceeding without camera.`);
+      }
+    } else {
+      console.log('[LiveStreamer] No camera detected. Proceeding without camera.');
+      setCameraError('No camera detected. Proceeding with audio/streaming only.');
     }
     
-    // Diagnostic: test if we can access camera at all
-    console.log('[LiveStreamer] Running camera diagnostic...');
-    try {
-      // Try video only
-      console.log('[LiveStreamer] Testing video access...');
-      const testStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      console.log('[LiveStreamer] ✅ Video access successful!');
-      testStream.getTracks().forEach(t => t.stop());
-      
-      setCameraError(null); // Clear previous errors
-      setCanPreview(true);
-    } catch (e: any) {
-      console.error('[LiveStreamer] Video diagnostic failed:', e.name, e.message);
-      
-      // If video fails, give detailed instructions
-      let instructions = '❌ Camera access is blocked.\n\n';
-      
-      if (e.name === 'NotAllowedError') {
-        instructions += 'SOLUTIONS:\n' +
-          '1. Check if another app is using the camera (Zoom, Teams, etc.) - close it\n' +
-          '2. Restart your browser\n' +
-          '3. Go to browser settings and reset camera permissions:\n' +
-          '   - Chrome: chrome://settings/content/camera\n' +
-          '   - Firefox: about:preferences#privacy → Permissions\n' +
-          '4. Or try a different browser\n\n' +
-          'Error: ' + e.message;
-      } else if (e.name === 'NotFoundError') {
-        instructions += 'No camera found on your device.\n' +
-          'Connect a USB camera or enable your webcam.';
-      } else {
-        instructions += 'Error: ' + e.message;
-      }
-      
-      setCameraError(instructions);
-      setCanPreview(true); // Show error message in preview area
-    }
+    // Always allow preview, even without camera
+    setCanPreview(true);
   };
+
+  // Auto-start preview when `autoStart` is enabled and a camera is available
+  useEffect(() => {
+    if (!autoStart) return;
+    if (role === 'viewer') return;
+    if (!availableDevices.video) return;
+    if (canPreview) return;
+
+    // fire-and-forget; startSession shows diagnostics and requests permission
+    startSession().catch((e) => {
+      console.warn('[LiveStreamer] autoStart startSession failed', e);
+    });
+  }, [autoStart, role, availableDevices.video, canPreview]);
 
   const goLive = async () => {
     try {
@@ -318,14 +312,26 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
 
   const sendMessage = () => {
     if (!messageInput.trim() || !roomId) return;
+    const newMessage = {
+      id: `msg_${Date.now()}`,
+      from: displayName,
+      text: messageInput.trim(),
+    };
+    setMessages((prev) => [...prev, newMessage]);
     send({ type: 'comment', roomId, payload: { from: displayName, text: messageInput.trim() } });
     setMessageInput('');
   };
 
-  const sendReaction = () => {
+  const sendReaction = (emoji: string = '❤️') => {
     if (!roomId) return;
-    send({ type: 'reaction', roomId, payload: { from: myId || displayName, reaction: '❤️' } });
-    setReactions((r) => r + 1);
+    const reactionId = `react_${Date.now()}_${Math.random()}`;
+    setReactions((prev) => [...prev, { id: reactionId, emoji, timestamp: Date.now() }]);
+    send({ type: 'reaction', roomId, payload: { from: myId || displayName, reaction: emoji } });
+    
+    // Remove reaction animation after 2 seconds
+    setTimeout(() => {
+      setReactions((prev) => prev.filter((r) => r.id !== reactionId));
+    }, 2000);
   };
 
   const toggleFullscreen = async () => {
@@ -639,7 +645,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span className="font-semibold">{translation.live.liveBadge}</span>
                 </div>
-                <div className="bg-black/60 text-white px-4 py-2 rounded-lg">👥 {viewerCount}</div>
+                <div className="bg-black/60 text-white px-4 py-2 rounded-lg">👁️ {viewerCount}</div>
               </div>
 
               <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 text-white rounded-lg">{translation.live.exitFullscreen}</button>
@@ -673,13 +679,44 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                 <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
               )}
 
+              {/* Floating Reactions */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {reactions.map((reaction) => (
+                  <div
+                    key={reaction.id}
+                    className="absolute text-3xl font-bold"
+                    style={{
+                      left: `${Math.random() * 80 + 10}%`,
+                      bottom: `${Math.random() * 30 + 10}%`,
+                      animation: `float-up 2s ease-out forwards`,
+                      opacity: 0.9,
+                    }}
+                  >
+                    {reaction.emoji}
+                  </div>
+                ))}
+              </div>
+
+              <style>{`
+                @keyframes float-up {
+                  0% {
+                    transform: translateY(0) scale(1);
+                    opacity: 0.9;
+                  }
+                  100% {
+                    transform: translateY(-150px) scale(0.5);
+                    opacity: 0;
+                  }
+                }
+              `}</style>
+
               {/* Video Overlay */}
-              <div className="absolute top-4 left-4 flex items-center gap-2">
+              <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
                 <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-lg">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span className="text-sm font-semibold">{translation.live.liveBadge}</span>
                 </div>
-                <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm">👥 {viewerCount}</div>
+                <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm">👁️ {viewerCount}</div>
               </div>
 
               {/* Fullscreen Button */}
@@ -704,7 +741,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
             <div className="bg-slate-50 rounded-xl p-4 space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">{translation.live.stats}</h3>
               <div className="text-sm">
-                <span className="font-semibold text-red-600 animate-pulse">{reactions}</span>
+                <span className="font-semibold text-red-600 animate-pulse">{reactions.length}</span>
                 <span className="text-slate-600"> {translation.live.reactions}</span>
               </div>
               <div className="text-sm">
@@ -717,33 +754,58 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
               </div>
             </div>
 
-            {/* Reaction Button */}
+            {/* Reaction Buttons */}
             {role === 'viewer' && (
-              <button onClick={sendReaction} className="w-full px-4 py-3 bg-blue-900 text-white rounded-xl font-semibold hover:bg-blue-800 transition transform active:scale-95">
-                {translation.live.like}
-              </button>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-600">{translation.live.reactions}</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {['❤️', '👍', '😂', '😍', '🔥'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => sendReaction(emoji)}
+                      className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition transform active:scale-90 text-xl"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Chat */}
-            <div className="bg-slate-50 rounded-xl p-4 flex flex-col h-80">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">{translation.live.chat}</h3>
-              <div className="flex-1 overflow-y-auto space-y-2">
+            <div className="bg-slate-50 rounded-xl p-4 flex flex-col h-80 border border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-900 mb-3">{translation.live.chat} ({messages.length})</h3>
+              <div className="flex-1 overflow-y-auto space-y-3">
                 {messages.length ? (
                   messages.map((m) => (
-                    <div key={m.id} className="text-xs">
-                      <p className="font-semibold text-slate-800">{m.from}</p>
-                      <p className="text-slate-600">{m.text}</p>
+                    <div key={m.id} className="bg-white rounded-lg p-2 border border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-slate-800 truncate">{m.from}</p>
+                        <span className="text-xs text-slate-400">just now</span>
+                      </div>
+                      <p className="text-xs text-slate-700 mt-1 word-break">{m.text}</p>
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-slate-400">{translation.live.noMessagesYet}</p>
+                  <p className="text-xs text-slate-400 text-center py-8">{translation.live.noMessagesYet}</p>
                 )}
               </div>
 
               {/* Input */}
-              <div className="mt-3 flex gap-2">
-                <input value={messageInput} onChange={(e) => setMessageInput(e.target.value)} placeholder={translation.live.saySomething} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-900" />
-                <button onClick={sendMessage} className="px-3 py-2 bg-blue-900 text-white rounded-lg text-xs font-medium">{translation.live.send}</button>
+              <div className="mt-3 flex gap-2 border-t border-slate-200 pt-3">
+                <input 
+                  value={messageInput} 
+                  onChange={(e) => setMessageInput(e.target.value)} 
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder={translation.live.saySomething} 
+                  className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-900" 
+                />
+                <button 
+                  onClick={sendMessage} 
+                  className="px-3 py-2 bg-blue-900 text-white rounded-lg text-xs font-medium hover:bg-blue-800 transition active:scale-95"
+                >
+                  {translation.live.send}
+                </button>
               </div>
             </div>
           </div>

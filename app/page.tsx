@@ -58,9 +58,10 @@ export default function HomePage() {
       setLoading(true);
       
       // Charger les posts et sponsored posts en parallèle
+      // Increased timeout to 15 seconds for mobile connections
       const [postsRes, sponsoredRes] = await Promise.all([
-        fetchWithTimeout('/api/posts', undefined, 10000),
-        fetch('/api/sponsored?limit=5'),
+        fetchWithTimeout('/api/posts', undefined, 15000),
+        fetchWithTimeout('/api/sponsored?limit=5', undefined, 15000),
       ]);
       
       // Traiter les posts

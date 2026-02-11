@@ -165,7 +165,27 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           ))}
         </motion.div>
 
-
+        {/* Texte "From NCH" avec animation */}
+        <motion.div
+          className="absolute bottom-8 w-full px-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+        >
+          <motion.p
+            className="text-white/40 text-sm font-light tracking-widest"
+            animate={{ 
+              opacity: [0.4, 0.8, 0.4],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          >
+            From NCH
+          </motion.p>
+        </motion.div>
       </div>
     </motion.div>
   );

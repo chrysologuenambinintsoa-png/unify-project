@@ -73,40 +73,6 @@ export default function GroupsPage() {
     fetchGroups();
   };
 
-  const mockGroups: Group[] = [
-    {
-      id: '1',
-      name: 'Développeurs React',
-      description: 'Communauté des développeurs React francophones',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=react',
-      coverImage: 'https://picsum.photos/400/200?random=1',
-      isPrivate: false,
-      memberCount: 1250,
-      createdAt: new Date().toISOString(),
-      owner: {
-        id: '1',
-        username: 'admin',
-        fullName: 'Admin React',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-      },
-    },
-    {
-      id: '2',
-      name: 'Photographie Amateur',
-      description: 'Partagez vos meilleures photos et apprenez ensemble',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=photo',
-      coverImage: 'https://picsum.photos/400/200?random=2',
-      isPrivate: false,
-      memberCount: 890,
-      createdAt: new Date().toISOString(),
-      owner: {
-        id: '2',
-        username: 'photo_guru',
-        fullName: 'Photo Guru',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=photo_guru',
-      },
-    },
-  ];
 
   return (
     <MainLayout>

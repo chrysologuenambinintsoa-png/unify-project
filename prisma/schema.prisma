@@ -725,3 +725,17 @@ model AdminMessage {
   @@index([status])
   @@map("admin_messages")
 }
+
+model PageLike {
+  id        String   @id @default(cuid())
+  pageId    String
+  userId    String
+  createdAt DateTime @default(now())
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, userId])
+  @@index([pageId])
+  @@index([userId])
+  @@map("page_likes")
+}

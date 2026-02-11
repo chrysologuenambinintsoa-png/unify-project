@@ -100,6 +100,13 @@ async function cleanDatabase() {
     }
 
     try {
+      const pageLikeCount = await (prisma as any).pageLike.deleteMany({});
+      console.log(`✓ PageLike: ${pageLikeCount.count} enregistrements supprimés`);
+    } catch (error) {
+      console.log(`⚠ PageLike: table n'existe pas (ignorée)`);
+    }
+
+    try {
       const groupPostMediaCount = await prisma.groupPostMedia.deleteMany({});
       console.log(`✓ GroupPostMedia: ${groupPostMediaCount.count} enregistrements supprimés`);
     } catch (error) {

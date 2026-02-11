@@ -192,6 +192,27 @@ unify/
 └── .env                   # Variables d'environnement
 ```
 
+## 🔄 Migration: ajout du modèle `PageLike`
+
+Un nouveau modèle `PageLike` a été ajouté pour persister les likes sur les pages. Une migration SQL a été ajoutée dans `prisma/migrations/20260211123000_add_page_like/migration.sql`.
+
+Pour appliquer la migration (en développement), exécutez :
+
+```bash
+npx prisma migrate dev --name add-page-like
+npx prisma generate
+```
+
+Si vous utilisez `prisma db push` pour pousser le schéma sans migrations, vous pouvez aussi exécuter :
+
+```bash
+npx prisma db push
+npx prisma generate
+```
+
+Après avoir appliqué la migration, redémarrez le serveur de développement.
+
+
 ## 🎨 Design
 
 ### Palette de Couleurs

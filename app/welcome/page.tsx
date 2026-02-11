@@ -84,7 +84,7 @@ export default function WelcomePage() {
   }, [slides.length]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div
           className="text-center mb-8"

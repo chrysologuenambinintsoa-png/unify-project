@@ -9,30 +9,54 @@ export function useLive(wsPath = '/ws') {
   const listenersRef = useRef(new Set<(m: Msg) => void>());
 
   useEffect(() => {
-    const loc = window.location;
-    const protocol = loc.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${loc.host}${wsPath}`;
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
+    try {
+      const loc = window.location;
+      const protocol = loc.protocol === 'https:' ? 'wss' : 'ws';
 
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-    ws.onmessage = (ev) => {
-      try {
-        const m: Msg = JSON.parse(ev.data);
-        if (m.type === 'roomsList') setRooms(m.rooms || []);
-        for (const l of listenersRef.current) l(m);
-      } catch (e) {}
-    };
+      // Allow overriding the WebSocket URL via NEXT_PUBLIC_LIVE_WS_URL
+      // Example: NEXT_PUBLIC_LIVE_WS_URL=wss://my-ws-host.example.com/ws
+      const envUrl = (process.env.NEXT_PUBLIC_LIVE_WS_URL as string | undefined) || '';
+      const url = envUrl && envUrl.length > 0 ? envUrl : `${protocol}://${loc.host}${wsPath}`;
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
 
-    const handleOpen = () => { ws.send(JSON.stringify({ type: 'listRooms' })); };
-    ws.addEventListener('open', handleOpen);
+      ws.onopen = () => {
+        console.log('[useLive] WebSocket connected to', url);
+        setConnected(true);
+        try {
+          console.log('[useLive] Sending listRooms message...');
+          ws.send(JSON.stringify({ type: 'listRooms' }));
+          console.log('[useLive] listRooms message sent successfully');
+        } catch (e) {
+          console.error('[useLive] Failed to send listRooms:', e);
+        }
+      };
+      ws.onclose = () => {
+        console.log('[useLive] WebSocket closed');
+        setConnected(false);
+      };
+      ws.onerror = (ev) => {
+        console.warn('[useLive] WebSocket error:', ev);
+        setConnected(false);
+      };
+      ws.onmessage = (ev) => {
+        try {
+          console.log('[useLive] Message received from server');
+          const m: Msg = JSON.parse(ev.data);
+          if (m.type === 'roomsList') setRooms(m.rooms || []);
+          for (const l of listenersRef.current) l(m);
+        } catch (e) {
+          console.error('[useLive] Failed to parse message:', e);
+        }
+      };
 
-    return () => {
-      ws.removeEventListener('open', handleOpen);
-      ws.close();
-      wsRef.current = null;
-    };
+      return () => {
+        ws.close();
+        wsRef.current = null;
+      };
+    } catch (e) {
+      console.error('[useLive] Failed to initialize WebSocket:', e);
+    }
   }, [wsPath]);
 
   const send = useCallback((msg: Msg) => {

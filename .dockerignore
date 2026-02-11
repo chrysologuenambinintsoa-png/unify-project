@@ -1,0 +1,17 @@
+node_modules
+**/.next
+dist
+build
+**/.env.local
+**/.env.development
+**/.env.test
+**/.env.production
+**/.git
+*.log
+coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.github
+.vscode
+prisma/migrations

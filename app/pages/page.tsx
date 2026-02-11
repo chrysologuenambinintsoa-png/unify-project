@@ -64,42 +64,7 @@ export default function PagesPage() {
     fetchPages();
   };
 
-  const mockPages: Page[] = [
-    {
-      id: '1',
-      name: 'Unify Official',
-      description: 'La plateforme sociale moderne pour connecter les gens',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=unify',
-      coverImage: 'https://picsum.photos/400/200?random=3',
-      category: 'Technology',
-      isVerified: true,
-      followerCount: 50000,
-      createdAt: new Date().toISOString(),
-      owner: {
-        id: '1',
-        username: 'unify_team',
-        fullName: 'Unify Team',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=unify_team',
-      },
-    },
-    {
-      id: '2',
-      name: 'Cuisine Créative',
-      description: 'Recettes innovantes et techniques culinaires avancées',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=cuisine',
-      coverImage: 'https://picsum.photos/400/200?random=4',
-      category: 'Food',
-      isVerified: false,
-      followerCount: 12500,
-      createdAt: new Date().toISOString(),
-      owner: {
-        id: '2',
-        username: 'chef_mario',
-        fullName: 'Chef Mario',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chef_mario',
-      },
-    },
-  ];
+
 
   return (
     <MainLayout>

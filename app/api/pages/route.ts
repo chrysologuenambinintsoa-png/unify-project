@@ -74,10 +74,44 @@ export async function GET(request: NextRequest) {
         coverImage: true,
         createdAt: true,
         _count: { select: { members: true } },
+        admins: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : undefined,
+        members: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : undefined,
       },
     });
 
-    return NextResponse.json(pages);
+    // Map to include isFollowing/isAdmin flags for the current user
+    let mapped = pages.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      category: p.category,
+      image: p.image,
+      coverImage: p.coverImage,
+      createdAt: p.createdAt,
+      followers: p._count?.members ?? 0,
+      isFollowing: Array.isArray(p.members) ? p.members.length > 0 : false,
+      isAdmin: Array.isArray(p.admins) ? p.admins.length > 0 : false,
+    }));
+
+    // Try to load liked state if PageLike model exists. Use dynamic access to avoid TS errors if model missing.
+    if (session?.user?.id && mapped.length > 0) {
+      try {
+        const pageIds = mapped.map((m: any) => m.id);
+        const likes = await (prisma as any).pageLike.findMany({
+          where: { pageId: { in: pageIds }, userId: session.user.id },
+          select: { pageId: true },
+        });
+        const likedSet = new Set(likes.map((l: any) => l.pageId));
+        mapped = mapped.map((m: any) => ({ ...m, isLiked: likedSet.has(m.id) }));
+      } catch (e) {
+        // If pageLike model doesn't exist or query fails, ignore and continue without isLiked
+        mapped = mapped.map((m: any) => ({ ...m, isLiked: false }));
+      }
+    } else {
+      mapped = mapped.map((m: any) => ({ ...m, isLiked: false }));
+    }
+
+    return NextResponse.json(mapped);
   } catch (error) {
     console.error('Error fetching pages:', error);
     // Check if it's a database connection error

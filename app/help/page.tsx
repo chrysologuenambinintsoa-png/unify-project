@@ -57,7 +57,7 @@ export default function HelpPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-dark via-amber-900 to-primary-dark">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900">
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* Header */}
         <motion.div

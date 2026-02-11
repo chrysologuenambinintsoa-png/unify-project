@@ -9,7 +9,7 @@ import hi from './translations/hi.json';
 import ar from './translations/ar.json';
 import it from './translations/it.json';
 
-export type Translation = typeof fr;
+export type Translation = any;
 export type Language = 'fr' | 'mg' | 'en' | 'es' | 'de' | 'ch' | 'pt' | 'hi' | 'ar' | 'it';
 
 const translations: Record<Language, Translation> = {

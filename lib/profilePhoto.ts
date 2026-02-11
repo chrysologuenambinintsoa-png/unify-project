@@ -86,10 +86,12 @@ export async function saveProfilePhoto(userId: string, buffer: Buffer, originalN
   return { url, path: destPath, filename };
 }
 
-export async function deleteProfilePhotoByPath(filePath: string) {
+export async function deleteProfilePhotoByPath(filePath?: string | null) {
   try {
+    if (!filePath) return;
+
     // If it's a local path, only allow deletion inside our upload dir
-    if (filePath && filePath.startsWith && filePath.startsWith(UPLOAD_DIR)) {
+    if (filePath.startsWith && filePath.startsWith(UPLOAD_DIR)) {
       await fs.unlink(filePath).catch(() => {});
       return;
     }

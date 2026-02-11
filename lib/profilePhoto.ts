@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import imageSize from 'image-size';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'avatars');
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -93,7 +94,52 @@ export async function deleteProfilePhotoByPath(filePath: string) {
       return;
     }
 
-    // If it's a Cloudinary URL or public id, we don't delete here (requires API key/secret). No-op.
+    // If it's a Cloudinary URL, attempt to delete using API credentials
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      // No credentials configured — cannot delete remote asset here
+      return;
+    }
+
+    if (typeof filePath === 'string' && filePath.includes('res.cloudinary.com')) {
+      try {
+        // Extract public_id: remove prefix up to '/upload/' then strip version like 'v12345/' and extension
+        const parts = filePath.split('/upload/');
+        if (parts.length < 2) return;
+        let rest = parts[1];
+        // remove leading version segment v{number}/
+        rest = rest.replace(/^v\d+\//, '');
+        // remove extension
+        rest = rest.replace(/\.[a-zA-Z0-9]+(?:\?.*)?$/, '');
+        const publicId = rest;
+
+        const timestamp = Math.floor(Date.now() / 1000);
+        const toSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+        const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+        const form = new (global as any).FormData();
+        form.append('public_id', publicId);
+        form.append('timestamp', String(timestamp));
+        form.append('api_key', apiKey);
+        form.append('signature', signature);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+          method: 'POST',
+          body: form as any,
+        });
+
+        if (!res.ok) {
+          // deletion failed — log and continue
+          const txt = await res.text().catch(() => '');
+          console.warn('Cloudinary delete failed', res.status, txt);
+        }
+      } catch (e) {
+        console.warn('Cloudinary delete error', e);
+      }
+    }
   } catch (err) {
     // ignore
   }

@@ -302,7 +302,9 @@
         "removeCover": "Supprimer",
         "changeCover": "Changer la couverture",
         "deleteCoverConfirm": "Êtes-vous sûr de vouloir supprimer votre photo de couverture ?",
-        "joinedDate": "Rejoint"
+        "joinedDate": "Rejoint",
+        "updateProfilePhotoPost": "a changé sa photo de profil",
+        "updateCoverPhotoPost": "a changé sa photo de couverture"
     },
     "pages": {
         "welcome": "Bienvenue sur Unify",

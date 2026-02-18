@@ -10,6 +10,7 @@ import ShareModal from '@/components/post/ShareModal';
 import { PublicationFullscreenViewer } from '@/components/PublicationFullscreenViewer';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { CommentThread } from '@/components/CommentThread';
+import { PostContent } from '@/components/PostContent';
 import { optimizeAvatarUrl, optimizeImageUrl } from '@/lib/cloudinaryOptimizer';
 import { Avatar } from '@/components/ui/Avatar';
 import { createPortal } from 'react-dom';
@@ -499,7 +500,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
                 <div className="w-full h-full flex items-center justify-center px-6 md:px-8 lg:px-12">
                   <div className="max-w-[760px] mx-auto">
                     <motion.p {...variants} className="text-center text-white font-bold text-2xl md:text-4xl lg:text-5xl leading-relaxed md:leading-snug break-words text-post-shadow">
-                      {post.content}
+                      <PostContent content={post.content} contentType={post.contentType} />
                     </motion.p>
                   </div>
                 </div>
@@ -510,7 +511,9 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       ) : (
         <div className="p-4">
           <div className="max-w-[760px] mx-auto">
-            <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">{post.content}</p>
+            <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">
+              <PostContent content={post.content} contentType={post.contentType} />
+            </p>
           </div>
         </div>
       )}

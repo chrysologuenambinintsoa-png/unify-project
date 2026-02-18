@@ -6,6 +6,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import imageSize from 'image-size';
 import { getNotificationMessage, getNotificationTitle } from '@/lib/translations';
 import { publishNotificationToUsers } from '@/app/api/realtime/broadcast';
+import { formatActivityMessage } from '@/lib/serverTranslations';
 
 // Configure Cloudinary with timeout
 cloudinary.config({
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: session.user.id,
           content: `${updatedUser.fullName || updatedUser.username} updated their cover photo`,
+          contentType: 'coverPhotoChange',
           isPublic: true,
           background: null,
           media: {

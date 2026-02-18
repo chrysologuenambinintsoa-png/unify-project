@@ -115,20 +115,7 @@ export default function HomePage() {
   useEffect(() => {
     if (session && isReady) {
       fetchAllData();
-
-      // Auto-refresh posts every 30 seconds
-      const refreshInterval = setInterval(() => {
-        try {
-          // Only refresh when the document is visible to avoid unnecessary reloads
-          if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-          console.log('[HomePage] Auto-refreshing posts...');
-          fetchAllData();
-        } catch (e) {
-          console.warn('[HomePage] Auto-refresh skipped due to visibility check error', e);
-        }
-      }, 30000); // 30 seconds
-
-      return () => clearInterval(refreshInterval);
+      // Auto-refresh disabled to prevent continuous reloading and data loss during interactions
     }
   }, [session, isReady]);
 

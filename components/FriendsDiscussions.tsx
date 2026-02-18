@@ -64,17 +64,28 @@ export function FriendsDiscussions({ limit = 8 }: FriendsDiscussionsProps) {
         }));
         setDiscussions(transformed.slice(0, limit));
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to fetch discussions:', {
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          console.warn('[FriendsDiscussions] Failed to parse error response as JSON');
+        }
+        
+        const errorMessage = errorData?.error || errorData?.message || response.statusText || 'Unknown error';
+        const errorDetails = errorData?.details || '';
+        
+        console.error('[FriendsDiscussions] API Error:', {
           status: response.status,
           statusText: response.statusText,
-          responseBody: errorData,
+          error: errorMessage,
+          details: errorDetails,
+          fullResponse: errorData,
         });
-        console.warn('[FriendsDiscussions] API Error Details:', JSON.stringify(errorData, null, 2));
+        
         setDiscussions([]);
       }
     } catch (error) {
-      console.error('Error fetching discussions:', error);
+      console.error('[FriendsDiscussions] Error fetching discussions:', error);
       console.error('[FriendsDiscussions] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       setDiscussions([]);
     } finally {

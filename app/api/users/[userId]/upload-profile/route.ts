@@ -122,11 +122,15 @@ export async function POST(
 
     // Create a post for profile/cover change visibility
     try {
-      const photoField = field === 'cover' || field === 'coverImage' ? 'cover photo' : 'profile photo';
+      const isProfilePhoto = field === 'avatar' || field === 'avatarImage';
+      const contentType = isProfilePhoto ? 'profilePhotoChange' : 'coverPhotoChange';
+      const postContent = `${updated.fullName || updated.username} ${isProfilePhoto ? 'updated their profile photo' : 'updated their cover photo'}`;
+      
       const post = await (prisma as any).post.create({
         data: {
           userId: userId,
-          content: `Updated their ${photoField}`,
+          content: postContent,
+          contentType: contentType,
           isPublic: true,
           background: null,
           media: {

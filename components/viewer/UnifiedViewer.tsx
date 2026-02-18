@@ -42,6 +42,8 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement | null>(null);
 
   const prev = useCallback(() => setIndex((i) => (i === 0 ? allMedia.length - 1 : i - 1)), [allMedia.length]);
   const next = useCallback(() => setIndex((i) => (i === allMedia.length - 1 ? 0 : i + 1)), [allMedia.length]);
@@ -68,6 +70,26 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setShowMoreMenu(false);
+    };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  // Close emoji picker on outside click or Escape
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!emojiPickerRef.current) return;
+      const target = e.target as Node;
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowEmojiPicker(false);
     };
     document.addEventListener('click', onDocClick);
     document.addEventListener('keydown', onKey);
@@ -321,24 +343,58 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Action Buttons */}
-            <div className="px-4 py-2 border-b flex items-center gap-2 flex-wrap">
-              <button onClick={handleLike} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors ${liked ? 'bg-accent text-black' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                <Heart size={16} /> <span className="text-sm">J'aime</span>
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                <MessageCircle size={16} /> <span className="text-sm">Commenter</span>
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                <Share2 size={16} /> <span className="text-sm">Partager</span>
-              </button>
-            </div>
-
-            {/* Reaction Picker Card */}
-            <div className="px-4 py-2 border-b relative">
-              <div className="flex items-center gap-2">
-                {['👍', '❤️', '😂', '😮', '😢', '😡'].map((e) => (
-                  <button key={e} onClick={() => triggerReaction(e)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-lg transition-colors" title={`React ${e}`}>{e}</button>
-                ))}
+            <div className="px-4 py-3 border-b flex flex-col gap-3">
+              <div className="grid grid-cols-4 gap-2">
+                <button onClick={handleLike} className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg transition-colors text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+                  <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden sm:inline">J'aime</span>
+                </button>
+                <button className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
+                  <MessageCircle size={18} /> <span className="hidden sm:inline">Commenter</span>
+                </button>
+                <button className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
+                  <Share2 size={18} /> <span className="hidden sm:inline">Partager</span>
+                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className={`w-full flex items-center justify-center gap-2 px-2 py-2 rounded-lg transition-colors text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    title="Ajouter une réaction"
+                  >
+                    <span className="text-lg">😊</span> <span className="hidden sm:inline">Réagir</span>
+                  </button>
+                  
+                  {/* Emoji Picker Card */}
+                  {showEmojiPicker && (
+                    <motion.div 
+                      ref={emojiPickerRef}
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 z-50 w-56"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Ajouter une réaction</div>
+                      <div className="grid grid-cols-6 gap-1">
+                        {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) => (
+                          <motion.button
+                            key={emoji}
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              triggerReaction(emoji);
+                              setShowEmojiPicker(false);
+                            }}
+                            className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                            title={`Réagir avec ${emoji}`}
+                          >
+                            {emoji}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </div>
 

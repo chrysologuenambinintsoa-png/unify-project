@@ -11,12 +11,6 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    console.log('[MainLayout] Client mounted - ready to render content');
-  }, []);
 
   if (renderError) {
     return (
@@ -72,7 +66,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-4">
             <div className="w-full max-w-5xl mx-auto">
               <ErrorBoundary onError={(error) => setRenderError(error.message)}>
-                {isClient ? children : <div className="text-gray-500 text-center py-8">Chargement...</div>}
+                {children}
               </ErrorBoundary>
             </div>
           </div>

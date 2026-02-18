@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
+import { SearchSkeleton } from '@/components/skeletons/SearchSkeleton';
 
 interface SearchResults {
   personnes: any[];
@@ -190,6 +191,15 @@ export default function SearchPage() {
   };
 
   const totalResults = results.personnes.length + results.groupes.length + results.pages.length;
+
+  // Show skeleton while loading
+  if (loading) {
+    return (
+      <MainLayout>
+        <SearchSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

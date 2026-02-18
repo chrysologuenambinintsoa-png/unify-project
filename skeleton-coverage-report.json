@@ -1,0 +1,144 @@
+{
+  "timestamp": "2026-02-18T12:32:14.161Z",
+  "summary": {
+    "totalScanned": 47,
+    "highPriority": 19,
+    "mediumPriority": 0,
+    "total": 19
+  },
+  "issues": [
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\admin\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\admin\\sponsored\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\auth\\forgot-password\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\auth\\login\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\auth\\register\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\auth\\reset-password\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\auth\\verify\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\badges-debug\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\friends\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\groups\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\help\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\notifications\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\pages\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\posts\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\posts\\[postId]\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "PhotoViewerClient.tsx",
+      "relativePath": "app\\posts\\[postId]\\photo\\PhotoViewerClient.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "PhotoViewerClient.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\search\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\stories\\[storyId]\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    },
+    {
+      "fileName": "page.tsx",
+      "relativePath": "app\\users\\[userId]\\posts\\page.tsx",
+      "issue": "MISSING_SKELETON",
+      "severity": "HIGH",
+      "message": "page.tsx a des états de loading mais pas de skeleton"
+    }
+  ]
+}

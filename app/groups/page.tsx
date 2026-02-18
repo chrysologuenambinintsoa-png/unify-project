@@ -10,6 +10,7 @@ import { Plus, Users, Lock, Globe, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import CreateGroupModal from '@/components/CreateGroupModal';
+import { GroupSkeleton } from '@/components/skeletons/GroupSkeleton';
 
 interface Group {
   id: string;
@@ -74,6 +75,15 @@ export default function GroupsPage() {
   // Ne rien retourner si pas prêt (évite page vide/grise)
   if (!isReady) {
     return null;
+  }
+
+  // Show skeleton while loading
+  if (loading && groups.length === 0) {
+    return (
+      <MainLayout>
+        <GroupSkeleton />
+      </MainLayout>
+    );
   }
 
   const handleCreateGroup = async (data: { name: string; description: string; image?: string; isPrivate: boolean }) => {

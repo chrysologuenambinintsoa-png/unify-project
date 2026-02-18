@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useRouter } from 'next/navigation';
+import { NotificationsSkeleton } from '@/components/skeletons/NotificationsSkeleton';
 
 type FilterType = 'all' | 'unread' | 'likes' | 'comments' | 'follows' | 'messages';
 
@@ -38,13 +39,16 @@ export default function NotificationsPage() {
   if (!isReady) {
     return (
       <MainLayout>
-        <div className="max-w-4xl mx-auto py-6">
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-            ))}
-          </div>
-        </div>
+        <NotificationsSkeleton />
+      </MainLayout>
+    );
+  }
+
+  // Show skeleton while loading notifications
+  if (loading) {
+    return (
+      <MainLayout>
+        <NotificationsSkeleton />
       </MainLayout>
     );
   }

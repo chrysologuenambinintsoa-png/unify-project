@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Users, UserPlus, UserCheck, Search, RefreshCw, Check, X } from 'lucide-react';
 import { useFriendBadges, useFriendRequests, useFriendSuggestions } from '@/hooks/useFriendBadges';
 import { FriendEventBadges } from '@/components/FriendBadge';
+import { FriendsSkeleton } from '@/components/skeletons/FriendsSkeleton';
 
 interface Person {
   id: string;
@@ -247,6 +248,15 @@ export default function FriendsPage() {
       mounted = false;
     };
   }, [filteredData]);
+
+  // Show skeleton while loading initial data
+  if (badgesData.loading || requestsData.loading || suggestionsData.loading) {
+    return (
+      <MainLayout>
+        <FriendsSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

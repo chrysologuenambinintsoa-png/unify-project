@@ -22,7 +22,11 @@
     "db:push": "prisma db push",
     "generate:favicon": "node scripts/generate-favicon.js",
     "security-check": "npm audit --audit-level=moderate",
-    "check-secrets": "git log -p | grep -i 'password\\|secret\\|api.key' | head || true"
+    "check-secrets": "git log -p | grep -i 'password\\|secret\\|api.key' | head || true",
+    "skeleton:analyze": "node scripts/analyze-skeleton-coverage.js",
+    "skeleton:apply": "node scripts/apply-skeleton-fix.js",
+    "skeleton:smart": "node scripts/smart-skeleton-fixer.js",
+    "skeleton:report": "node scripts/smart-skeleton-fixer.js && cat skeleton-coverage-report.json | jq ."
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

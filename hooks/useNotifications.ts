@@ -35,7 +35,9 @@ export const useNotifications = () => {
         const response = await fetch('/api/notifications', {
           headers: {
             'Cache-Control': 'no-cache',
-          }
+          },
+          // include credentials so the NextAuth session cookie is sent
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -93,7 +95,8 @@ export const useNotifications = () => {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json'
-              }
+              },
+              credentials: 'include',
             }
           );
 
@@ -145,7 +148,8 @@ export const useNotifications = () => {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ all: true })
+          body: JSON.stringify({ all: true }),
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -184,7 +188,13 @@ export const useNotifications = () => {
           eventSourceRef.current.close();
         }
 
-        eventSourceRef.current = new EventSource('/api/realtime/notifications');
+        // Use withCredentials so cookies are transmitted when EventSource is cross-origin
+        try {
+          eventSourceRef.current = new EventSource('/api/realtime/notifications', { withCredentials: true } as any);
+        } catch (e) {
+          // Fallback if the environment doesn't support the options parameter
+          eventSourceRef.current = new EventSource('/api/realtime/notifications');
+        }
 
         eventSourceRef.current.addEventListener('notification', (event: any) => {
           try {

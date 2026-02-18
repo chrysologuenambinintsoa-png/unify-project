@@ -345,7 +345,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
           await fetch(`/api/stories/${activeStory.id}/views`, { method: 'POST', credentials: 'same-origin' });
         } catch (e) {}
 
-        const vResp = await fetch(`/api/stories/${activeStory.id}/views`);
+        const vResp = await fetch(`/api/stories/${activeStory.id}/views`, { credentials: 'include' });
         if (vResp.ok) {
           const j = await vResp.json();
           if (mounted) {
@@ -358,7 +358,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       }
 
       try {
-        const rResp = await fetch(`/api/stories/${activeStory.id}/reactions`);
+        const rResp = await fetch(`/api/stories/${activeStory.id}/reactions`, { credentials: 'include' });
         if (rResp.ok) {
           const j = await rResp.json();
           if (mounted) setReactionGroups(j.reactions || []);
@@ -376,7 +376,13 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
   // Real-time SSE subscription
   useEffect(() => {
     if (!activeStory?.id) return;
-    const es = new EventSource('/api/realtime');
+    // Send cookies with SSE when possible
+    let es: EventSource;
+    try {
+      es = new EventSource('/api/realtime', { withCredentials: true } as any);
+    } catch (e) {
+      es = new EventSource('/api/realtime');
+    }
 
     const onView = (e: MessageEvent) => {
       try {

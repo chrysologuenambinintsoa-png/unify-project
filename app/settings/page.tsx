@@ -67,7 +67,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/users/profile');
+        const response = await fetch('/api/users/profile', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           setFormData({
@@ -178,6 +178,7 @@ export default function SettingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -233,6 +234,7 @@ export default function SettingsPage() {
           newPassword: passwordData.newPassword,
           confirmPassword: passwordData.confirmPassword,
         }),
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -520,7 +522,10 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {translation.forms?.gender || 'Gender'}
+                        {typeof translation.forms?.gender === 'string'
+                          ? translation.forms?.gender
+                          : 'Gender'
+                        }
                       </label>
                       <select
                         value={formData.gender || 'other'}

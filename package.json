@@ -16,6 +16,8 @@
     "ws-server": "tsx scripts/ws-server.ts",
     "dev:all": "concurrently \"next dev\" \"npm:ws-server\"",
     "db:clean": "tsx prisma/clean.ts",
+    "db:clean:production": "tsx prisma/cleanup-production.ts",
+    "db:verify": "tsx prisma/verify-cleanup.ts",
     "db:seed": "tsx prisma/seed.ts || echo \"No seed script found\"",
     "db:push": "prisma db push",
     "generate:favicon": "node scripts/generate-favicon.js",

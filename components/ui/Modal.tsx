@@ -69,9 +69,9 @@ export function Modal({
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ type: 'spring', damping: 20 }}
             className={cn(
-              'bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full my-8',
+              'bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full my-4 sm:my-8',
               sizes[size],
-              'max-h-[90vh] overflow-y-auto',
+              'max-h-[min(90vh,calc(100vh-2rem))] overflow-y-auto',
               className
             )}
           >
@@ -118,7 +118,7 @@ export function ModalHeader({
 }
 
 export function ModalBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('p-6 overflow-y-auto max-h-[calc(90vh-140px)]', className)}>{children}</div>;
+  return <div className={cn('p-4 sm:p-6 overflow-y-auto', className)}>{children}</div>;
 }
 
 export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {

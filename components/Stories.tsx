@@ -691,7 +691,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
       {/* Create Story Modal - Enhanced */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl p-4 sm:p-6 shadow-2xl max-h-[min(90vh,calc(100vh-2rem))] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Créer une Story</h2>

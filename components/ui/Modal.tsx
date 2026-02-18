@@ -19,13 +19,23 @@ export function Modal({
 }: ModalProps) {
   useEffect(() => {
     if (isOpen) {
+      document.documentElement.style.overflow = 'hidden';
+      // Prevent scrolling on iOS
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
     } else {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
     };
   }, [isOpen]);
 
@@ -51,7 +61,7 @@ export function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={handleBackdropClick}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -59,9 +69,9 @@ export function Modal({
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ type: 'spring', damping: 20 }}
             className={cn(
-              'bg-white rounded-2xl shadow-2xl w-full',
+              'bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full my-8',
               sizes[size],
-              'max-h-[90vh] overflow-hidden',
+              'max-h-[90vh] overflow-y-auto',
               className
             )}
           >

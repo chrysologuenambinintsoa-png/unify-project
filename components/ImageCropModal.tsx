@@ -42,15 +42,19 @@ export function ImageCropModal({
   const containerWidth = isMounted ? Math.min(400, typeof window !== 'undefined' ? window.innerWidth - 80 : 400) : 400;
   const containerHeight = Math.round(containerWidth / aspectRatio);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     setIsDragging(true);
-    setDragStart({ x: e.clientX - offsetX, y: e.clientY - offsetY });
+    setDragStart({ x: clientX - offsetX, y: clientY - offsetY });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging) return;
-    setOffsetX(e.clientX - dragStart.x);
-    setOffsetY(e.clientY - dragStart.y);
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    setOffsetX(clientX - dragStart.x);
+    setOffsetY(clientY - dragStart.y);
   };
 
   const handleMouseUp = () => {
@@ -162,7 +166,7 @@ export function ImageCropModal({
               {/* Preview container with border guide - Facebook style */}
               <div className="flex justify-center">
                 <div
-                  className="relative border-4 border-primary rounded-lg overflow-hidden bg-gray-100 cursor-move shadow-lg"
+                  className="relative border-4 border-primary rounded-lg overflow-hidden bg-gray-100 cursor-move shadow-lg touch-none"
                   style={{
                     width: `${containerWidth}px`,
                     height: `${containerHeight}px`,
@@ -171,6 +175,9 @@ export function ImageCropModal({
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
+                  onTouchStart={handleMouseDown}
+                  onTouchMove={handleMouseMove}
+                  onTouchEnd={handleMouseUp}
                 >
                   <img
                     ref={imgRef}

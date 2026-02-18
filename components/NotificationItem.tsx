@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface NotificationItemProps {
   id: string;
@@ -60,13 +61,8 @@ export function NotificationItem({
             read ? "hover:bg-gray-50" : "bg-blue-50 hover:bg-blue-100"
           }`}
         >
-          <div className="relative w-10 h-10 flex-shrink-0 mt-0.5">
-            <Image
-              src={user.avatar || "/default-avatar.png"}
-              alt={user.fullName}
-              fill
-              className="rounded-full object-cover"
-            />
+          <div className="flex-shrink-0 mt-0.5">
+            <Avatar src={user.avatar || null} name={user.fullName} userId={user.id} size="sm" className="w-10 h-10" />
           </div>
 
           <div className="flex-1 min-w-0">

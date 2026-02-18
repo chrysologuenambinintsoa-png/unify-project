@@ -58,7 +58,9 @@
     "editPost": "Editar publicación",
     "background": "Fondo",
     "shareToGroup": "Compartir con grupo",
-    "shareToPage": "Compartir con página"
+    "shareToPage": "Compartir con página",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "Nuevo mensaje",
@@ -149,7 +151,19 @@
     "groupDescription": "Descripción del grupo",
     "privateGroup": "Grupo privado",
     "publicGroup": "Grupo público",
-    "joinCommunities": "Únete a comunidades que te interesen"
+    "joinCommunities": "Únete a comunidades que te interesen",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Páginas",
@@ -302,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "Administra tu configuración",
     "profilePhoto": "Foto de perfil",
-    "coverPhoto": "Foto de portada"
+    "coverPhoto": "Foto de portada",
+    "sections": {
+      "accountManagement": "Gestión de cuenta",
+      "generalSettings": "Configuración general"
+    }
   },
   "privacyPolicy": {
     "title": "Política de privacidad",
@@ -354,13 +372,19 @@
     "socialPlatform": "Plataforma de red social moderna",
     "privacyLink": "Privacidad",
     "termsLink": "Términos",
-    "helpLink": "Ayuda"  },
+    "helpLink": "Ayuda"
+  },
   "forms": {
     "fullName": "Nombre completo",
     "bio": "Biografía",
     "dateOfBirth": "Fecha de nacimiento",
     "originCity": "Ciudad de origen",
-    "currentCity": "Ciudad actual"
+    "currentCity": "Ciudad actual",
+    "gender": {
+      "male": "Hombre",
+      "female": "Mujer",
+      "other": "Otro"
+    }
   },
   "buttons": {
     "saveChanges": "Guardar cambios",
@@ -405,7 +429,8 @@
   },
   "storyForm": {
     "createStoryTitle": "Crear una historia",
-    "sendMessage": "Enviar mensaje"  },
+    "sendMessage": "Enviar mensaje"
+  },
   "pageLabels": {
     "noPublications": "No hay publicaciones aún",
     "noNotifications": "No hay notificaciones"
@@ -423,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Cuenta eliminada. Redirigiendo...",
-    "errorDeletingAccount": "Error al eliminar la cuenta"
+    "errorDeletingAccount": "Error al eliminar la cuenta",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "Cambiar contraseña",
@@ -515,5 +541,37 @@
     "micOn": "Micrófono activado",
     "micOff": "Micrófono desactivado",
     "liveBadge": "EN VIVO"
+  },
+  "locations": {
+    "paris": "París",
+    "london": "Londres",
+    "newYork": "Nueva York",
+    "tokyo": "Tokio",
+    "sydney": "Sídney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Visitar",
+      "contact": "Contactar",
+      "cancel": "Cancelar",
+      "creating": "Creando...",
+      "publishing": "Publicando...",
+      "loading": "Cargando..."
+    },
+    "labels": {
+      "conversions": "Conversiones",
+      "impressions": "Impresiones",
+      "clicks": "Clics",
+      "animation": "Animación",
+      "pageName": "Nombre de la página",
+      "tagPeople": "Etiquetar personas",
+      "searchAndAdd": "Buscar y agregar personas...",
+      "publications": "Publicaciones",
+      "followers": "Seguidores"
+    }
+  },
+  "company": {
+    "visit": "Visitar",
+    "contact": "Contactar"
   }
 }

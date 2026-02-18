@@ -12,10 +12,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 pt-16 w-full overflow-hidden">
+    <div className="w-full h-screen flex flex-col">
       <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-1 w-full pt-16 overflow-hidden">
         {/* Desktop Sidebar - Fixed */}
         <nav className="hidden lg:flex lg:flex-col w-64 flex-shrink-0 bg-primary-dark text-white fixed left-0 top-16 bottom-0 overflow-y-auto">
           <Sidebar />
@@ -33,7 +33,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </nav>
 
         {/* Main Content - Full width on mobile, offset by sidebar on desktop */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full lg:ml-64">
+        <main className="flex-1 w-full lg:ml-64 overflow-y-auto bg-gray-50 dark:bg-gray-950">
           <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-4">
             <div className="w-full max-w-5xl mx-auto">{children}</div>
           </div>

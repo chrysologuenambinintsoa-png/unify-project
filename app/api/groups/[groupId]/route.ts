@@ -7,16 +7,69 @@ import { authOptions } from '@/lib/auth';
 export async function GET(req: NextRequest, { params }: { params: Promise<{ groupId: string }> }) {
   try {
     const { groupId } = await params;
+    const session = await getServerSession(authOptions);
+
     const group = await prisma.group.findUnique({
       where: { id: groupId },
       include: {
         members: { include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } }, take: 5 },
-        posts: { orderBy: { createdAt: 'desc' }, take: 20 },
+        posts: { 
+          orderBy: { createdAt: 'desc' }, 
+          take: 20 
+        },
         _count: { select: { members: true, posts: true } },
       },
     });
     if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 });
-    return NextResponse.json(group);
+    
+    // Enrich posts with author information
+    const postsWithAuthors = await Promise.all(
+      (group.posts || []).map(async (post: any) => {
+        const author = await prisma.user.findUnique({
+          where: { id: post.authorId },
+          select: { id: true, username: true, fullName: true, avatar: true },
+        });
+        return {
+          ...post,
+          author: author || { id: post.authorId, username: 'Unknown', fullName: 'Unknown User', avatar: null },
+        };
+      })
+    );
+    
+    // Fetch admin user data
+    const admin = await prisma.user.findUnique({
+      where: { id: group.adminId },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        avatar: true,
+      },
+    });
+
+    // Check if current user is a member
+    let isMember = false;
+    if (session?.user?.id) {
+      const memberCheck = await prisma.groupMember.findFirst({
+        where: {
+          groupId: groupId,
+          userId: session.user.id,
+        },
+      });
+      isMember = !!memberCheck;
+    }
+
+    return NextResponse.json({
+      ...group,
+      posts: postsWithAuthors,
+      owner: admin || {
+        id: group.adminId,
+        username: 'Unknown',
+        fullName: 'Unknown',
+        avatar: null,
+      },
+      isMember,
+    });
   } catch (error) {
     console.error('Error fetching group:', error);
     return NextResponse.json({ error: 'Failed to fetch group' }, { status: 500 });

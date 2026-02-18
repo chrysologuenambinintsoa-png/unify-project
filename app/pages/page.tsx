@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
 import { Plus, Flag, Users, Star, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -29,15 +31,14 @@ interface Page {
 
 export default function PagesPage() {
   const { translation } = useLanguage();
+  const { isReady } = useRequireAuth();
+  const router = useRouter();
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-pages' | 'discover'>('my-pages');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
-    fetchPages();
-  }, [activeTab]);
-
+  // Fonction pour charger les pages
   const fetchPages = async () => {
     try {
       setLoading(true);
@@ -53,6 +54,17 @@ export default function PagesPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isReady) {
+      fetchPages();
+    }
+  }, [activeTab, isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return null;
+  }
 
   const handleCreatePage = async (data: { name: string; description: string; image?: string }) => {
     const response = await fetch('/api/pages', {
@@ -113,7 +125,7 @@ export default function PagesPage() {
         </div>
 
         {/* Pages Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={activeTab === 'my-pages' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'}>
           {pages.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <Flag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -129,6 +141,34 @@ export default function PagesPage() {
                 <Button>Explorer plus de pages</Button>
               )}
             </div>
+          ) : activeTab === 'my-pages' ? (
+            // Simplified view for "Mes pages" - just avatar and name
+            pages.map((page) => (
+              <motion.div
+                key={page.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => router.push(`/pages/${page.id}`)}
+                className="flex flex-col items-center cursor-pointer group"
+              >
+                <div className="relative mb-2">
+                  <img
+                    src={page.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=page'}
+                    alt={page.name}
+                    className="w-16 h-16 rounded-lg object-cover group-hover:opacity-80 transition-opacity"
+                  />
+                  {page.isVerified && (
+                    <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white p-1 rounded-full">
+                      <Star className="w-3 h-3 fill-current" />
+                    </div>
+                  )}
+                </div>
+                <p className="font-medium text-gray-900 text-center text-sm line-clamp-2 group-hover:text-blue-600">
+                  {page.name}
+                </p>
+              </motion.div>
+            ))
           ) : (
             pages.map((page) => (
               <motion.div
@@ -185,14 +225,20 @@ export default function PagesPage() {
                     </div>
 
                     <div className="flex space-x-2">
-                      <Button className="flex-1" size="sm">
-                        {activeTab === 'my-pages' ? 'Gérer' : 'Suivre'}
+                      <Button
+                        className="flex-1"
+                        size="sm"
+                        onClick={() => router.push(`/pages/${page.id}`)}
+                      >
+                        Voir la page
                       </Button>
-                      {activeTab === 'my-pages' && (
-                        <Button variant="secondary" size="sm">
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => fetch(`/api/pages/${page.id}/follow`, { method: 'POST' }).then(() => fetchPages()).catch(() => {})}
+                      >
+                        Suivre
+                      </Button>
                     </div>
                   </div>
                 </Card>

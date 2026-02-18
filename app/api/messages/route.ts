@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { notifyNewMessage } from '@/lib/notification-service';
 
 // GET /api/messages - Get messages for a user
 export async function GET(request: NextRequest) {
@@ -10,11 +9,13 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
+      console.error('[GET /api/messages] No session or user ID');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const conversationUserId = searchParams.get('userId');
+    console.log('[GET /api/messages] User:', session.user.id, 'ConversationUserId:', conversationUserId);
 
     if (conversationUserId) {
       // Get conversation with specific user
@@ -69,6 +70,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(messages);
     } else {
       // Get all conversations
+      console.log('[GET /api/messages] Fetching all conversations for user:', session.user.id);
+      
       const messages = await prisma.message.findMany({
         where: {
           OR: [
@@ -100,6 +103,8 @@ export async function GET(request: NextRequest) {
         take: 100,
       });
 
+      console.log('[GET /api/messages] Found messages count:', messages.length);
+
       // Group by conversation (other user)
       const conversationsMap = new Map();
 
@@ -119,17 +124,24 @@ export async function GET(request: NextRequest) {
       const conversations = Array.from(conversationsMap.values()).map((conv) => ({
         id: conv.user.id,
         user: conv.user,
-        lastMessage: conv.lastMessage.content,
+        lastMessage: conv.lastMessage.content || (conv.lastMessage.image ? '📷 Photo' : '📎 Fichier'),
         time: conv.lastMessage.createdAt.toISOString(),
         unread: conv.unread,
       }));
 
+      console.log('[GET /api/messages] Conversations count:', conversations.length);
       return NextResponse.json({ conversations });
     }
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('[GET /api/messages] Error fetching messages:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: error,
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch messages' },
+      { error: 'Failed to fetch messages', details: errorMessage, stack: process.env.NODE_ENV === 'development' ? errorStack : undefined },
       { status: 500 }
     );
   }
@@ -147,9 +159,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { receiverId, content, image, document } = body;
 
-    if (!receiverId || !content?.trim()) {
+    if (!receiverId || (!content?.trim() && !image)) {
       return NextResponse.json(
-        { error: 'Receiver and content are required' },
+        { error: 'Receiver, content, or image is required' },
         { status: 400 }
       );
     }
@@ -182,21 +194,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send notification email to receiver (best-effort)
-    try {
-      const senderName = session.user.fullName || session.user.username || 'Someone';
-      const messagePreview = content.substring(0, 100);
-      await notifyNewMessage(
-        receiverId,
-        senderName,
-        messagePreview,
-        `/messages?userId=${session.user.id}`
-      );
-      console.log(`Message notification sent to user ${receiverId}`);
-    } catch (notificationError) {
-      console.error('Failed to send message notification:', notificationError);
-      // Don't block message sending if notification fails
-    }
+    // Note: Message notifications are not sent as they have their own Messages section
+    // Users will see new messages in the Messages page with real-time polling
+    // and in the conversation list with unread counts
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {

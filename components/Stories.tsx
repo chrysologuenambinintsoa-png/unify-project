@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Story from './Story';
 import { Send, SmilePlus } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface StoriesProps {
   stories: Story[];
@@ -14,6 +15,7 @@ interface StoriesProps {
 interface Story {
   id: string;
   user: {
+    id: string;
     name: string;
     avatar: string;
   };
@@ -455,7 +457,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
             story={{
               id: 'create',
               user: currentUser,
-              image: currentUser.avatar || 'https://via.placeholder.com/300x500',
+              image: currentUser.avatar,
               timestamp: new Date(),
             }}
             isUserStory={true}
@@ -506,11 +508,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
             {/* Story Header */}
             <div className="absolute top-4 left-4 right-4 z-10 flex items-center">
               <div className="w-10 h-10 bg-primary rounded-full border-2 border-white flex items-center justify-center text-white font-bold overflow-hidden">
-                {activeStory.user.avatar ? (
-                  <img src={activeStory.user.avatar} alt={activeStory.user.name} className="w-full h-full object-cover" />
-                ) : (
-                  activeStory.user.name.charAt(0).toUpperCase()
-                )}
+                <Avatar src={activeStory.user.avatar || null} name={activeStory.user.name} userId={activeStory.user.id} size="sm" className="w-full h-full" />
               </div>
               <div className="ml-3 text-white">
                 <p className="font-semibold">{activeStory.user.name}</p>
@@ -565,11 +563,7 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
             <div className="absolute top-16 right-6 z-20 pointer-events-none flex items-center gap-2">
               <div className="flex -space-x-2">
                 {viewers.slice(0,5).map(u => (
-                  u?.user?.avatar ? (
-                    <img key={u.id} src={u.user.avatar} alt={u.user.fullName || u.user.username} className="w-8 h-8 rounded-full border-2 border-white" />
-                  ) : (
-                    <div key={u.id} className="w-8 h-8 rounded-full bg-gray-300 text-xs flex items-center justify-center border-2 border-white text-black">{(u.user.fullName||u.user.username||'U').charAt(0)}</div>
-                  )
+                  <Avatar key={u.id} src={u.user?.avatar || null} name={u.user?.fullName || u.user?.username} userId={u.user?.id} size="sm" className="w-8 h-8 border-2 border-white" />
                 ))}
               </div>
               <div className="text-white text-sm bg-black/50 px-2 py-1 rounded">{viewCount} vus</div>

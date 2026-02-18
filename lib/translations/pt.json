@@ -58,7 +58,9 @@
     "editPost": "Editar publicaó§ó£o",
     "background": "Fundo",
     "shareToGroup": "Compartilhar com grupo",
-    "shareToPage": "Compartilhar com pó¡gina"
+    "shareToPage": "Compartilhar com pó¡gina",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "Nova mensagem",
@@ -149,7 +151,19 @@
     "groupDescription": "Descrió§ó£o do grupo",
     "privateGroup": "Grupo privado",
     "publicGroup": "Grupo póºblico",
-    "joinCommunities": "Junte-se a comunidades que o interessem"
+    "joinCommunities": "Junte-se a comunidades que o interessem",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Pó¡ginas",
@@ -302,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "Gerencie suas preferóªncias e configuraó§óµes de conta",
     "profilePhoto": "Foto de Perfil",
-    "coverPhoto": "Foto de Capa"
+    "coverPhoto": "Foto de Capa",
+    "sections": {
+      "accountManagement": "Gerenciamento de conta",
+      "generalSettings": "Configurações gerais"
+    }
   },
   "privacyPolicy": {
     "title": "Poló­tica de Privacidade",
@@ -354,13 +372,19 @@
     "socialPlatform": "Uma plataforma social para conectar comunidades",
     "privacyLink": "Privacidade",
     "termsLink": "Termos",
-    "helpLink": "Ajuda"  },
+    "helpLink": "Ajuda"
+  },
   "forms": {
     "fullName": "Nome completo",
     "bio": "Biografia",
     "dateOfBirth": "Data de nascimento",
     "originCity": "Cidade de origem",
-    "currentCity": "Cidade atual"
+    "currentCity": "Cidade atual",
+    "gender": {
+      "male": "Masculino",
+      "female": "Feminino",
+      "other": "Outro"
+    }
   },
   "buttons": {
     "saveChanges": "Salvar alterações",
@@ -405,7 +429,8 @@
   },
   "storyForm": {
     "createStoryTitle": "Criar uma história",
-    "sendMessage": "Enviar mensagem"  },
+    "sendMessage": "Enviar mensagem"
+  },
   "pageLabels": {
     "noPublications": "Ainda sem publicações",
     "noNotifications": "Sem notificações"
@@ -423,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Conta excluída. Redirecionando...",
-    "errorDeletingAccount": "Erro ao excluir a conta"
+    "errorDeletingAccount": "Erro ao excluir a conta",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "Alterar senha",
@@ -515,6 +541,37 @@
     "micOn": "Microfone ligado",
     "micOff": "Microfone desligado",
     "liveBadge": "AO VIVO"
+  },
+  "locations": {
+    "paris": "Paris",
+    "london": "Londres",
+    "newYork": "Nova York",
+    "tokyo": "Tóquio",
+    "sydney": "Sydney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Visitar",
+      "contact": "Contato",
+      "cancel": "Cancelar",
+      "creating": "Criando...",
+      "publishing": "Publicando...",
+      "loading": "Carregando..."
+    },
+    "labels": {
+      "conversions": "Conversões",
+      "impressions": "Impressões",
+      "clicks": "Cliques",
+      "animation": "Animação",
+      "pageName": "Nome da página",
+      "tagPeople": "Marcar pessoas",
+      "searchAndAdd": "Procurar e adicionar pessoas...",
+      "publications": "Publicações",
+      "followers": "Seguidores"
+    }
+  },
+  "company": {
+    "visit": "Visitar",
+    "contact": "Contato"
   }
 }
-

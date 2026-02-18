@@ -11,18 +11,19 @@ import SponsoredPostCard from '@/components/SponsoredPostCard';
 import { FriendSuggestions } from '@/components/FriendSuggestions';
 import { PageSuggestions } from '@/components/PageSuggestions';
 import { GroupSuggestions } from '@/components/GroupSuggestions';
-import { LoadingPage } from '@/components/LoadingPage';
-import { PostWithDetails } from '@/types';
+import { FriendsDiscussions } from '@/components/FriendsDiscussions';
+import { PostWithDetails, ExtendedUser } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
-import { usePublishedStories } from '@/hooks/usePublishedStories';
+import { fetchWithTimeout, fetchWithRetry } from '@/lib/fetchWithTimeout';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
+import { HomeSkeleton } from '@/components/skeletons/HomeSkeleton';
+import { PostSkeleton } from '@/components/skeletons/PostSkeleton';
 
 export default function HomePage() {
   const { translation } = useLanguage();
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { isReady, session } = useRequireAuth();
   const { clearHomeActivity } = useHomeActivity();
   const [posts, setPosts] = useState<PostWithDetails[]>([]);
   const [sponsoredPosts, setSponsoredPosts] = useState<any[]>([]);
@@ -30,83 +31,167 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [postsLoaded, setPostsLoaded] = useState(false);
   const [sponsoredLoaded, setSponsoredLoaded] = useState(false);
-  
-  // Utiliser le hook pour récupérer les stories publiées
-  const { stories, loading: storiesLoading, refresh: refreshStories } = usePublishedStories({ limit: 50 });
+  const [stories, setStories] = useState<any[]>([]);
+  const [storiesLoading, setStoriesLoading] = useState(false);
 
-  // Rediriger vers la page de login si pas d'utilisateur connecté
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    }
-  }, [status, router]);
-
-  // Réinitialiser le badge home quand on ouvre la page d'accueil
-  useEffect(() => {
-    clearHomeActivity();
-  }, [clearHomeActivity]);
-
-  // Charger les posts et sponsored posts en parallèle
-  useEffect(() => {
-    if (session) {
-      fetchAllData();
-    }
-  }, [session]);
-
+  // Fonction pour charger les posts et sponsored posts en parallèle avec gestion d'erreur améliorée
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      
-      // Charger les posts et sponsored posts en parallèle
-      // Increased timeout to 15 seconds for mobile connections
-      const [postsRes, sponsoredRes] = await Promise.all([
-        fetchWithTimeout('/api/posts', undefined, 15000),
-        fetchWithTimeout('/api/sponsored?limit=5', undefined, 15000),
-      ]);
-      
-      // Traiter les posts
-      if (postsRes.ok) {
-        const data = await postsRes.json();
-        setPosts(data);
-        setPostsLoaded(true);
-      } else {
-        throw new Error('Failed to fetch posts');
+      setError(null);
+
+      // Charger les posts avec timeout plus long et retry
+      let postsData: any[] = [];
+      let postsError = false;
+      try {
+        const postsRes = await fetchWithRetry('/api/posts', undefined, 45000, 2);
+        if (postsRes.ok) {
+          postsData = await postsRes.json();
+          if (!Array.isArray(postsData)) {
+            postsData = [];
+          }
+        } else {
+          console.error('Posts API returned', postsRes.status);
+          postsError = true;
+        }
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+        postsError = true;
       }
+
+      // Charger les sponsored posts avec gestion d'erreur gracieuse
+      let sponsoredData: any[] = [];
+      try {
+        const sponsoredRes = await fetchWithRetry(
+          '/api/sponsored?limit=5',
+          undefined,
+          20000,
+          1
+        );
+        if (sponsoredRes.ok) {
+          const data = await sponsoredRes.json();
+          sponsoredData = Array.isArray(data) ? data : [];
+        } else {
+          console.warn(
+            'Sponsored API returned',
+            sponsoredRes.status,
+            '- continuing without sponsored posts'
+          );
+        }
+      } catch (err) {
+        console.warn(
+          'Error fetching sponsored posts:',
+          err,
+          '- continuing without sponsored posts'
+        );
+      }
+
+      // Mettre à jour les données
+      setPosts(postsData);
+      setPostsLoaded(true);
+      setSponsoredPosts(sponsoredData);
+      setSponsoredLoaded(true);
       
-      // Traiter les sponsored posts
-      if (sponsoredRes.ok) {
-        const data = await sponsoredRes.json();
-        setSponsoredPosts(Array.isArray(data) ? data : []);
-        setSponsoredLoaded(true);
+      // Afficher une erreur uniquement si les posts n'ont pas pu être chargés
+      if (postsError) {
+        setError('Erreur lors du chargement des publications. Veuillez réessayer.');
       }
     } catch (err) {
-      if ((err as any)?.name === 'AbortError') {
-        setError('Le chargement des publications a expiré. Vérifiez la connexion et réessayez.');
-      } else {
-        setError(err instanceof Error ? err.message : 'Une erreur est survenue lors du chargement');
-      }
+      console.error('Unexpected error in fetchAllData:', err);
+      setError('Une erreur inattendue s\'est produite. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Afficher un écran de chargement pendant la vérification de la session
-  if (status === 'loading') {
-    return <LoadingPage message="Connexion en cours..." />;
+  // Réinitialiser le badge home quand on ouvre la page d'accueil
+  useEffect(() => {
+    if (isReady) {
+      clearHomeActivity();
+    }
+  }, [clearHomeActivity, isReady]);
+
+  // Charger les posts et sponsored posts en parallèle
+  useEffect(() => {
+    if (session && isReady) {
+      fetchAllData();
+
+      // Auto-refresh posts every 30 seconds
+      const refreshInterval = setInterval(() => {
+        console.log('[HomePage] Auto-refreshing posts...');
+        fetchAllData();
+      }, 30000); // 30 seconds
+
+      return () => clearInterval(refreshInterval);
+    }
+  }, [session, isReady]);
+
+  // Charger les stories publiées
+  useEffect(() => {
+    const loadStories = async () => {
+      try {
+        setStoriesLoading(true);
+        const res = await fetch('/api/stories/published?limit=50');
+        if (res.ok) {
+          const json = await res.json();
+          const list = Array.isArray(json) ? json : (json?.data || []);
+          setStories(list.map((story: any) => ({
+            id: story.id,
+            user: {
+              name: story.user.fullName || story.user.username,
+              avatar: story.user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${story.user.id || story.user.username || 'user'}`
+            },
+            image: story.imageUrl,
+            timestamp: new Date(story.createdAt),
+            viewed: false
+          })));
+        }
+      } catch (err) {
+        console.error('Erreur lors du chargement des stories:', err);
+      } finally {
+        setStoriesLoading(false);
+      }
+    };
+    
+    if (isReady) {
+      loadStories();
+    }
+  }, [isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return (
+      <MainLayout>
+        <HomeSkeleton />
+      </MainLayout>
+    );
   }
 
-  // Ne pas afficher le contenu si l'utilisateur n'est pas authentifié
-  if (!session) {
-    return <LoadingPage message="Redirection en cours..." />;
-  }
   const handleLike = async (postId: string) => {
     try {
+      // Optimistic update - add/remove like from the likes array immediately
+      setPosts(prev => prev.map(p => 
+        p.id === postId 
+          ? { 
+              ...p, 
+              likes: Array.isArray(p.likes) && p.likes.length > 0
+                ? p.likes.slice(0, -1)
+                : [...(p.likes || []), { id: 'temp', userId: session?.user?.id || '', createdAt: new Date(), user: session?.user as ExtendedUser }]
+            }
+          : p
+      ));
+
       const response = await fetch(`/api/posts/${postId}/likes`, {
         method: 'POST',
       });
-      if (response.ok) {
-        // Recharger les posts pour mettre à jour les likes
-        await fetchAllData();
+      
+      if (!response.ok) {
+        // Revert optimistic update on error - just refetch the posts
+        const res = await fetch('/api/posts?sort=newest&limit=50');
+        if (res.ok) {
+          const data = await res.json();
+          setPosts(data.posts || []);
+        }
       }
     } catch (err) {
       console.error('Erreur lors du like:', err);
@@ -169,12 +254,26 @@ export default function HomePage() {
           media: media.length > 0 ? media : undefined,
         }),
       });
+
+      console.log('Post creation response:', { status: response.status, statusText: response.statusText });
+
       if (response.ok) {
+        const createdPost = await response.json();
+        
+        // Optimistically add the new post to the list instead of reloading all posts
+        const optimisticPost = {
+          ...createdPost,
+          user: session?.user as ExtendedUser,
+          _count: { likes: 0, comments: 0 },
+          liked: false,
+        };
+        setPosts(prev => [optimisticPost, ...prev]);
+        
         // Also add images to user's photo gallery
         if (newPost.images && newPost.images.length > 0 && session?.user?.id) {
           for (const imageUrl of newPost.images) {
             try {
-              await fetch(`/api/users/${session.user.id}/photos`, {
+              const photoRes = await fetch(`/api/users/${session.user.id}/photos`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -185,18 +284,44 @@ export default function HomePage() {
                   caption: '',
                 }),
               });
+              
+              if (!photoRes.ok) {
+                const photoError = await photoRes.json().catch(() => ({ error: 'Unknown error' }));
+                console.warn('Warning: Photo not added to gallery:', photoError);
+                // Don't fail the post creation, just log warning
+              }
             } catch (err) {
-              console.error('Error adding photo to gallery:', err);
+              console.warn('Warning: Error adding photo to gallery:', err);
+              // Don't fail the post creation, just log warning
             }
           }
         }
-        await fetchAllData();
       } else {
-        const error = await response.json();
-        console.error('Erreur lors de la création du post:', error);
+        const error = await response.json().catch(() => ({ error: 'Failed to create post' }));
+        const errorMessage = error?.details || error?.error || error?.message || 'Failed to create post';
+        const logObject = JSON.stringify({ 
+          status: response.status, 
+          error: JSON.stringify(error),
+          errorMessage
+        });
+        console.error('Error creating post:', logObject);
+        
+        // User-friendly error messages
+        let userMessage = errorMessage;
+        if (errorMessage.includes('User not found') || errorMessage.includes('posts_userId_fkey')) {
+          userMessage = 'Your session has expired. Please log in again.';
+        }
+        
+        alert(`Error: ${userMessage}`);
       }
     } catch (err) {
-      console.error('Erreur lors de la création du post:', err);
+      console.error('Network error creating post:', {
+        message: err instanceof Error ? err.message : String(err),
+        name: err instanceof Error ? err.name : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create post';
+      alert(`Error: ${errorMessage}`);
     }
   };
 
@@ -224,27 +349,40 @@ export default function HomePage() {
                 <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Stories</h2>
               </div>
               <Stories 
-                stories={stories.map(story => ({
-                  id: story.id,
-                  user: {
-                    name: story.user.fullName || story.user.username,
-                    avatar: story.user.avatar || 'https://via.placeholder.com/40'
-                  },
-                  image: story.imageUrl || 'https://via.placeholder.com/300x500',
-                  timestamp: new Date(story.createdAt),
-                  viewed: false
-                }))} 
+                stories={stories}
                 currentUser={session?.user as any}
-                onCreated={refreshStories}
+                onCreated={() => {
+                  // Refresh stories after creation
+                  const loadStories = async () => {
+                    try {
+                      const res = await fetch('/api/stories/published?limit=50');
+                      if (res.ok) {
+                        const json = await res.json();
+                        const list = Array.isArray(json) ? json : (json?.data || []);
+                        setStories(list.map((story: any) => ({
+                          id: story.id,
+                          user: {
+                            name: story.user.fullName || story.user.username,
+                            avatar: story.user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${story.user.id || story.user.username || 'user'}`
+                          },
+                          image: story.imageUrl,
+                          timestamp: new Date(story.createdAt),
+                          viewed: false
+                        })));
+                      }
+                    } catch (err) {
+                      console.error('Erreur lors du chargement des stories:', err);
+                    }
+                  };
+                  loadStories();
+                }}
               />
             </div>
             {loading ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-sm md:text-base">Chargement des publications...</p>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-red-500 text-sm md:text-base">{error}</p>
+              <div className="space-y-3 md:space-y-4 px-4 md:px-0">
+                {[0, 1, 2].map((i) => (
+                  <PostSkeleton key={i} />
+                ))}
               </div>
             ) : posts.length === 0 ? (
               <div className="text-center py-12">
@@ -252,6 +390,19 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="space-y-3 md:space-y-4 px-4 md:px-0">
+                {error && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 text-yellow-800 dark:text-yellow-200 rounded-lg p-4 mb-4 flex justify-between items-center">
+                    <span className="text-sm">{error}</span>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={fetchAllData}
+                      className="ml-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs font-medium transition-colors"
+                    >
+                      Réessayer
+                    </motion.button>
+                  </div>
+                )}
                 {/* Afficher les annonces sponsorisées tous les 3 posts */}
                 {posts.map((post, index) => (
                   <div key={post.id}>
@@ -260,7 +411,6 @@ export default function HomePage() {
                       post={post}
                       onLike={handleLike}
                       onDelete={handleDelete}
-                      onCommentAdded={fetchAllData}
                     />
                     {/* Afficher une annonce tous les 3 posts */}
                     {sponsoredPosts.length > 0 && index > 0 && (index + 1) % 3 === 0 && (
@@ -277,6 +427,7 @@ export default function HomePage() {
 
           {/* Sidebar with Suggestions - Visible on all screens, full-width on mobile */}
           <div className="w-full md:w-80 flex flex-col space-y-4 md:space-y-6 px-4 md:px-0">
+            <FriendsDiscussions limit={8} />
             <FriendSuggestions compact />
             <div className="hidden md:block">
               <PageSuggestions compact />

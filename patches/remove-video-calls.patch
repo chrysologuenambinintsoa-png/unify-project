@@ -1,0 +1,97 @@
+*** Begin Patch
+*** Delete File: app/api/video-calls/route.ts
+*** Delete File: app/api/video-calls/[callId]/route.ts
+*** Delete File: app/api/video-calls/[callId]/accept/route.ts
+*** Delete File: app/api/video-calls/[callId]/end/route.ts
+*** Delete File: app/api/video-calls/[callId]/offer/route.ts
+*** Delete File: app/api/video-calls/[callId]/ice-candidate/route.ts
+*** Delete File: app/api/video-calls/pending/route.ts
+*** Delete File: components/messaging/CallModal.tsx
+*** Delete File: components/messaging/CallInterface.tsx
+*** Delete File: components/videocall.tsx
+*** Delete File: components/videocallbutton.tsx
+*** Delete File: components/videocalloptions.tsx
+*** Delete File: hooks/useCall.ts
+*** Delete File: lib/webrtc-service.ts
+*** Delete File: lib/rtc-config.ts
+*** Delete File: lib/videoCallService.ts
+*** Delete File: scripts/check_env_and_turn.js
+*** Delete File: scripts/generate_turnserver_conf.js
+*** Delete File: turnserver.conf.example
+*** Delete File: README_COTURN.md
+*** Delete File: VOICE_VIDEO_CALLS_IMPLEMENTATION.md
+*** Delete File: VOICE_VIDEO_CALLS_SETUP_GUIDE.md
+*** Delete File: VOICE_VIDEO_CALLS_QUICK_START.md
+*** Delete File: COMPLETION_VOICE_VIDEO_CALLS.md
+*** Delete File: IMPLEMENTATION_CHECKLIST_VOICE_VIDEO.md
+*** Delete File: TURN_SERVERS_CONFIGURATION.md
+*** Delete File: PRODUCTION_CALLS_CONFIGURATION.md
+*** Delete File: PRODUCTION_DEPLOYMENT_GUIDE.md
+*** Delete File: DEVELOPERS_TECHNICAL_GUIDE.md
+*** Delete File: COMPLETE_INVENTORY.md
+*** Update File: .env
+@@
+-NEXT_PUBLIC_STUN_SERVERS="stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302,stun:stun2.l.google.com:19302,stun:stun3.l.google.com:19302,stun:stun4.l.google.com:19302"
+-
+-# TURN Servers (Relay for NAT/Firewall traversal)
+-# Development/Testing: Use local Coturn or free service
+-# Production: Use commercial TURN service (Twilio, Xirsys, etc.)
+-# 
+-# To setup local Coturn:
+-# 1. Install: apt-get install coturn
+-# 2. Install: sudo apt install coturn
+-# 3. Edit /etc/coturn/turnserver.conf:
+-#    - realm=yourdomain.com
+-#    - user=testuser:testpass
+-#    - listening-port=3478
+-#    - listening-ip=127.0.0.1
+-# 4. Start: sudo systemctl start coturn
+-# 5. Test: turnutils_uclient -v -u testuser -w testpass 127.0.0.1
+-NEXT_PUBLIC_TURN_SERVERS="turn:testuser:testpass@127.0.0.1:3478?transport=udp,turn:testuser:testpass@127.0.0.1:3478?transport=tcp"
+-
+-# Coturn server configuration (optional - used if you're self-hosting Coturn)
+-# These variables are used as documentation / helpers when installing/configuring Coturn
+-COTURN_ENABLED="false"                # Set to true if you will self-host Coturn in production
+-COTURN_REALM="localhost"
+-COTURN_EXTERNAL_IP="41.77.17.233"       # Replace with public IP when deploying Coturn
+-COTURN_LISTEN_IP="0.0.0.0"
+-COTURN_PORT="3478"
+-# Comma-separated list of user:password entries for static credential mode
+-COTURN_USERS="testuser:testpass,devuser:devpass"
+-
+-# Video/Audio Call Features
+-NEXT_PUBLIC_ENABLE_VIDEO_CALLS="true"
+-NEXT_PUBLIC_ENABLE_AUDIO_CALLS="true"
+-
+-# Call Timing Configuration (milliseconds)
+-NEXT_PUBLIC_CALL_POLLING_INTERVAL="2000"   # Poll every 2 seconds for new calls
+-NEXT_PUBLIC_CALL_TIMEOUT="60000"            # Timeout after 60 seconds
+-NEXT_PUBLIC_MAX_CALL_DURATION="3600"        # Max duration: 1 hour (seconds)
+-
+-# WebRTC Configuration
+-NEXT_PUBLIC_RTC_ICE_SERVERS_ONLY="false"   # Allow direct P2P connections
+-NEXT_PUBLIC_RTC_ENABLE_STATS="true"        # Collect WebRTC statistics
++## Video/Audio call configuration removed. If you need to re-enable calls, add proper TURN/STUN and call-related env vars.
++## Removed variables:
++## NEXT_PUBLIC_STUN_SERVERS, NEXT_PUBLIC_TURN_SERVERS, COTURN_*, NEXT_PUBLIC_ENABLE_VIDEO_CALLS,
++## NEXT_PUBLIC_ENABLE_AUDIO_CALLS, NEXT_PUBLIC_CALL_POLLING_INTERVAL, NEXT_PUBLIC_CALL_TIMEOUT,
++## NEXT_PUBLIC_MAX_CALL_DURATION, NEXT_PUBLIC_RTC_ICE_SERVERS_ONLY, NEXT_PUBLIC_RTC_ENABLE_STATS
+*** Update File: .env.local
+@@
+-NEXT_PUBLIC_TURN_SERVERS="turn:testuser:testpass@127.0.0.1:3478?transport=udp,turn:testuser:testpass@127.0.0.1:3478?transport=tcp"
++## NEXT_PUBLIC_TURN_SERVERS removed (video/audio call feature deleted)
+@@
+-NEXT_PUBLIC_RTC_ENABLE_STATS="true"        # Collect and log WebRTC statistics
++## NEXT_PUBLIC_RTC_ENABLE_STATS removed
+*** Update File: .env.example
+@@
+-NEXT_PUBLIC_TURN_SERVERS=""
++## NEXT_PUBLIC_TURN_SERVERS (removed) — configure TURN provider if re-adding calls
+@@
+-# NEXT_PUBLIC_RTC_ENABLE_STATS="false"       # Enable WebRTC statistics collection
++## NEXT_PUBLIC_RTC_ENABLE_STATS removed
+*** Update File: .env.production
+@@
+-NEXT_PUBLIC_TURN_SERVERS="turn:username:password@your-turn-provider.example.com:3478?transport=udp"
++## NEXT_PUBLIC_TURN_SERVERS removed (calls disabled)
+*** End Patch

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface StoryCardProps {
   story: Partial<Story> & { user?: { id: string; username: string; fullName: string; avatar?: string } };
@@ -31,9 +32,7 @@ export default function StoryCard({ story }: StoryCardProps) {
           <p className="text-sm text-gray-600 line-clamp-2">{story.text || translation.pageLabels?.noPublications || 'No text'}</p>
           {story.user && (
             <div className="mt-3 flex items-center gap-2">
-              {story.user.avatar && (
-                <Image src={story.user.avatar} alt={story.user.fullName} width={24} height={24} className="rounded-full" />
-              )}
+              <Avatar src={story.user.avatar} name={story.user.fullName} userId={story.user.id} size="sm" className="w-6 h-6" />
               <div className="text-xs text-gray-500">
                 <p className="font-medium text-gray-700">{story.user.fullName}</p>
                 <p>{createdTime}</p>

@@ -42,6 +42,7 @@ model User {
   resetCodeExpiry        DateTime?
   verificationCode       String?
   verificationCodeExpiry DateTime?
+  gender                 String?           @default("other")
   accounts               Account[]
   adminMessages          AdminMessage[]
   bookmarks              Bookmark[]
@@ -52,6 +53,7 @@ model User {
   friends2               Friendship[]      @relation("User2")
   groupMembers           GroupMember[]
   groupPollsCreated      GroupPoll[]       @relation("GroupPollCreator")
+  hiddenMessages         HiddenMessage[]
   likes                  Like[]
   loginHistory           LoginHistory[]
   messageReactions       MessageReaction[]
@@ -60,8 +62,8 @@ model User {
   notifications          Notification[]
   pageAdmins             PageAdmin[]
   pageInvites            PageInvite[]
-  pageMembers            PageMember[]
   pageLikes              PageLike[]
+  pageMembers            PageMember[]
   pagePollsCreated       PagePoll[]        @relation("PagePollCreator")
   photoGallery           PhotoGallery[]
   pollVotes              PollVote[]
@@ -281,23 +283,42 @@ model StoryReaction {
 }
 
 model Message {
-  id         String            @id @default(cuid())
-  content    String
-  image      String?
-  document   String?
-  senderId   String
-  receiverId String
-  isRead     Boolean           @default(false)
-  readAt     DateTime?
-  createdAt  DateTime          @default(now())
-  reactions  MessageReaction[]
-  receiver   User              @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  sender     User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(cuid())
+  content              String?
+  image                String?
+  document             String?
+  senderId             String
+  receiverId           String
+  isRead               Boolean           @default(false)
+  readAt               DateTime?
+  createdAt            DateTime          @default(now())
+  isMessageRequest     Boolean           @default(false)
+  messageRequestStatus String?           @default("pending")
+  deletedAt            DateTime?
+  deletedForEveryone   Boolean           @default(false)
+  hiddenFor            HiddenMessage[]
+  reactions            MessageReaction[]
+  receiver             User              @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender               User              @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
   @@index([createdAt])
+  @@index([isMessageRequest])
   @@map("messages")
+}
+
+model HiddenMessage {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("hidden_messages")
 }
 
 model MessageReaction {
@@ -358,6 +379,7 @@ model Group {
   updatedAt     DateTime       @updatedAt
   profileImage  String?
   visibility    String         @default("public")
+  isPage        Boolean        @default(false)
   adminMessages AdminMessage[]
   members       GroupMember[]
   polls         GroupPoll[]
@@ -423,8 +445,8 @@ model Page {
   adminMessages AdminMessage[]
   admins        PageAdmin[]
   invites       PageInvite[]
-  members       PageMember[]
   pageLikes     PageLike[]
+  members       PageMember[]
   polls         PagePoll[]
   posts         PagePost[]
 
@@ -611,6 +633,7 @@ model VideoCall {
   duration    Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  type        String    @default("video")
   caller      User      @relation("CallerCalls", fields: [callerId], references: [id], onDelete: Cascade)
   recipient   User      @relation("RecipientCalls", fields: [recipientId], references: [id], onDelete: Cascade)
 

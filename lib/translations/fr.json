@@ -58,7 +58,9 @@
         "editPost": "Modifier la publication",
         "background": "Arrière-plan",
         "shareToGroup": "Partager dans un groupe",
-        "shareToPage": "Partager sur une page"
+        "shareToPage": "Partager sur une page",
+        "location": "Lieu",
+        "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
     },
     "message": {
         "newMessage": "Nouveau message",
@@ -119,7 +121,21 @@
         "deleteForEveryoneDescription": "Tout le monde verra le message comme supprimé",
         "noMediaFound": "Aucun média trouvé.",
         "loading": "Chargement...",
-        "noFriendsFound": "Aucun ami trouvé"
+        "noFriendsFound": "Aucun ami trouvé",
+        "messageRequest": "Demande de message",
+        "messageRequestInfo": "Demande de message d'une personne non amie",
+        "acceptAndFriend": "Accepter & Devenir ami",
+        "decline": "Refuser",
+        "messageRequestAccepted": "Demande acceptée et amitié créée",
+        "messageRequestRejected": "Demande de message refusée",
+        "sendMessageRequest": "Envoyer un message",
+        "yourMessage": "Votre message",
+        "writeMessagePlaceholder": "Écrivez un message pour vous présenter...",
+        "messageSent": "Message envoyé!",
+        "messageRequestSentDesc": "Votre demande de message a été envoyée. {name} recevra une notification.",
+        "whenAccepts": "Quand {name} accepte votre demande, vous deviendrez amis et pourrez discuter librement.",
+        "enterMessage": "Veuillez entrer un message",
+        "sendRequest": "Envoyer la demande"
     },
     "story": {
         "addStory": "Ajouter une story",
@@ -140,6 +156,8 @@
     },
     "group": {
         "groups": "Groupes",
+        "myGroups": "Mes groupes",
+        "discover": "Découvrir",
         "createGroup": "Créer un groupe",
         "manageGroup": "Gérer le groupe",
         "addMembers": "Ajouter des membres",
@@ -149,7 +167,37 @@
         "groupDescription": "Description du groupe",
         "privateGroup": "Groupe privé",
         "publicGroup": "Groupe public",
-        "joinCommunities": "Rejoignez des communautés qui vous intéressent"
+        "joinCommunities": "Rejoignez des communautés qui vous intéressent",
+        "noGroups": "Aucun groupe",
+        "noGroupsFound": "Aucun groupe trouvé",
+        "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+        "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+        "explorMore": "Explorer plus de groupes",
+        "suggestedGroups": "Groupes suggérés",
+        "members": "membres",
+        "private": "Privé",
+        "public": "Public",
+        "viewGroup": "Voir le groupe",
+        "join": "Rejoindre",
+        "joined": "✓ Rejoins",
+        "contact": "Contacter",
+        "noDescription": "Pas de description",
+        "contactGroup": "Contacter le groupe",
+        "groupNotFound": "Groupe non trouvé",
+        "overview": "Aperçu",
+        "posts": "Publications",
+        "settings": "Paramétrage",
+        "joining": "Connexion...",
+        "joinThisGroup": "Rejoindre ce groupe",
+        "isMember": "✓ Membre",
+        "manage": "Gérer",
+        "information": "Information",
+        "creator": "Créateur",
+        "privacy": "Confidentialité",
+        "noPosts": "Aucune publication pour le moment",
+        "changeCover": "Changer la couverture du groupe",
+        "changeAvatar": "Changer l'avatar du groupe",
+        "created": "Créé"
     },
     "page": {
         "pages": "Pages",
@@ -159,7 +207,29 @@
         "pageName": "Nom de la page",
         "pageCategory": "Catégorie",
         "pageDescription": "Description",
-        "verified": "Vérifié"
+        "verified": "Vérifié",
+        "suggestedPages": "Pages suggérées",
+        "follow": "Suivre",
+        "following": "✓ En suivant",
+        "followers": "abonnés",
+        "noDescription": "Pas de description",
+        "like": "J'aime",
+        "liked": "✓ Aimé",
+        "pageNotFound": "Page non trouvée",
+        "overview": "Aperçu",
+        "posts": "Publications",
+        "settings": "Paramétrage",
+        "followThisPage": "Suivre cette page",
+        "manage": "Gérer",
+        "information": "Information",
+        "admin": "Administrateur",
+        "category": "Catégorie",
+        "website": "Site Web",
+        "visit": "Visiter",
+        "noPosts": "Aucune publication pour le moment",
+        "changeCover": "Changer la couverture de la page",
+        "changeAvatar": "Changer l'avatar de la page",
+        "created": "Créée"
     },
     "friends": {
         "friends": "Amis",
@@ -302,14 +372,23 @@
     "settingsPage": {
         "managePreferences": "Gérez vos préférences et paramètres de compte",
         "profilePhoto": "Photo de profil",
-        "coverPhoto": "Photo de couverture"
+        "coverPhoto": "Photo de couverture",
+        "sections": {
+            "accountManagement": "Gestion de compte",
+            "generalSettings": "Paramètres généraux"
+        }
     },
     "forms": {
         "fullName": "Nom complet",
         "bio": "Bio",
         "dateOfBirth": "Date de naissance",
         "originCity": "Ville d'origine",
-        "currentCity": "Ville actuelle"
+        "currentCity": "Ville actuelle",
+        "gender": {
+            "male": "Homme",
+            "female": "Femme",
+            "other": "Autre"
+        }
     },
     "buttons": {
         "saveChanges": "Enregistrer les modifications",
@@ -341,10 +420,6 @@
         "errorSendingHeart": "Impossible d'envoyer le cœur",
         "comments": "commentaires",
         "shares": "partages"
-    },
-    "alerts": {
-        "accountDeletedRedirecting": "Compte supprimé. Redirection...",
-        "errorDeletingAccount": "Erreur lors de la suppression du compte"
     },
     "confirmations": {
         "changesSaved": "Modifications enregistrées",
@@ -517,6 +592,43 @@
         "micOn": "Micro activé",
         "micOff": "Micro désactivé",
         "liveBadge": "EN DIRECT"
+    },
+    "locations": {
+        "paris": "Paris",
+        "london": "Londres",
+        "newYork": "New York",
+        "tokyo": "Tokyo",
+        "sydney": "Sydney"
+    },
+    "ui": {
+        "buttons": {
+            "visit": "Visiter",
+            "contact": "Contacter",
+            "cancel": "Annuler",
+            "creating": "Création...",
+            "publishing": "Publication...",
+            "loading": "Chargement..."
+        },
+        "labels": {
+            "conversions": "Conversions",
+            "impressions": "Impressions",
+            "clicks": "Clics",
+            "animation": "Animation",
+            "pageName": "Nom de la page",
+            "tagPeople": "Baliser des personnes",
+            "searchAndAdd": "Rechercher et ajouter des personnes...",
+            "publications": "Publications",
+            "followers": "Abonnés"
+        }
+    },
+    "company": {
+        "visit": "Visiter",
+        "contact": "Contacter"
+    },
+    "alerts": {
+        "accountDeletedRedirecting": "Compte supprimé. Redirection...",
+        "errorDeletingAccount": "Erreur lors de la suppression du compte",
+        "confirmDelete": "Veuillez confirmer la suppression"
     }
 }
 

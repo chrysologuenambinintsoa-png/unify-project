@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface Story {
   id: string;
@@ -60,9 +61,7 @@ export default function StoryDetailPage() {
           {/* Author Info */}
           {story.user && (
             <div className="flex items-center gap-3 mb-6 pb-6 border-b">
-              {story.user.avatar && (
-                <Image src={story.user.avatar} alt={story.user.fullName} width={48} height={48} className="rounded-full" />
-              )}
+              <Avatar src={story.user.avatar} name={story.user.fullName} userId={story.user.id} size="md" className="w-12 h-12" />
               <div>
                 <p className="font-semibold">{story.user.fullName}</p>
                 <p className="text-sm text-gray-500">@{story.user.username}</p>
@@ -99,9 +98,7 @@ export default function StoryDetailPage() {
               <div className="space-y-4">
                 {story.comments.map((comment) => (
                   <div key={comment.id} className="flex gap-3 pb-4 border-b last:border-b-0">
-                    {comment.user.avatar && (
-                      <Image src={comment.user.avatar} alt={comment.user.fullName} width={36} height={36} className="rounded-full" />
-                    )}
+                    <Avatar src={comment.user.avatar} name={comment.user.fullName} userId={comment.user.id} size="sm" className="w-9 h-9" />
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{comment.user.fullName}</p>
                       <p className="text-sm text-gray-800 mt-1">{comment.content}</p>

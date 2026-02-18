@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SettingsSkeleton } from '@/components/skeletons/SettingsSkeleton';
 import { useTheme } from '@/contexts/ThemeContext';
 import { motion } from 'framer-motion';
 import { Settings, User, Bell, Shield, Palette, Globe, CheckCircle, Lock, Smartphone, LogOut, Key, Plus, Trash2 } from 'lucide-react';
@@ -13,16 +16,19 @@ import LoginHistoryView from '@/components/LoginHistoryView';
 import SavedDevicesView from '@/components/SavedDevicesView';
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const { isReady } = useRequireAuth();
   const { data: session, update: updateSession } = useSession();
   const { translation, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   
   const [activeSection, setActiveSection] = useState<'general' | 'account'>('general');
   const [activeTab, setActiveTab] = useState<'general' | 'privacy' | 'notifications' | 'appearance' | 'password' | 'linked-accounts' | 'delete-account' | 'login-history' | 'saved-devices'>('general');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!isReady);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
   const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+  const [userLoaded, setUserLoaded] = useState(false);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -31,6 +37,7 @@ export default function SettingsPage() {
     dateOfBirth: '',
     originCity: '',
     currentCity: '',
+    gender: 'other',
   });
   
   const [privacySettings, setPrivacySettings] = useState({
@@ -70,10 +77,13 @@ export default function SettingsPage() {
             dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '',
             originCity: data.originCity || '',
             currentCity: data.currentCity || '',
+            gender: data.gender || 'other',
           });
         }
+        setUserLoaded(true);
       } catch (error) {
         console.error('Error fetching profile:', error);
+        setUserLoaded(true);
       }
     };
 
@@ -91,7 +101,7 @@ export default function SettingsPage() {
 
   const accountTabs = [
     { key: 'password', icon: Key, label: translation.buttons?.changePassword || 'Change password' },
-    { key: 'linked-accounts', icon: Plus, label: 'Linked accounts' },
+    { key: 'linked-accounts', icon: Plus, label: translation.passwordSection?.linkedAccounts || 'Linked accounts' },
     { key: 'delete-account', icon: Trash2, label: translation.buttons?.deleteAccount || 'Delete account' },
     { key: 'login-history', icon: Lock, label: translation.tabLabels.loginHistory },
     { key: 'saved-devices', icon: Smartphone, label: translation.tabLabels.savedDevices },
@@ -139,6 +149,11 @@ export default function SettingsPage() {
     } catch (e) {}
   }, []);
 
+  // Early return if auth not ready (after all hooks) - show skeleton standalone
+  if (!isReady) {
+    return <SettingsSkeleton />;
+  }
+
   const handleNotificationChange = (field: string, value: any) => {
     setNotificationSettings(prev => ({ ...prev, [field]: value }));
   };
@@ -148,10 +163,21 @@ export default function SettingsPage() {
       setLoading(true);
       setSaveSuccess(false);
 
+      // Build request body with only the fields we want to send
+      const requestBody = {
+        fullName: formData.fullName,
+        bio: formData.bio,
+        coverImage: formData.coverImage,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        originCity: formData.originCity,
+        currentCity: formData.currentCity,
+        gender: formData.gender,
+      };
+
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
@@ -166,7 +192,9 @@ export default function SettingsPage() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        alert('Erreur lors de la sauvegarde');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error response:', errorData);
+        alert('Erreur lors de la sauvegarde: ' + (errorData.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -247,7 +275,8 @@ export default function SettingsPage() {
 
       if (response.ok) {
         alert(translation.alerts?.accountDeletedRedirecting || 'Account deleted. Redirecting...');
-        await signOut({ redirect: true, callbackUrl: '/' });
+        await signOut({ redirect: false });
+        router.push('/auth/logout');
       } else {
         alert(data.error || translation.alerts?.errorDeletingAccount || 'Error deleting account');
       }
@@ -258,6 +287,14 @@ export default function SettingsPage() {
       setDeleteAccountLoading(false);
     }
   };
+
+  if (!userLoaded) {
+    return (
+      <MainLayout>
+        <SettingsSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -479,6 +516,21 @@ export default function SettingsPage() {
                         onChange={(e) => handleInputChange('currentCity', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {translation.forms?.gender || 'Gender'}
+                      </label>
+                      <select
+                        value={formData.gender || 'other'}
+                        onChange={(e) => handleInputChange('gender', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      >
+                        <option value="male">{translation.forms?.gender?.male || 'Male'}</option>
+                        <option value="female">{translation.forms?.gender?.female || 'Female'}</option>
+                        <option value="other">{translation.forms?.gender?.other || 'Other'}</option>
+                      </select>
                     </div>
                   </div>
 

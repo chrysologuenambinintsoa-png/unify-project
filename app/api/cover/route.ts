@@ -26,7 +26,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 60000): Promise
   ]);
 }
 
-// POST /api/cover - Upload user cover image
+// POST /api/cover - Upload user cover image, or set existing gallery photo as cover
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -35,66 +35,100 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('cover') as File;
+    let coverUrl: string | null = null;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
+    // Check if this is JSON request with photoId (using existing gallery photo)
+    const contentType = request.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      try {
+        const body = await request.json();
+        const photoId = body.photoId;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
-    }
+        if (photoId) {
+          // Get the photo from photoGallery
+          const photo = await (prisma as any).photoGallery.findUnique({
+            where: { id: photoId },
+          });
 
-    // Validate file size (max 10MB for cover)
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 });
-    }
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Validate image dimensions (max 1024x1024)
-    try {
-      // @ts-ignore
-      const dims = imageSize(buffer);
-      if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
-        if (dims.width > 1024 || dims.height > 1024) {
-          return NextResponse.json({ error: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' }, { status: 400 });
-        }
-      }
-    } catch (err) {
-      return NextResponse.json({ error: 'Unable to read image dimensions.' }, { status: 400 });
-    }
-
-    // Upload to Cloudinary with timeout
-    const uploadResult = await withTimeout(
-      new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: 'unify/covers',
-            // Store original image - transformations applied on display
-            quality: 'auto',
-            public_id: `user_cover_${session.user.id}_${Date.now()}`,
-            timeout: 60000,
-            chunk_size: 5242880,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
+          if (!photo || photo.userId !== session.user.id) {
+            return NextResponse.json(
+              { error: 'Photo not found or unauthorized' },
+              { status: 404 }
+            );
           }
-        );
-        uploadStream.end(buffer);
-      }),
-      70000
-    );
+
+          coverUrl = photo.url;
+        }
+      } catch (jsonErr) {
+        // Continue - might be FormData instead
+      }
+    }
+
+    // If not from photoId, process as file upload
+    if (!coverUrl) {
+      const formData = await request.formData();
+      const file = formData.get('cover') as File;
+
+      if (!file) {
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
+      }
+
+      // Validate file size (max 10MB for cover)
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 });
+      }
+
+      // Convert file to buffer
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Validate image dimensions (max 1024x1024)
+      try {
+        // @ts-ignore
+        const dims = imageSize(buffer);
+        if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
+          if (dims.width > 1024 || dims.height > 1024) {
+            return NextResponse.json({ error: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' }, { status: 400 });
+          }
+        }
+      } catch (err) {
+        return NextResponse.json({ error: 'Unable to read image dimensions.' }, { status: 400 });
+      }
+
+      // Upload to Cloudinary with timeout
+      const uploadResult = await withTimeout(
+        new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'unify/covers',
+              // Store original image - transformations applied on display
+              quality: 'auto',
+              public_id: `user_cover_${session.user.id}_${Date.now()}`,
+              timeout: 60000,
+              chunk_size: 5242880,
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(buffer);
+        }),
+        70000
+      );
+
+      coverUrl = (uploadResult as any).secure_url;
+    }
 
     // Update user cover image in database
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: { coverImage: (uploadResult as any).secure_url },
+      data: { coverImage: coverUrl },
       select: {
         id: true,
         username: true,
@@ -104,34 +138,45 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create a post announcing the cover image change
-    let profileChangePostId: string | null = null;
+    // Also create an entry in photoGallery for consistency with other photos
     try {
-      const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
-      const content = getNotificationMessage('coverChange', actorName, 'fr');
-
-      if (updatedUser.coverImage) {
-        const profileChangePost = await prisma.post.create({
-          data: {
-            content,
-            userId: updatedUser.id,
-            media: {
-              create: [
-                {
-                  type: 'image',
-                  url: updatedUser.coverImage,
-                },
-              ],
-            },
-          },
-        });
-        profileChangePostId = profileChangePost.id;
-      }
-    } catch (postErr) {
-      console.error('Failed to create cover-change post:', postErr);
+      await (prisma as any).photoGallery.create({
+        data: {
+          userId: session.user.id,
+          url: coverUrl,
+          type: 'cover',
+          caption: null,
+        },
+      });
+    } catch (photoErr) {
+      console.warn('Failed to create photoGallery entry for cover photo:', photoErr);
+      // Continue - the main cover update succeeded
     }
 
-    // Notify friends (accepted friendships)
+    // Create a post for cover change visibility
+    try {
+      const post = await (prisma as any).post.create({
+        data: {
+          userId: session.user.id,
+          content: `${updatedUser.fullName || updatedUser.username} updated their cover photo`,
+          isPublic: true,
+          background: null,
+          media: {
+            create: {
+              type: 'image',
+              url: coverUrl,
+            },
+          },
+        },
+        include: { media: true },
+      });
+    } catch (postErr) {
+      console.warn('Failed to create post for cover change:', postErr);
+      // Continue - the main cover update succeeded
+    }
+
+    // Notify friends ONLY (accepted friendships)
+    // Do NOT create a public post - just send notifications to friends
     try {
       const friendships = await prisma.friendship.findMany({
         where: {
@@ -151,7 +196,7 @@ export async function POST(request: NextRequest) {
         const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
         const notificationTitle = getNotificationTitle('coverChange', 'fr');
         const notificationContent = getNotificationMessage('coverChange', actorName, 'fr');
-        const notificationUrl = profileChangePostId ? `/posts/${profileChangePostId}` : `/users/${updatedUser.id}`;
+        const notificationUrl = `/users/${updatedUser.id}`;
         
         const notifData = friendIds.map((fid) => ({
           type: 'profile',
@@ -238,6 +283,34 @@ export async function DELETE(request: NextRequest) {
         coverImage: true,
       },
     });
+
+    // Also delete photoGallery entries with type 'cover' for this user
+    try {
+      await (prisma as any).photoGallery.deleteMany({
+        where: {
+          userId: session.user.id,
+          type: 'cover',
+        },
+      });
+    } catch (photoErr) {
+      console.warn('Failed to delete photoGallery cover photos:', photoErr);
+      // Continue - the main cover deletion succeeded
+    }
+
+    // Also delete posts created for cover changes
+    try {
+      await (prisma as any).post.deleteMany({
+        where: {
+          userId: session.user.id,
+          content: {
+            contains: 'updated their cover photo',
+          },
+        },
+      });
+    } catch (postErr) {
+      console.warn('Failed to delete posts for cover changes:', postErr);
+      // Continue - the main cover deletion succeeded
+    }
 
     return NextResponse.json({
       success: true,

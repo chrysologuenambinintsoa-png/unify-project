@@ -58,7 +58,9 @@
     "editPost": "Edit post",
     "background": "Background",
     "shareToGroup": "Share to group",
-    "shareToPage": "Share to page"
+    "shareToPage": "Share to page",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "新消息",
@@ -149,7 +151,19 @@
     "groupDescription": "Group description",
     "privateGroup": "Private group",
     "publicGroup": "Public group",
-    "joinCommunities": "Join communities that interest you"
+    "joinCommunities": "Join communities that interest you",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Pages",
@@ -302,15 +316,23 @@
   "settingsPage": {
     "managePreferences": "Manage your settings",
     "profilePhoto": "Profile Photo",
-    "coverPhoto": "Cover Photo"
+    "coverPhoto": "Cover Photo",
+    "sections": {
+      "accountManagement": "账户管理",
+      "generalSettings": "常规设置"
+    }
   },
-  
   "forms": {
     "fullName": "Full name",
     "bio": "Bio",
     "dateOfBirth": "Date of birth",
     "originCity": "City of origin",
-    "currentCity": "Current city"
+    "currentCity": "Current city",
+    "gender": {
+      "male": "男性",
+      "female": "女性",
+      "other": "其他"
+    }
   },
   "buttons": {
     "saveChanges": "Save changes",
@@ -345,7 +367,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Account deleted. Redirecting...",
-    "errorDeletingAccount": "Error deleting account"
+    "errorDeletingAccount": "Error deleting account",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "confirmations": {
     "changesSaved": "Changes saved",
@@ -518,5 +541,37 @@
     "micOn": "Mic On",
     "micOff": "Mic Off",
     "liveBadge": "LIVE"
+  },
+  "locations": {
+    "paris": "巴黎",
+    "london": "伦敦",
+    "newYork": "纽约",
+    "tokyo": "东京",
+    "sydney": "悉尼"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "访问",
+      "contact": "联系",
+      "cancel": "取消",
+      "creating": "创建中...",
+      "publishing": "发布中...",
+      "loading": "加载中..."
+    },
+    "labels": {
+      "conversions": "转化",
+      "impressions": "展现",
+      "clicks": "点击",
+      "animation": "动画",
+      "pageName": "页面名称",
+      "tagPeople": "标记人员",
+      "searchAndAdd": "搜索并添加人员...",
+      "publications": "出版物",
+      "followers": "追随者"
+    }
+  },
+  "company": {
+    "visit": "访问",
+    "contact": "联系"
   }
 }

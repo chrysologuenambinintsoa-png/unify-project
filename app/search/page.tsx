@@ -7,6 +7,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface SearchResults {
   personnes: any[];
@@ -251,17 +252,7 @@ export default function SearchPage() {
                           className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md cursor-pointer"
                         >
                           <div className="flex items-center space-x-3">
-                            {person.avatar ? (
-                              <img
-                                src={person.avatar}
-                                alt={person.username}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white font-bold">
-                                {person.username?.charAt(0).toUpperCase()}
-                              </div>
-                            )}
+                            <Avatar src={person.avatar} name={person.fullName || person.username} userId={person.id} size="sm" className="w-10 h-10" />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-gray-900">

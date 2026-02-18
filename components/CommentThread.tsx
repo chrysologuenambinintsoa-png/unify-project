@@ -209,7 +209,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
       <div className="flex space-x-3 pb-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          <Avatar src={comment.user?.avatar ? (optimizeAvatarUrl(comment.user.avatar, 32) || comment.user.avatar) : null} name={comment.user?.fullName} size="sm" className="w-8 h-8" />
+          <Avatar src={comment.user?.avatar ? (optimizeAvatarUrl(comment.user.avatar, 32) || comment.user.avatar) : null} name={comment.user?.fullName} userId={comment.user?.id} size="sm" className="w-8 h-8" />
         </div>
 
         {/* Comment Content */}
@@ -219,21 +219,21 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
             <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
           </div>
 
-          {/* Actions */}
+      {/* Actions */}
           <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
             <button
               type="button"
               onClick={() => handleAddReaction(comment.id, '👍')}
-              className={`transition-colors flex items-center gap-2 text-sm ${commentUserLiked[comment.id] ? 'text-red-500' : 'hover:text-primary text-gray-600'}`}
+              className={`transition-colors flex items-center gap-2 text-sm font-medium ${commentUserLiked[comment.id] ? 'text-red-500' : 'hover:text-primary text-gray-600'}`}
             >
               <span className="text-base">👍</span>
               <span>{commentReactionCounts[comment.id] || 0}</span>
             </button>
             <button 
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="hover:text-primary transition-colors flex items-center space-x-1"
+              className="hover:text-primary transition-colors flex items-center space-x-1 font-medium"
             >
-              <MessageCircle size={12} />
+              <MessageCircle size={14} />
               <span>Reply</span>
             </button>
             <div className="relative">
@@ -241,14 +241,17 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                 onClick={() => setShowReactions(showReactions === comment.id ? null : comment.id)}
                 className="hover:text-primary transition-colors"
               >
-                <Smile size={12} />
+                <Smile size={14} />
               </button>
               {showReactions === comment.id && (
                 <div className="absolute z-10 bottom-6 left-0 bg-white border border-gray-200 rounded-lg p-2 flex gap-2 shadow-lg">
                   {REACTIONS.map(emoji => (
                     <button
                       key={emoji}
-                      onClick={() => handleAddReaction(comment.id, emoji)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddReaction(comment.id, emoji);
+                      }}
                       className="text-lg hover:scale-125 transition-transform"
                     >
                       {emoji}
@@ -296,7 +299,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                           className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors flex items-center space-x-2 text-sm"
                         >
                           <div className="w-6 h-6 rounded-full overflow-hidden">
-                            <Avatar src={friend.avatar ? (optimizeAvatarUrl(friend.avatar, 24) || friend.avatar) : null} name={friend.fullName} size="sm" className="w-6 h-6" />
+                            <Avatar src={friend.avatar ? (optimizeAvatarUrl(friend.avatar, 24) || friend.avatar) : null} name={friend.fullName} userId={friend.id} size="sm" className="w-6 h-6" />
                           </div>
                           <div>
                             <p className="font-medium">{friend.fullName}</p>

@@ -22,6 +22,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
   const localStreamRef = useRef<MediaStream | null>(null);
   const pcsRef = useRef<Record<string, RTCPeerConnection>>({});
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const fullscreenContainerRef = useRef<HTMLDivElement | null>(null);
 
   // State
   const [roomId, setRoomId] = useState<string | null>(initialRoomId || null);
@@ -39,6 +40,9 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
   const [canPreview, setCanPreview] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [availableDevices, setAvailableDevices] = useState<{ video: boolean; audio: boolean }>({ video: false, audio: false });
+  const [chatOpen, setChatOpen] = useState(true);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [pinnedComment, setPinnedComment] = useState<{ id: string; from: string; text: string } | null>(null);
 
   console.log('[LiveStreamer] Render:', { step, canPreview, role, camOn, micOn });
 
@@ -334,18 +338,40 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     }, 2000);
   };
 
-  const toggleFullscreen = async () => {
-    if (!videoContainerRef.current) return;
-    try {
-      if (!isFullscreen) {
-        await videoContainerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
+  // Handle fullscreen change (including Escape key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
         setIsFullscreen(false);
       }
-    } catch (err) {
-      console.warn('fullscreen error', err);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Handle fullscreen request when fullscreen container is ready
+  useEffect(() => {
+    if (isFullscreen && fullscreenContainerRef.current && !document.fullscreenElement) {
+      console.log('[Fullscreen] Requesting fullscreen on fullscreen container');
+      fullscreenContainerRef.current.requestFullscreen({ navigationUI: 'hide' }).catch((err) => {
+        console.error('[Fullscreen] Request failed on fullscreen container:', err);
+      });
+    }
+  }, [isFullscreen]);
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      // Request fullscreen - will be handled by useEffect
+      setIsFullscreen(true);
+    } else {
+      // Exiting fullscreen
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.error('[Fullscreen] Exit failed:', err);
+        });
+      }
+      setIsFullscreen(false);
     }
   };
 
@@ -624,31 +650,33 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     );
   }
 
-  // Streaming Step
+  // Streaming Step (refactored UI: central video, floating controls, participants strip, collapsible chat)
   if (step === 'streaming' && roomId) {
     const viewerCount = 1 + Object.keys(remoteStreams).length;
 
     if (isFullscreen) {
       return (
-        <div ref={videoContainerRef} className="fixed inset-0 z-50 bg-black">
+        <div ref={fullscreenContainerRef} className="fixed inset-0 z-50 bg-black">
           <div className="w-full h-full flex items-center justify-center relative">
             {role === 'viewer' && Object.keys(remoteStreams).length ? (
-              <video autoPlay playsInline className="w-full h-full object-contain" ref={(el) => { if (el) el.srcObject = Object.values(remoteStreams)[0]; }} />
+              <video autoPlay playsInline className="w-full h-full object-contain" ref={(el) => { if (el && Object.values(remoteStreams)[0]) el.srcObject = Object.values(remoteStreams)[0]; }} />
             ) : (
-              <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-contain" />
+              <video autoPlay muted playsInline className="w-full h-full object-contain" ref={(el) => { if (el && localStreamRef.current) el.srcObject = localStreamRef.current; }} />
             )}
 
             {/* Fullscreen Overlay */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-4 left-4 flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-700 to-blue-700 text-white px-4 py-2 rounded-lg">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span className="font-semibold">{translation.live.liveBadge}</span>
                 </div>
                 <div className="bg-black/60 text-white px-4 py-2 rounded-lg">👁️ {viewerCount}</div>
               </div>
 
-              <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 text-white rounded-lg">{translation.live.exitFullscreen}</button>
+              <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors font-semibold">
+                {isFullscreen ? '⛔ ' + translation.live.exitFullscreen : '⛶ Fullscreen'}
+              </button>
             </div>
           </div>
         </div>
@@ -657,156 +685,138 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
 
     return (
       <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 rounded-full bg-red-600 animate-pulse" />
             <h1 className="text-2xl font-bold text-slate-900">{translation.live.liveNow}</h1>
-            <div className="text-sm text-slate-500">{roomId}</div>
+            <div className="text-sm text-slate-500">{streamTitle || translation.live.liveStream}</div>
           </div>
 
-          <button onClick={endStream} className="px-4 py-2 bg-blue-900 text-white rounded-lg font-semibold hover:bg-blue-800 transition">
-            {translation.live.endStream}
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-slate-600 mr-2">👁️ {viewerCount}</div>
+            <button onClick={() => navigator.clipboard?.writeText(window.location.href)} className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm">{translation.live.share}</button>
+            <button onClick={endStream} className="px-4 py-2 bg-gradient-to-r from-indigo-700 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg">{translation.live.endStream}</button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Video Area */}
-          <div className="lg:col-span-2 space-y-4">
-            <div ref={videoContainerRef} className="bg-black rounded-xl overflow-hidden relative group h-96">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
+          {/* Main column: video + controls + participants */}
+          <div>
+            <div ref={videoContainerRef} className="relative bg-black rounded-xl overflow-hidden h-[60vh] lg:h-[70vh]">
               {role === 'viewer' && Object.keys(remoteStreams).length ? (
-                <video autoPlay playsInline className="w-full h-full object-cover" ref={(el) => { if (el) el.srcObject = Object.values(remoteStreams)[0]; }} />
+                <video autoPlay playsInline className="w-full h-full object-cover" ref={(el) => { if (el && Object.values(remoteStreams)[0]) el.srcObject = Object.values(remoteStreams)[0]; }} />
               ) : (
-                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                <video autoPlay muted playsInline className="w-full h-full object-cover" ref={(el) => { if (el && localStreamRef.current) el.srcObject = localStreamRef.current; }} />
               )}
 
-              {/* Floating Reactions */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {reactions.map((reaction) => (
-                  <div
-                    key={reaction.id}
-                    className="absolute text-3xl font-bold"
-                    style={{
-                      left: `${Math.random() * 80 + 10}%`,
-                      bottom: `${Math.random() * 30 + 10}%`,
-                      animation: `float-up 2s ease-out forwards`,
-                      opacity: 0.9,
-                    }}
-                  >
-                    {reaction.emoji}
-                  </div>
+              {/* Floating reactions */}
+              <div className="absolute inset-0 pointer-events-none">
+                {reactions.map((r) => (
+                  <div key={r.id} className="absolute text-4xl" style={{ left: `${Math.random() * 80 + 10}%`, bottom: `${Math.random() * 30 + 10}%`, animation: 'float-up 2s ease-out forwards' }}>{r.emoji}</div>
                 ))}
               </div>
 
-              <style>{`
-                @keyframes float-up {
-                  0% {
-                    transform: translateY(0) scale(1);
-                    opacity: 0.9;
-                  }
-                  100% {
-                    transform: translateY(-150px) scale(0.5);
-                    opacity: 0;
-                  }
-                }
-              `}</style>
+              <style>{`@keyframes float-up { 0%{ transform: translateY(0) scale(1); opacity:1 } 100%{ transform: translateY(-140px) scale(.6); opacity:0 } }`}</style>
 
-              {/* Video Overlay */}
-              <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
-                <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-lg">
+              {/* Top-left live badge */}
+              <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-700 to-blue-700 text-white px-3 py-1 rounded-lg">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   <span className="text-sm font-semibold">{translation.live.liveBadge}</span>
                 </div>
-                <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm">👁️ {viewerCount}</div>
+                <div className="bg-black/50 text-white px-3 py-1 rounded-lg text-sm">👁️ {viewerCount}</div>
               </div>
 
-              {/* Fullscreen Button */}
-              {role === 'viewer' && (
-                <button onClick={toggleFullscreen} className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition px-3 py-2 bg-white/20 text-white rounded-lg text-sm">
-                  {translation.live.fullscreen}
-                </button>
-              )}
-
-              {/* Decorative Gradient */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-pink-400 to-indigo-400 opacity-20 rounded-full blur-3xl pointer-events-none" />
+              {/* Floating control bar (center bottom) */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-5 z-30 flex items-center gap-3 bg-black/40 backdrop-blur-md px-3 py-2 rounded-full">
+                <button onClick={() => setMicOn((v) => !v)} className={`px-3 py-2 rounded-full ${micOn ? 'bg-white text-slate-900' : 'bg-slate-800 text-white'}`}>{micOn ? '🎙' : '🔇'}</button>
+                <button onClick={() => setCamOn((v) => !v)} className={`px-3 py-2 rounded-full ${camOn ? 'bg-white text-slate-900' : 'bg-slate-800 text-white'}`}>{camOn ? '📷' : '🚫'}</button>
+                <button onClick={() => sendReaction('❤️')} className="px-3 py-2 rounded-full bg-white text-red-600">❤️</button>
+                <button onClick={() => { /* Invite co-host placeholder */ }} className="px-3 py-2 rounded-full bg-white text-slate-900">Inviter</button>
+                <button onClick={toggleFullscreen} className="px-3 py-2 rounded-full bg-white text-slate-900">⤢</button>
+              </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4">
-              <p className="text-sm text-slate-600">{streamTitle || translation.live.liveStream}</p>
+            {/* Participants strip */}
+            <div className="mt-3 flex items-center gap-3 overflow-x-auto py-2">
+              {/* Host thumbnail */}
+              <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-lg px-3 py-2">
+                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">{displayName?.charAt(0) || 'H'}</div>
+                <div className="text-sm">
+                  <div className="font-semibold">{displayName}</div>
+                  <div className="text-xs text-slate-500">{role}</div>
+                </div>
+              </div>
+              {Object.keys(remoteStreams).map((id) => (
+                <div key={id} className="flex items-center gap-2 bg-white border border-slate-100 rounded-lg px-3 py-2">
+                  <div className="w-9 h-9 bg-slate-200 rounded-full" />
+                  <div className="text-sm">
+                    <div className="font-semibold truncate">{id}</div>
+                    <div className="text-xs text-slate-500">particip</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Chat/Sidebar */}
+          {/* Right column: chat / stats */}
           <div className="space-y-4">
-            {/* Stats */}
-            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-              <h3 className="text-sm font-semibold text-slate-900">{translation.live.stats}</h3>
-              <div className="text-sm">
-                <span className="font-semibold text-red-600 animate-pulse">{reactions.length}</span>
-                <span className="text-slate-600"> {translation.live.reactions}</span>
+            <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-semibold">{translation.live.chat}</h3>
+                <span className="text-xs text-slate-500">({messages.length})</span>
               </div>
-              <div className="text-sm">
-                <span className="font-semibold">{messages.length}</span>
-                <span className="text-slate-600"> {translation.live.messages}</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-semibold">{viewerCount}</span>
-                <span className="text-slate-600"> {translation.live.viewers}</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setChatOpen((s) => !s)} className="px-2 py-1 bg-slate-100 rounded-md text-sm">{chatOpen ? 'Fermer' : 'Ouvrir'}</button>
+                <button onClick={() => setParticipantsOpen((s) => !s)} className="px-2 py-1 bg-slate-100 rounded-md text-sm">Participants</button>
               </div>
             </div>
 
-            {/* Reaction Buttons */}
-            {role === 'viewer' && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-600">{translation.live.reactions}</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {['❤️', '👍', '😂', '😍', '🔥'].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => sendReaction(emoji)}
-                      className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition transform active:scale-90 text-xl"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+            {chatOpen && (
+              <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col h-[60vh] overflow-hidden">
+                {pinnedComment && (
+                  <div className="mb-2 p-2 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-md border-l-4 border-indigo-500">
+                    <div className="text-xs text-slate-500">Pinned</div>
+                    <div className="font-medium">{pinnedComment.from}</div>
+                    <div className="text-sm text-slate-700">{pinnedComment.text}</div>
+                  </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto space-y-3 p-1">
+                  {messages.length ? (
+                    messages.map((m) => (
+                      <div key={m.id} className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{m.from}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400">just now</span>
+                            <button onClick={() => setPinnedComment(m)} className="text-xs text-blue-600">Pin</button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-700 mt-1">{m.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 text-center py-8">{translation.live.noMessagesYet}</p>
+                  )}
+                </div>
+
+                <div className="mt-2 flex gap-2">
+                  <input value={messageInput} onChange={(e) => setMessageInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendMessage()} placeholder={translation.live.saySomething} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                  <button onClick={sendMessage} className="px-3 py-2 bg-gradient-to-r from-indigo-700 to-blue-700 text-white rounded-lg">{translation.live.send}</button>
                 </div>
               </div>
             )}
 
-            {/* Chat */}
-            <div className="bg-slate-50 rounded-xl p-4 flex flex-col h-80 border border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">{translation.live.chat} ({messages.length})</h3>
-              <div className="flex-1 overflow-y-auto space-y-3">
-                {messages.length ? (
-                  messages.map((m) => (
-                    <div key={m.id} className="bg-white rounded-lg p-2 border border-slate-100">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-slate-800 truncate">{m.from}</p>
-                        <span className="text-xs text-slate-400">just now</span>
-                      </div>
-                      <p className="text-xs text-slate-700 mt-1 word-break">{m.text}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400 text-center py-8">{translation.live.noMessagesYet}</p>
-                )}
+            {/* Stats / reactions */}
+            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold">{translation.live.stats}</div>
+                <div className="text-sm text-slate-500">👁️ {viewerCount}</div>
               </div>
-
-              {/* Input */}
-              <div className="mt-3 flex gap-2 border-t border-slate-200 pt-3">
-                <input 
-                  value={messageInput} 
-                  onChange={(e) => setMessageInput(e.target.value)} 
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder={translation.live.saySomething} 
-                  className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-900" 
-                />
-                <button 
-                  onClick={sendMessage} 
-                  className="px-3 py-2 bg-blue-900 text-white rounded-lg text-xs font-medium hover:bg-blue-800 transition active:scale-95"
-                >
-                  {translation.live.send}
-                </button>
-              </div>
+              <div className="text-sm"><span className="font-semibold text-red-600">{reactions.length}</span> <span className="text-slate-600">{translation.live.reactions}</span></div>
+              <div className="text-sm"><span className="font-semibold">{messages.length}</span> <span className="text-slate-600">{translation.live.messages}</span></div>
             </div>
           </div>
         </div>

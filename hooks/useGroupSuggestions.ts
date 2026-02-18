@@ -36,8 +36,7 @@ export function useGroupSuggestions({ limit = 10, offset = 0 } = {}) {
 
   useEffect(() => {
     fetchSuggestions();
-    const t = setInterval(fetchSuggestions, 30000);
-    return () => clearInterval(t);
+    // Auto-refresh disabled to prevent data loss on fast interactions
   }, [fetchSuggestions]);
 
   return { items, loading, error, refresh: fetchSuggestions };

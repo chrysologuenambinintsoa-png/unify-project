@@ -58,7 +58,9 @@
     "editPost": "Beitrag bearbeiten",
     "background": "Hintergrund",
     "shareToGroup": "Mit Gruppe teilen",
-    "shareToPage": "Mit Seite teilen"
+    "shareToPage": "Mit Seite teilen",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "Neue Nachricht",
@@ -149,7 +151,19 @@
     "groupDescription": "Gruppenbeschreibung",
     "privateGroup": "Private Gruppe",
     "publicGroup": "Öffentliche Gruppe",
-    "joinCommunities": "Treten Sie Gemeinschaften bei, die Sie interessieren"
+    "joinCommunities": "Treten Sie Gemeinschaften bei, die Sie interessieren",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Seiten",
@@ -302,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "Verwalten Sie Ihre Einstellungen",
     "profilePhoto": "Profilbild",
-    "coverPhoto": "Cover-Bild"
+    "coverPhoto": "Cover-Bild",
+    "sections": {
+      "accountManagement": "Kontoverwaltung",
+      "generalSettings": "Allgemeine Einstellungen"
+    }
   },
   "privacyPolicy": {
     "title": "Datenschutzrichtlinie",
@@ -361,7 +379,12 @@
     "bio": "Biografie",
     "dateOfBirth": "Geburtsdatum",
     "originCity": "Herkunftsstadt",
-    "currentCity": "Aktuelle Stadt"
+    "currentCity": "Aktuelle Stadt",
+    "gender": {
+      "male": "Männlich",
+      "female": "Weiblich",
+      "other": "Sonstiges"
+    }
   },
   "buttons": {
     "saveChanges": "Änderungen speichern",
@@ -407,8 +430,7 @@
   "storyForm": {
     "createStoryTitle": "Eine Geschichte erstellen",
     "sendMessage": "Nachricht senden"
-  }
-  ,
+  },
   "pageLabels": {
     "noPublications": "Noch keine Beiträge",
     "noNotifications": "Keine Benachrichtigungen"
@@ -426,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Konto gelöscht. Umleitung...",
-    "errorDeletingAccount": "Fehler beim Löschen des Kontos"
+    "errorDeletingAccount": "Fehler beim Löschen des Kontos",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "Passwort ändern",
@@ -518,5 +541,37 @@
     "micOn": "Mikrofon an",
     "micOff": "Mikrofon aus",
     "liveBadge": "LIVE"
+  },
+  "locations": {
+    "paris": "Paris",
+    "london": "London",
+    "newYork": "New York",
+    "tokyo": "Tokio",
+    "sydney": "Sydney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Besuchen",
+      "contact": "Kontakt",
+      "cancel": "Abbrechen",
+      "creating": "Wird erstellt...",
+      "publishing": "Wird veröffentlicht...",
+      "loading": "Wird geladen..."
+    },
+    "labels": {
+      "conversions": "Konversionen",
+      "impressions": "Impressionen",
+      "clicks": "Klicks",
+      "animation": "Animation",
+      "pageName": "Seitenname",
+      "tagPeople": "Personen markieren",
+      "searchAndAdd": "Personen suchen und hinzufügen...",
+      "publications": "Veröffentlichungen",
+      "followers": "Follower"
+    }
+  },
+  "company": {
+    "visit": "Besuchen",
+    "contact": "Kontakt"
   }
 }

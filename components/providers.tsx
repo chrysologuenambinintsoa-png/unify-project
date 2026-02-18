@@ -4,44 +4,31 @@ import { SessionProvider, useSession } from 'next-auth/react';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { HomeActivityProvider } from '@/contexts/HomeActivityContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { SplashScreen } from './SplashScreen';
+import { ToastProvider } from '@/hooks/useToast';
 import { PageProgressBar } from './PageProgressBar';
-import { useState, useEffect } from 'react';
+import { ToastContainer } from './ToastContainer';
+import { SplashScreenWrapper } from './SplashScreenWrapper';
+import { useEffect, useState } from 'react';
 
 function ProvidersContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
-  
-  // Show splash when session is loading
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [sessionCheckTimeout, setSessionCheckTimeout] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
+  // Afficher le splash screen au premier chargement (loading initial)
   useEffect(() => {
-    // When status changes from loading to anything else, hide splash after a short delay
     if (status !== 'loading') {
       const timer = setTimeout(() => {
-        setIsInitialLoad(false);
-      }, 800);
+        setIsInitializing(false);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [status]);
 
-  // Force hide splash after 5 seconds max on mobile (prevent indefinite loading on slow networks)
-  useEffect(() => {
-    const maxWaitTime = setTimeout(() => {
-      if (isInitialLoad) {
-        console.warn('Session check timeout - forcing splash screen to hide');
-        setSessionCheckTimeout(true);
-        setIsInitialLoad(false);
-      }
-    }, 5000);
-
-    return () => clearTimeout(maxWaitTime);
-  }, [isInitialLoad]);
-
   return (
     <>
-      <SplashScreen isLoading={isInitialLoad} />
       <PageProgressBar />
+      <ToastContainer />
+      <SplashScreenWrapper />
       {children}
     </>
   );
@@ -53,7 +40,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeProvider>
         <LanguageProvider>
           <HomeActivityProvider>
-            <ProvidersContent>{children}</ProvidersContent>
+            <ToastProvider>
+              <ProvidersContent>{children}</ProvidersContent>
+            </ToastProvider>
           </HomeActivityProvider>
         </LanguageProvider>
       </ThemeProvider>

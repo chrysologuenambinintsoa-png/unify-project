@@ -19,6 +19,7 @@ interface StoryProps {
 interface Story {
   id: string;
   user: {
+    id: string;
     name: string;
     avatar: string;
   };
@@ -81,7 +82,7 @@ export default function Story({ story, isUserStory = false, onViewStory, onCreat
       {/* User Avatar */}
       {!isUserStory && (
         <div className="absolute -top-1 -left-1 w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white overflow-hidden">
-            <Avatar src={story.user?.avatar || null} name={story.user?.name} size="sm" className="w-8 h-8 sm:w-10 sm:h-10" />
+            <Avatar src={story.user?.avatar || null} name={story.user?.name} userId={story.user?.id} size="sm" className="w-8 h-8 sm:w-10 sm:h-10" />
           </div>
       )}
 

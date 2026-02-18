@@ -15,7 +15,6 @@ import { SidebarUser } from '@/components/layout/SidebarUser';
 const navItems = [
   { href: '/', icon: Home, labelKey: 'nav.home' },
   { href: '/explore', icon: Search, labelKey: 'nav.explore' },
-  { href: '/stories', icon: Flag, labelKey: 'nav.stories' },
   { href: '/videos', icon: Video, labelKey: 'nav.videos' },
   { href: '/notifications', icon: Bell, labelKey: 'nav.notifications' },
   { href: '/messages', icon: Mail, labelKey: 'nav.messages' },

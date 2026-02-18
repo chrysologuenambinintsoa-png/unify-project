@@ -33,10 +33,27 @@ export async function GET(request: NextRequest) {
           coverImage: true,
           createdAt: true,
           _count: { select: { members: true } },
+          admins: { where: { userId: session.user.id }, select: { userId: true } },
+          members: { where: { userId: session.user.id }, select: { userId: true } },
         },
       });
 
-      return NextResponse.json(pages);
+      // Normalize shape to what the frontend expects
+      const mappedMyPages = pages.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        category: p.category,
+        avatar: p.image,
+        coverImage: p.coverImage,
+        createdAt: p.createdAt,
+        followerCount: p._count?.members ?? 0,
+        isFollowing: Array.isArray(p.members) ? p.members.length > 0 : false,
+        isAdmin: Array.isArray(p.admins) ? p.admins.length > 0 : false,
+        isLiked: false,
+      }));
+
+      return NextResponse.json(mappedMyPages);
     }
 
     // Discover pages - exclude user's own pages
@@ -85,10 +102,10 @@ export async function GET(request: NextRequest) {
       name: p.name,
       description: p.description,
       category: p.category,
-      image: p.image,
+      avatar: p.image,
       coverImage: p.coverImage,
       createdAt: p.createdAt,
-      followers: p._count?.members ?? 0,
+      followerCount: p._count?.members ?? 0,
       isFollowing: Array.isArray(p.members) ? p.members.length > 0 : false,
       isAdmin: Array.isArray(p.admins) ? p.admins.length > 0 : false,
     }));
@@ -135,13 +152,21 @@ export async function POST(request: NextRequest) {
     const { name, description, image, category } = body;
     if (!name) return NextResponse.json({ error: 'Page name required' }, { status: 400 });
 
+    // Create the page and assign the current user as admin and member
     const page = await prisma.page.create({
       data: {
         name,
         description,
         image,
         category,
+        admins: {
+          create: [{ userId: session.user.id, role: 'admin' }],
+        },
+        members: {
+          create: [{ userId: session.user.id, role: 'admin' }],
+        },
       },
+      include: { admins: true, members: true },
     });
 
     return NextResponse.json(page, { status: 201 });

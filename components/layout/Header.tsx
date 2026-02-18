@@ -8,6 +8,7 @@ import LiveIcon from '@/components/layout/LiveIcon';
 import { Badge } from '@/components/ui/Badge';
 import { SearchBar } from '@/components/SearchBar';
 import { UserMenu } from '@/components/layout/UserMenu';
+import { NotificationsDropdown } from '@/components/NotificationsDropdown';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { motion } from 'framer-motion';
@@ -22,7 +23,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { counts } = useUnreadCounts();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] bg-white shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="px-2 sm:px-4 lg:px-8 h-16">
         <div className="flex items-center justify-between h-full gap-1 sm:gap-4">
           {/* Menu Button - Mobile Only */}
@@ -30,9 +31,9 @@ export function Header({ onMenuClick }: HeaderProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onMenuClick}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="lg:hidden p-1.5 rounded-lg bg-primary-dark dark:bg-primary-dark hover:bg-primary-light dark:hover:bg-primary-light transition-colors flex-shrink-0"
           >
-            <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </motion.button>
 
           {/* Logo */}
@@ -43,7 +44,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             >
               <img src="/logo.svg" alt="Unify" className="w-full h-full" />
             </motion.div>
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary-dark hidden sm:block">
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary-dark dark:text-white hidden sm:block">
               Unify
             </span>
           </Link>
@@ -60,29 +61,21 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark dark:bg-primary-dark hover:bg-primary-light dark:hover:bg-primary-light transition-colors"
                 >
                   <Mail className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                   <Badge count={counts.messages} />
                 </motion.button>
               </Link>
 
-              <Link href="/notifications">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
-                >
-                  <Bell className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
-                  <Badge count={counts.notifications} />
-                </motion.button>
-              </Link>
+              {/* Notifications Dropdown - Replaces Link */}
+              <NotificationsDropdown />
 
               <Link href="/live">
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark dark:bg-primary-dark hover:bg-primary-light dark:hover:bg-primary-light transition-colors"
                 >
                   <LiveIcon />
                 </motion.button>
@@ -92,7 +85,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative p-1.5 rounded-full bg-primary-dark hover:bg-primary-dark/80 transition-colors"
+                  className="relative p-1.5 rounded-full bg-primary-dark dark:bg-primary-dark hover:bg-primary-light dark:hover:bg-primary-light transition-colors"
                 >
                   <Settings className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                 </motion.button>

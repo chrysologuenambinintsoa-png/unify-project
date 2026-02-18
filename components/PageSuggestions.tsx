@@ -2,11 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { usePageSuggestions } from '@/hooks/usePageSuggestions';
-import { Users, ExternalLink } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Users } from 'lucide-react';
 import { HeartIcon } from '@/components/HeartIcon';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import { CardsSkeleton } from '@/components/skeletons/CardsSkeleton';
 
 interface SuggestedPage {
   id: string;
@@ -23,10 +26,21 @@ interface PageSuggestionsProps {
 }
 
 export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
-  const { items: pages, loading, error, refresh } = usePageSuggestions();
+  const { translation } = useLanguage();
+  const { items: allPages, loading, error, refresh } = usePageSuggestions();
   const router = useRouter();
+  const { data: session } = useSession();
   const [followingInitialized, setFollowingInitialized] = useState(false);
   const [likedInitialized, setLikedInitialized] = useState(false);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
+
+  // Filter out pages created by the current user
+  const pages = React.useMemo(() => {
+    if (!allPages || !session?.user?.id) return allPages || [];
+    return (allPages || []).filter((p: any) => !p.isAdmin);
+  }, [allPages, session?.user?.id]);
 
   React.useEffect(() => {
     if (!pages || pages.length === 0) return;
@@ -47,31 +61,22 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
     setLikedIds(initialLikes);
     setLikedInitialized(true);
   }, [pages]);
-  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
-  
 
   const handleLike = async (pageId: string) => {
     try {
       setActionLoading(prev => new Set(prev).add(pageId));
-      
       const response = await fetch(`/api/pages/${pageId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-
       if (response.ok) {
         const data = await response.json();
-        if (data.action === 'liked') {
-          setLikedIds(prev => new Set(prev).add(pageId));
-        } else {
-          setLikedIds(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(pageId);
-            return newSet;
-          });
-        }
+        setLikedIds(prev => {
+          const newSet = new Set(prev);
+          if (data.action === 'liked') newSet.add(pageId);
+          else newSet.delete(pageId);
+          return newSet;
+        });
       }
     } catch (error) {
       console.error('Error liking page:', error);
@@ -87,22 +92,22 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
   const handleFollow = async (pageId: string) => {
     try {
       setActionLoading(prev => new Set(prev).add(pageId));
-      
       const response = await fetch(`/api/pages/${pageId}/follow`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-
       if (response.ok) {
         const data = await response.json();
+        setFollowingIds(prev => {
+          const newSet = new Set(prev);
+          if (data.action === 'followed') newSet.add(pageId);
+          else newSet.delete(pageId);
+          return newSet;
+        });
+        // Refresh suggestions to remove followed page from the list
         if (data.action === 'followed') {
-          setFollowingIds(prev => new Set(prev).add(pageId));
-        } else {
-          setFollowingIds(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(pageId);
-            return newSet;
-          });
+          await new Promise(resolve => setTimeout(resolve, 300));
+          refresh();
         }
       }
     } catch (error) {
@@ -117,75 +122,60 @@ export function PageSuggestions({ compact = false }: PageSuggestionsProps) {
   };
 
   if (loading) {
-    // Don't show loading skeleton - just return null to avoid visual loading indicators
-    return null;
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4">{translation.page?.suggestedPages || 'Suggested Pages'}</h3>
+        <CardsSkeleton count={compact ? 3 : 5} cardWidth="w-40" />
+      </div>
+    );
   }
 
   if (pages.length === 0) {
-    // No pages -> do not render
     return null;
   }
 
   return (
-    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg md:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg border border-yellow-100 dark:border-yellow-800/30">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Pages suggérées</h3>
-      <div className="space-y-3 md:space-y-4">
-        {pages.slice(0, compact ? 3 : 5).map((page: any) => (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-md p-4 md:p-6 border border-gray-200 dark:border-gray-700">
+      <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4">{translation.page?.suggestedPages || 'Suggested Pages'}</h3>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
+        {pages.slice(0, compact ? 5 : 12).map((page: any) => (
           <motion.div
             key={page.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl p-2 sm:p-3 md:p-4 hover:shadow-md dark:hover:shadow-xl transition-shadow"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ y: -4 }}
+            className="flex-shrink-0 w-40"
           >
-            <div className="flex items-start gap-2 sm:gap-3 md:gap-4 min-w-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg md:rounded-xl flex items-center justify-center text-white font-bold text-sm md:text-lg flex-shrink-0">
+            <div className="bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary-dark/20 dark:to-accent/20 rounded-xl p-3 hover:shadow-lg transition-all border border-primary/20 dark:border-primary-dark/30 h-full flex flex-col">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent dark:from-primary-dark dark:to-accent rounded-lg flex items-center justify-center text-white font-bold text-lg mb-2">
                 {page.name.charAt(0)}
               </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm md:text-base">{page.name}</h4>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">{page.description}</p>
-                <div className="flex items-center gap-2 md:gap-4 text-xs text-gray-500 dark:text-gray-400 mb-2 md:mb-3 flex-wrap">
-                  <div className="flex items-center gap-1 whitespace-nowrap">
-                    <Users className="w-3 h-3 flex-shrink-0" />
-                    <span>{(page.followers ?? 0).toLocaleString()}</span>
-                  </div>
-                  <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs whitespace-nowrap">{page.category || 'Catégorie'}</span>
-                </div>
-                <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                  <Button
-                    onClick={() => handleLike(page.id)}
-                    variant={likedIds.has(page.id) ? 'primary' : 'outline'}
-                    size="sm"
-                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
-                    disabled={actionLoading.has(page.id)}
-                  >
-                    <HeartIcon 
-                      className="w-3 h-3 flex-shrink-0" 
-                      fill={likedIds.has(page.id)}
-                    />
-                    <span className="hidden sm:inline">J'aime</span>
-                  </Button>
-                  <Button
-                    onClick={() => handleFollow(page.id)}
-                    variant={followingIds.has(page.id) ? 'secondary' : 'primary'}
-                    size="sm"
-                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
-                    disabled={actionLoading.has(page.id)}
-                  >
-                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    <span className="hidden sm:inline">{followingIds.has(page.id) ? 'Suivi' : 'Suivre'}</span>
-                    <span className="sm:hidden">{followingIds.has(page.id) ? '✓' : '+'}</span>
-                  </Button>
-                  <Button
-                    onClick={() => router.push(`/pages/${page.id}`)}
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-xs md:text-sm px-2 md:px-3 py-1 md:py-2"
-                  >
-                    <span className="hidden sm:inline">Explorer</span>
-                    <span className="sm:hidden">🔍</span>
-                  </Button>
-                </div>
+              <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm mb-1">{page.name}</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2 flex-grow">{page.description || translation.page?.noDescription || 'No description'}</p>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3 pb-2 border-b border-primary/20 dark:border-primary-dark/30">
+                <Users className="w-3 h-3" />
+                <span>{(page.followers ?? 0).toLocaleString()} {translation.page?.followers || 'followers'}</span>
+              </div>
+              <div className="flex gap-1 flex-col">
+                <Button
+                  onClick={() => handleFollow(page.id)}
+                  variant={followingIds.has(page.id) ? 'secondary' : 'primary'}
+                  size="sm"
+                  className="w-full text-xs py-2"
+                  disabled={actionLoading.has(page.id)}
+                >
+                  {followingIds.has(page.id) ? ('✓ ' + (translation.page?.following || 'Following')) : ('+ ' + (translation.page?.follow || 'Follow'))}
+                </Button>
+                <Button
+                  onClick={() => handleLike(page.id)}
+                  variant={likedIds.has(page.id) ? 'primary' : 'outline'}
+                  size="sm"
+                  className="w-full text-xs py-2 flex items-center justify-center gap-1"
+                  disabled={actionLoading.has(page.id)}
+                >
+                  <HeartIcon className="w-3 h-3" fill={likedIds.has(page.id)} />
+                  {likedIds.has(page.id) ? (translation.page?.liked || 'Liked') : (translation.page?.like || 'Like')}
+                </Button>
               </div>
             </div>
           </motion.div>

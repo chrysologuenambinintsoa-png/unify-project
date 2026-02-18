@@ -20,7 +20,7 @@ export async function GET(
     }
 
     // Fetch user profile (request only core fields to avoid missing-column DB errors)
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -52,6 +52,72 @@ export async function GET(
         },
       },
     });
+
+    // If user doesn't exist and it's the current user, create them from available data
+    if (!user && session?.user?.id === userId) {
+      try {
+        console.log('[Profile] Creating missing user from session:', userId);
+        
+        // Generate a readable username
+        let username = session.user.username;
+        if (!username) {
+          // Try to extract from email
+          if (session.user.email) {
+            username = session.user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_').substring(0, 20);
+          } else if (session.user.fullName) {
+            username = session.user.fullName.toLowerCase().replace(/[^a-z0-9_\s]/g, '').replace(/\s+/g, '_').substring(0, 20);
+          } else {
+            username = `user_${Math.random().toString(36).substring(7)}`;
+          }
+        }
+        
+        const createdUser = await prisma.user.create({
+          data: {
+            id: userId,
+            email: session.user.email || `user_${userId}@local`,
+            username: username,
+            fullName: session.user.fullName || session.user.name || (session.user.email?.split('@')[0] || 'Utilisateur'),
+            avatar: session.user.avatar || session.user.image || null,
+          },
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            email: true,
+            avatar: true,
+            bio: true,
+            coverImage: true,
+            isVerified: true,
+            createdAt: true,
+            dateOfBirth: true,
+            originCity: true,
+            currentCity: true,
+            schoolName: true,
+            collegeName: true,
+            highSchoolName: true,
+            universityName: true,
+            collegeInfo: true,
+            highSchoolInfo: true,
+            universityInfo: true,
+            skills: true,
+            _count: {
+              select: {
+                posts: true,
+                friends1: true,
+                friends2: true,
+              },
+            },
+          },
+        });
+        user = createdUser;
+      } catch (createErr) {
+        console.error('[Profile] Failed to create missing user:', createErr);
+        return NextResponse.json(
+          { error: 'Failed to initialize user profile. Please log in again.' },
+          { status: 500 }
+        );
+      }
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -155,6 +221,47 @@ export async function PUT(
         { error: 'Unauthorized' },
         { status: 403 }
       );
+    }
+
+    // Ensure user exists before updating
+    let userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      try {
+        console.log('[Profile PUT] Creating missing user:', userId);
+        
+        // Generate a readable username
+        let username = session.user.username;
+        if (!username) {
+          // Try to extract from email
+          if (session.user.email) {
+            username = session.user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_').substring(0, 20);
+          } else if (session.user.fullName) {
+            username = session.user.fullName.toLowerCase().replace(/[^a-z0-9_\s]/g, '').replace(/\s+/g, '_').substring(0, 20);
+          } else {
+            username = `user_${Math.random().toString(36).substring(7)}`;
+          }
+        }
+        
+        await prisma.user.create({
+          data: {
+            id: userId,
+            email: session.user.email || `user_${userId}@local`,
+            username: username,
+            fullName: session.user.fullName || session.user.name || (session.user.email?.split('@')[0] || 'Utilisateur'),
+            avatar: session.user.avatar || session.user.image || null,
+          },
+        });
+      } catch (createErr) {
+        console.error('[Profile PUT] Failed to create missing user:', createErr);
+        return NextResponse.json(
+          { error: 'Failed to initialize user profile. Please log in again.' },
+          { status: 500 }
+        );
+      }
     }
 
     const body = await request.json();

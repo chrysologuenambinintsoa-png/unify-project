@@ -24,7 +24,6 @@
     "forgotPassword": "Adino ny teny miafina ?",
     "resetPassword": "Ovay ny teny miafina",
     "resetLinkSent": "Ny rohy ovana dia nalefa",
-    
     "noAccount": "Tsy misy kaonty ?",
     "hasAccount": "Efa misy kaonty ?",
     "createAccount": "Hamorona kaonty",
@@ -59,7 +58,9 @@
     "editPost": "Ovay ny hafatra",
     "background": "Afara",
     "shareToGroup": "Ampitao amin'ny vondrona",
-    "shareToPage": "Ampitao amin'ny pejy"
+    "shareToPage": "Ampitao amin'ny pejy",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "Hafatra vaovao",
@@ -150,7 +151,19 @@
     "groupDescription": "Fampitandremana momba ny vondrona",
     "privateGroup": "Vondrona tsirairay",
     "publicGroup": "Vondrona ho an'ny rehetra",
-    "joinCommunities": "Sumali sa mga komunidad na nakakaintereso sa iyo"
+    "joinCommunities": "Sumali sa mga komunidad na nakakaintereso sa iyo",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Pejy",
@@ -212,8 +225,8 @@
     "saveChanges": "Raiketo ny fanovana",
     "fullName": "Anarana feno",
     "dateOfBirth": "Andro nahaterahana",
-    "originCity": "TanÃƒÂ na niaviana",
-    "currentCity": "TanÃƒÂ na ankehitriny",
+    "originCity": "Tanàna niaviana",
+    "currentCity": "Tanàna ankehitriny",
     "savingChanges": "Manao raiketo..."
   },
   "profile": {
@@ -303,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "Mandrindra ny iyong mombamomba at paramètre ny kaonty",
     "profilePhoto": "Sarin'ny olona",
-    "coverPhoto": "Sary afara"
+    "coverPhoto": "Sary afara",
+    "sections": {
+      "accountManagement": "Fitantanana kaonty",
+      "generalSettings": "Mombamomba amin'ny ankapobeny"
+    }
   },
   "privacyPolicy": {
     "title": "Politikan'ny Fiarovana",
@@ -362,7 +379,12 @@
     "bio": "Bio",
     "dateOfBirth": "Andro nahaterahana",
     "originCity": "Tany niaviana",
-    "currentCity": "Tany ankehitriny"
+    "currentCity": "Tany ankehitriny",
+    "gender": {
+      "male": "Lahy",
+      "female": "Vavy",
+      "other": "Hafa"
+    }
   },
   "buttons": {
     "saveChanges": "Raiketo ny fiovan'ny fisian'ny filo",
@@ -519,5 +541,37 @@
     "micOn": "Mikrô Misokatra",
     "micOff": "Mikrô Mihidy",
     "liveBadge": "LIVE"
+  },
+  "locations": {
+    "paris": "Paris",
+    "london": "Londres",
+    "newYork": "New York",
+    "tokyo": "Tokyo",
+    "sydney": "Sydney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Fifanaliana",
+      "contact": "Fifandraisana",
+      "cancel": "Foanana",
+      "creating": "Miforona...",
+      "publishing": "Nansitraka...",
+      "loading": "Mikatraho..."
+    },
+    "labels": {
+      "conversions": "Famadihana",
+      "impressions": "Fahitana",
+      "clicks": "Fitsapitsapian'ny toko",
+      "animation": "Fihetsiketsehana",
+      "pageName": "Anarana pejy",
+      "tagPeople": "Soratin'ny asa",
+      "searchAndAdd": "Tarohy sy hampiditra olona...",
+      "publications": "Navoaka",
+      "followers": "Manaraka"
+    }
+  },
+  "company": {
+    "visit": "Fifanaliana",
+    "contact": "Fifandraisana"
   }
 }

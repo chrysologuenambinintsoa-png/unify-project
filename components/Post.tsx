@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Share2, Bookmark, MoreVertical, X, Send, Flag } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { HeartIcon } from '@/components/HeartIcon';
 import { useHomeActivity } from '@/contexts/HomeActivityContext';
 import { useSession } from 'next-auth/react';
@@ -53,6 +54,8 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [isReporting, setIsReporting] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferReaction, setTransferReaction] = useState<{emoji: string; userName: string} | null>(null);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({
     '❤️': 0,
     '😢': 0,
@@ -225,15 +228,50 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
     }
   }, []);
 
+  // Close options menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsMenuRef.current && !optionsMenuRef.current.contains(event.target as Node)) {
+        setShowOptionsMenu(false);
+      }
+    };
+
+    if (showOptionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showOptionsMenu]);
+
   const totalReactions = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     const newLiked = !liked;
     setLiked(newLiked);
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+    
+    try {
+      const response = await fetch(`/api/posts/${post.id}/likes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to like post:', response.status);
+        // Revert on error
+        setLiked(!newLiked);
+        setLikeCount(prev => newLiked ? Math.max(0, prev - 1) : prev + 1);
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+      // Revert on error
+      setLiked(!newLiked);
+      setLikeCount(prev => newLiked ? Math.max(0, prev - 1) : prev + 1);
+    }
+
     if (onLike) {
       onLike(post.id);
     }
+    
     // Increment home activity badge if user is not on home page
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
       incrementHomeActivity();
@@ -298,9 +336,8 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       setCommentCount(prev => prev + 1);
       setCommentText('');
 
-      if (onCommentAdded) {
-        await onCommentAdded();
-      }
+      // Don't reload all posts - keep local state intact
+      // onCommentAdded callback is removed to prevent data loss
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error adding comment';
       console.error('Comment error:', errorMsg);
@@ -338,12 +375,23 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
       <div className="p-3 md:p-4 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
           {/* User Avatar */}
-          <Avatar src={optimizeAvatarUrl(author.avatar, 80) || author.avatar || null} name={author.name} size="md" className="w-10 h-10 flex-shrink-0" />
+          <Avatar src={optimizeAvatarUrl(author.avatar, 80) || author.avatar || null} name={author.name} userId={author.id} size="md" className="w-10 h-10 flex-shrink-0" />
           {/* User Info */}
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base truncate">{author.name}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'} • {formatDate(createdAt)}</p>
+              {/* Display group/page context */}
+              {post?.group && (
+                <span className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium truncate flex items-center gap-1">
+                  <span>👥</span> in <span className="truncate">{post.group.name}</span>
+                </span>
+              )}
+              {post?.page && (
+                <span className="text-xs md:text-sm text-purple-600 dark:text-purple-400 font-medium truncate flex items-center gap-1">
+                  <span>📄</span> on <span className="truncate">{post.page.name}</span>
+                </span>
+              )}
               {(post?.isSponsored || post?.sponsored) && (
                 <span className="sponsored-text">
                   📢 Sponsorisé
@@ -363,10 +411,11 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           </button>
 
           {showOptionsMenu && (
-            <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50" onClick={(e) => e.stopPropagation()}>
               {isPostOwner && onEdit && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowOptionsMenu(false);
                     onEdit(post);
                   }}
@@ -377,7 +426,8 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
               )}
               {isPostOwner && onDelete && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowOptionsMenu(false);
                     onDelete(post.id);
                   }}
@@ -388,8 +438,10 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
               )}
               {!isPostOwner && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowReportModal(true);
+                    setShowOptionsMenu(false);
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-yellow-50 dark:hover:bg-gray-700 text-orange-600 font-medium flex items-center space-x-2 text-sm"
                 >
@@ -420,13 +472,17 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
             if (!anim || anim === 'none') return { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: {} };
             switch (anim) {
               case 'bounce':
-                return { initial: { y: 0, opacity: 1 }, animate: { y: [0, -12, 0], opacity: [1, 1, 1] }, transition: { duration: 0.8, repeat: Infinity } };
+                return { initial: { y: 0 }, animate: { y: [0, -8, 0] }, transition: { duration: 0.8, repeat: Infinity } };
               case 'pulse':
-                return { initial: { scale: 1, opacity: 1 }, animate: { scale: [1, 1.05, 1], opacity: [1, 0.95, 1] }, transition: { duration: 2, repeat: Infinity } };
+                return { initial: { opacity: 1 }, animate: { opacity: [1, 0.8, 1] }, transition: { duration: 2, repeat: Infinity } };
               case 'shake':
-                return { initial: { x: 0 }, animate: { x: [-6, 6, -6, 6, 0] }, transition: { duration: 0.6, repeat: Infinity } };
+                return { initial: { x: 0 }, animate: { x: [-4, 4, -4, 4, 0] }, transition: { duration: 0.6, repeat: Infinity } };
               case 'rotate':
-                return { initial: { rotate: 0 }, animate: { rotate: 360 }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
+                return { initial: { rotateY: 0 }, animate: { rotateY: 360 }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
+              case 'glow':
+                return { initial: {}, animate: { textShadow: ['0 0 8px rgba(255,255,255,0.3)', '0 0 20px rgba(255,255,255,0.8)', '0 0 8px rgba(255,255,255,0.3)'] }, transition: { duration: 1.5, repeat: Infinity } };
+              case 'scale':
+                return { initial: { scale: 1 }, animate: { scale: [1, 1.05, 1] }, transition: { duration: 1.5, repeat: Infinity } };
               default:
                 return { initial: { opacity: 1 }, animate: { opacity: 1 }, transition: {} };
             }
@@ -437,14 +493,14 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           return (
             <div className="p-4">
               <div
-                className="text-post-card w-full"
-                style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.12), rgba(0,0,0,0.12)), ${findBg.style}` }}
+                className="text-post-card w-full aspect-video md:aspect-square"
+                style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.12), rgba(0,0,0,0.12)), ${findBg.style}`, backgroundAttachment: 'fixed' }}
               >
-                <div className="py-6 md:py-8 lg:py-10 px-4 md:px-6 lg:px-8">
+                <div className="w-full h-full flex items-center justify-center px-6 md:px-8 lg:px-12">
                   <div className="max-w-[760px] mx-auto">
-                    <p className="text-center text-white font-semibold md:font-semibold text-base md:text-lg lg:text-xl leading-relaxed md:leading-snug break-words text-post-shadow">
+                    <motion.p {...variants} className="text-center text-white font-bold text-2xl md:text-4xl lg:text-5xl leading-relaxed md:leading-snug break-words text-post-shadow">
                       {post.content}
-                    </p>
+                    </motion.p>
                   </div>
                 </div>
               </div>
@@ -699,23 +755,23 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
             </div>
           </div>
 
-          {/* Reactions Modal - Blue Gradient Card */}
+          {/* Reactions Modal - Enhanced Blue Gradient Card */}
           {selectedReactionEmoji && (
             <div 
               className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center p-3 sm:p-4"
               onClick={() => setSelectedReactionEmoji(null)}
             >
               <div 
-                className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full max-h-[70vh] sm:max-h-96 overflow-hidden flex flex-col"
+                className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl sm:rounded-3xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
                 onClick={e => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-300/30 flex items-center justify-between gap-2">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-300/30 flex items-center justify-between gap-2 flex-shrink-0">
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <span className="text-3xl sm:text-4xl flex-shrink-0">{selectedReactionEmoji}</span>
                     <div className="min-w-0">
                       <p className="text-white font-bold text-sm sm:text-base">Réactions</p>
-                      <p className="text-blue-100 text-xs sm:text-sm">{(reactionUsers[selectedReactionEmoji] || []).length} utilisateurs</p>
+                      <p className="text-blue-100 text-xs sm:text-sm">{(reactionUsers[selectedReactionEmoji] || []).length} utilisateur{(reactionUsers[selectedReactionEmoji] || []).length !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                   <button
@@ -727,19 +783,100 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
                 </div>
 
                 {/* Users List */}
-                <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4">
-                  <div className="space-y-2 sm:space-y-3">
-                    {(reactionUsers[selectedReactionEmoji] || []).map((user, idx) => (
-                      <div key={`${user.id}-${idx}`} className="flex items-center gap-2 sm:gap-3 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/30 transition-colors">
-                        <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white/40 flex items-center justify-center text-white font-bold flex-shrink-0 text-xs sm:text-sm">
-                          {user.name.charAt(0).toUpperCase()}
+                <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 sm:py-4">
+                  <div className="space-y-2">
+                    {(reactionUsers[selectedReactionEmoji] || []).length > 0 ? (
+                      (reactionUsers[selectedReactionEmoji] || []).map((user, idx) => (
+                        <div key={`${user.id}-${idx}`} className="group hover:bg-white/20 transition-all duration-200 p-2 sm:p-3 rounded-lg">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-white/40 flex items-center justify-center text-white font-bold flex-shrink-0 text-xs sm:text-sm">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-medium text-xs sm:text-sm truncate">{user.name}</p>
+                            </div>
+                            {/* Actions - Show on hover/mobile */}
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 sm:group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const response = await fetch(`/api/posts/${post.id}/reactions`, {
+                                      method: 'DELETE',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ emoji: selectedReactionEmoji }),
+                                    });
+                                    if (response.ok) {
+                                      setReactionCounts(prev => ({
+                                        ...prev,
+                                        [selectedReactionEmoji]: Math.max(0, (prev[selectedReactionEmoji] || 1) - 1),
+                                      }));
+                                      setReactionUsers(prev => ({
+                                        ...prev,
+                                        [selectedReactionEmoji]: (prev[selectedReactionEmoji] || []).filter((u, i) => i !== idx),
+                                      }));
+                                    }
+                                  } catch (error) {
+                                    console.error('Erreur suppression réaction:', error);
+                                  }
+                                }}
+                                title="Supprimer"
+                                className="p-1.5 text-white hover:bg-red-500/60 rounded transition-colors text-xs sm:text-sm"
+                              >
+                                🗑️
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentText(`@${user.name} `);
+                                  setSelectedReactionEmoji(null);
+                                }}
+                                title="Répondre"
+                                className="p-1.5 text-white hover:bg-green-500/60 rounded transition-colors text-xs sm:text-sm"
+                              >
+                                💬
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTransferReaction({emoji: selectedReactionEmoji, userName: user.name});
+                                  setShowTransferModal(true);
+                                }}
+                                title="Transférer"
+                                className="p-1.5 text-white hover:bg-purple-500/60 rounded transition-colors text-xs sm:text-sm"
+                              >
+                                📤
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium text-xs sm:text-sm truncate">{user.name}</p>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-white text-sm opacity-70">Aucune réaction pour cet emoji</p>
                       </div>
-                    ))}
+                    )}
                   </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 sm:px-6 py-2 sm:py-3 border-t border-blue-300/30 bg-blue-500/20 text-white text-xs sm:text-sm text-center flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      setReactionCounts(prev => ({
+                        ...prev,
+                        [selectedReactionEmoji]: 0,
+                      }));
+                      setReactionUsers(prev => ({
+                        ...prev,
+                        [selectedReactionEmoji]: [],
+                      }));
+                      setSelectedReactionEmoji(null);
+                    }}
+                    className="w-full hover:bg-white/20 py-1 px-2 rounded transition-colors"
+                  >
+                    Masquer tous les {selectedReactionEmoji}
+                  </button>
                 </div>
               </div>
             </div>

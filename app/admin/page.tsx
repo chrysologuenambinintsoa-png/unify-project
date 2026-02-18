@@ -1,22 +1,21 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card } from '@/components/ui/Card';
 import { motion } from 'framer-motion';
 import { Settings, Megaphone, BarChart3, Users } from 'lucide-react';
 
 export default function AdminPage() {
+  const { isReady, session } = useRequireAuth();
   const router = useRouter();
-  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    }
-  }, [status, router]);
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return null;
+  }
 
   const adminSections = [
     {

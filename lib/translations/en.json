@@ -24,7 +24,6 @@
     "forgotPassword": "Forgot password?",
     "resetPassword": "Reset Password",
     "resetLinkSent": "Reset link sent",
-    
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "createAccount": "Create account",
@@ -59,7 +58,9 @@
     "editPost": "Edit post",
     "background": "Background",
     "shareToGroup": "Share to group",
-    "shareToPage": "Share to page"
+    "shareToPage": "Share to page",
+    "location": "Location",
+    "locationPlaceholder": "Where are you? (e.g., Paris, France)"
   },
   "message": {
     "newMessage": "New message",
@@ -120,7 +121,21 @@
     "deleteForEveryoneDescription": "Everyone will see the message as deleted",
     "noMediaFound": "No media found.",
     "loading": "Loading...",
-    "noFriendsFound": "No friends found"
+    "noFriendsFound": "No friends found",
+    "messageRequest": "Message Request",
+    "messageRequestInfo": "Message request from a non-friend",
+    "acceptAndFriend": "Accept & Friend",
+    "decline": "Decline",
+    "messageRequestAccepted": "Message request accepted and friendship created",
+    "messageRequestRejected": "Message request rejected",
+    "sendMessageRequest": "Send Message",
+    "yourMessage": "Your Message",
+    "writeMessagePlaceholder": "Write a message to introduce yourself...",
+    "messageSent": "Message Sent!",
+    "messageRequestSentDesc": "Your message request has been sent. {name} will receive a notification.",
+    "whenAccepts": "When {name} accepts your request, you'll become friends and can message freely.",
+    "enterMessage": "Please enter a message",
+    "sendRequest": "Send Request"
   },
   "story": {
     "addStory": "Add story",
@@ -150,7 +165,39 @@
     "groupDescription": "Group description",
     "privateGroup": "Private group",
     "publicGroup": "Public group",
-    "joinCommunities": "Join communities that interest you"
+    "joinCommunities": "Join communities that interest you",
+    "myGroups": "My groups",
+    "discover": "Discover",
+    "suggestedGroups": "Suggested Groups",
+    "noGroups": "No groups",
+    "noGroupsFound": "No groups found",
+    "noGroupsJoined": "You haven't joined any groups yet.",
+    "noGroupsMatch": "No groups match your criteria.",
+    "explorMore": "Explore more groups",
+    "members": "members",
+    "private": "Private",
+    "public": "Public",
+    "viewGroup": "View group",
+    "join": "Join",
+    "joined": "✓ Joined",
+    "contact": "Contact",
+    "noDescription": "No description",
+    "contactGroup": "Contact Group",
+    "groupNotFound": "Group not found",
+    "overview": "Overview",
+    "posts": "Posts",
+    "settings": "Settings",
+    "joining": "Joining...",
+    "joinThisGroup": "Join this group",
+    "isMember": "✓ Member",
+    "manage": "Manage",
+    "information": "Information",
+    "creator": "Creator",
+    "privacy": "Privacy",
+    "noPosts": "No posts yet",
+    "changeCover": "Change group cover",
+    "changeAvatar": "Change group avatar",
+    "created": "Created"
   },
   "page": {
     "pages": "Pages",
@@ -160,7 +207,29 @@
     "pageName": "Page name",
     "pageCategory": "Category",
     "pageDescription": "Description",
-    "verified": "Verified"
+    "verified": "Verified",
+    "suggestedPages": "Suggested Pages",
+    "follow": "Follow",
+    "following": "✓ Following",
+    "followers": "followers",
+    "noDescription": "No description",
+    "like": "Like",
+    "liked": "✓ Liked",
+    "pageNotFound": "Page not found",
+    "overview": "Overview",
+    "posts": "Posts",
+    "settings": "Settings",
+    "followThisPage": "Follow this page",
+    "manage": "Manage",
+    "information": "Information",
+    "admin": "Admin",
+    "category": "Category",
+    "website": "Website",
+    "visit": "Visit",
+    "noPosts": "No posts yet",
+    "changeCover": "Change page cover",
+    "changeAvatar": "Change page avatar",
+    "created": "Created"
   },
   "friends": {
     "friends": "Friends",
@@ -303,13 +372,23 @@
   "settingsPage": {
     "managePreferences": "Manage your preferences and account settings",
     "profilePhoto": "Profile Photo",
-    "coverPhoto": "Cover Photo"
-  },  "forms": {
+    "coverPhoto": "Cover Photo",
+    "sections": {
+      "accountManagement": "Account Management",
+      "generalSettings": "General Settings"
+    }
+  },
+  "forms": {
     "fullName": "Full name",
     "bio": "Bio",
     "dateOfBirth": "Date of birth",
     "originCity": "City of origin",
-    "currentCity": "Current city"
+    "currentCity": "Current city",
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    }
   },
   "buttons": {
     "saveChanges": "Save changes",
@@ -344,7 +423,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Account deleted. Redirecting...",
-    "errorDeletingAccount": "Error deleting account"
+    "errorDeletingAccount": "Error deleting account",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "confirmations": {
     "changesSaved": "Changes saved",
@@ -416,7 +496,8 @@
   "storyForm": {
     "createStoryTitle": "Create a Story",
     "sendMessage": "Send message"
-  },  "privacyPolicy": {
+  },
+  "privacyPolicy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: February 2026",
     "introduction": "At Unify, we take your privacy very seriously. This privacy policy explains how we collect, use, protect and share your personal data.",
@@ -516,5 +597,37 @@
     "micOn": "Mic On",
     "micOff": "Mic Off",
     "liveBadge": "LIVE"
+  },
+  "locations": {
+    "paris": "Paris",
+    "london": "London",
+    "newYork": "New York",
+    "tokyo": "Tokyo",
+    "sydney": "Sydney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Visit",
+      "contact": "Contact",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "publishing": "Publishing...",
+      "loading": "Loading..."
+    },
+    "labels": {
+      "conversions": "Conversions",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "animation": "Animation",
+      "pageName": "Page Name",
+      "tagPeople": "Tag People",
+      "searchAndAdd": "Search and add people...",
+      "publications": "Publications",
+      "followers": "Followers"
+    }
+  },
+  "company": {
+    "visit": "Visit",
+    "contact": "Contact"
   }
 }

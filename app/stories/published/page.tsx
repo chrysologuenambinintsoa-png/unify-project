@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { X, Eye, Heart, Plus } from 'lucide-react';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import { Button } from '@/components/ui/Button';
+import { StoriesSkeleton } from '@/components/skeletons/StoriesSkeleton';
 
 interface Story {
   id: string;
@@ -122,9 +123,7 @@ export default function PublishedStoriesPage() {
   if (loading && stories.length === 0) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <></>
-        </div>
+        <StoriesSkeleton />
       </MainLayout>
     );
   }

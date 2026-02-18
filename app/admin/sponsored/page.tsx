@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -31,28 +30,14 @@ interface SponsoredPost {
 }
 
 export default function AdminSponsoredPage() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  const { isReady, session } = useRequireAuth();
   const [posts, setPosts] = useState<SponsoredPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<SponsoredPost | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    }
-  }, [status, router]);
-
-  // Fetch sponsored posts
-  useEffect(() => {
-    if (session?.user) {
-      fetchPosts();
-    }
-  }, [session]);
-
+  // Fonction pour charger les posts sponsorisés
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -67,6 +52,18 @@ export default function AdminSponsoredPage() {
       setLoading(false);
     }
   };
+
+  // Fetch sponsored posts
+  useEffect(() => {
+    if (session?.user && isReady) {
+      fetchPosts();
+    }
+  }, [session, isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return null;
+  }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce sponsorisé?')) return;

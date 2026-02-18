@@ -207,28 +207,47 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
             {showOptionsMenu && (
               <div
                 ref={optionsMenuRef}
-                className="absolute right-0 top-12 bg-white rounded-lg shadow-lg py-2 z-10 w-48"
+                className="absolute right-0 top-12 bg-white rounded-lg shadow-lg py-2 z-50 w-48"
+                onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={handleEditPost}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditPost();
+                  }}
                   className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2"
                 >
                   <span>✏️</span>
                   <span>{translation.buttons?.editPost || 'Edit post'}</span>
                 </button>
                 <button
-                  onClick={handleDeletePost}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePost();
+                  }}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition flex items-center space-x-2"
                 >
                   <span>🗑️</span>
                   <span>{translation.buttons?.deletePost || 'Delete post'}</span>
                 </button>
                 <div className="border-t my-1"></div>
-                <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOptionsMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2"
+                >
                   <span>📌</span>
                   <span>Pin Post</span>
                 </button>
-                <button className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOptionsMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2"
+                >
                   <span>🔔</span>
                   <span>Turn off notifications</span>
                 </button>
@@ -264,19 +283,19 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
             const getVariants = () => {
               switch (anim) {
                 case 'bounce':
-                  return { animate: { y: [0, -16, 0] }, transition: { duration: 0.8, repeat: Infinity } };
+                  return { animate: { y: [0, -8, 0] }, transition: { duration: 0.8, repeat: Infinity } };
                 case 'pulse':
-                  return { animate: { scale: [1, 1.04, 1] }, transition: { duration: 2, repeat: Infinity } };
+                  return { animate: { opacity: [1, 0.8, 1] }, transition: { duration: 2, repeat: Infinity } };
                 case 'rotate':
-                  return { animate: { rotate: 360 }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
+                  return { animate: { rotateY: [0, 360] }, transition: { duration: 4, repeat: Infinity, ease: 'linear' } };
                 case 'wave':
-                  return { animate: { skewY: [0, 2, -2, 0] }, transition: { duration: 2, repeat: Infinity } };
+                  return { animate: { skewY: [0, 1, -1, 0] }, transition: { duration: 2, repeat: Infinity } };
                 case 'shake':
-                  return { animate: { x: [-6, 6, -6, 6, 0] }, transition: { duration: 0.5, repeat: Infinity } };
+                  return { animate: { x: [-4, 4, -4, 4, 0] }, transition: { duration: 0.6, repeat: Infinity } };
                 case 'glow':
-                  return { animate: { textShadow: ['0 0 8px rgba(255,255,255,0.5)', '0 0 18px rgba(255,255,255,0.9)', '0 0 8px rgba(255,255,255,0.5)'] }, transition: { duration: 1.5, repeat: Infinity } };
+                  return { animate: { textShadow: ['0 0 8px rgba(255,255,255,0.3)', '0 0 20px rgba(255,255,255,0.8)', '0 0 8px rgba(255,255,255,0.3)'] }, transition: { duration: 1.5, repeat: Infinity } };
                 case 'scale':
-                  return { animate: { scale: [1, 1.08, 1] }, transition: { duration: 1.5, repeat: Infinity } };
+                  return { animate: { scale: [1, 1.05, 1] }, transition: { duration: 1.5, repeat: Infinity } };
                 default:
                   return {};
               }
@@ -286,9 +305,9 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
 
             return (
               <div className="mb-3">
-                <div className={`${bgClass} p-6 rounded-lg w-full min-h-[200px] flex items-center justify-center`}>
+                <div className={`${bgClass} p-8 md:p-12 lg:p-16 rounded-lg w-full aspect-video md:aspect-square flex items-center justify-center`}>
                   <motion.div {...getVariants()} className="text-center">
-                    <p className="text-white text-2xl md:text-4xl font-bold leading-tight break-words">
+                    <p className="text-white text-3xl md:text-5xl lg:text-6xl font-bold leading-tight break-words">
                       {post.content}
                     </p>
                   </motion.div>

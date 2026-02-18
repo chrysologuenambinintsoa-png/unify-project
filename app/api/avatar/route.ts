@@ -8,7 +8,7 @@ import { publishNotificationToUsers } from '@/app/api/realtime/broadcast';
 
 // local filesystem-based avatar storage is used (preserve original binary)
 
-// POST /api/avatar - Upload user avatar
+// POST /api/avatar - Upload user avatar, or set existing gallery photo as avatar
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,29 +17,63 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await request.formData();
-    const file = formData.get('avatar') as File;
+    let avatarUrl: string | null = null;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    // Check if this is JSON request with photoId (using existing gallery photo)
+    const contentType = request.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      try {
+        const body = await request.json();
+        const photoId = body.photoId;
+
+        if (photoId) {
+          // Get the photo from photoGallery
+          const photo = await (prisma as any).photoGallery.findUnique({
+            where: { id: photoId },
+          });
+
+          if (!photo || photo.userId !== session.user.id) {
+            return NextResponse.json(
+              { error: 'Photo not found or unauthorized' },
+              { status: 404 }
+            );
+          }
+
+          avatarUrl = photo.url;
+        }
+      } catch (jsonErr) {
+        // Continue - might be FormData instead
+      }
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    // If not from photoId, process as file upload
+    if (!avatarUrl) {
+      const formData = await request.formData();
+      const file = formData.get('avatar') as File;
 
-    // Save to local uploads directory (preserve original binary, no resizing)
-    let saveResult;
-    try {
-      saveResult = await saveProfilePhoto(session.user.id, buffer, (file as any).name || `avatar_${Date.now()}`, (file as any).type || 'image/jpeg');
-    } catch (err: any) {
-      return NextResponse.json({ error: err?.message || 'Failed to save avatar' }, { status: 400 });
+      if (!file) {
+        return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      }
+
+      // Convert file to buffer
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Save to local uploads directory (preserve original binary, no resizing)
+      let saveResult;
+      try {
+        saveResult = await saveProfilePhoto(session.user.id, buffer, (file as any).name || `avatar_${Date.now()}`, (file as any).type || 'image/jpeg');
+      } catch (err: any) {
+        return NextResponse.json({ error: err?.message || 'Failed to save avatar' }, { status: 400 });
+      }
+
+      avatarUrl = saveResult.url;
     }
 
     // Update user avatar in database with relative URL
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: { avatar: saveResult.url },
+      data: { avatar: avatarUrl },
       select: {
         id: true,
         username: true,
@@ -48,34 +82,45 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create a post announcing the profile photo change (so it appears on home feed)
-    let profileChangePostId: string | null = null;
+    // Also create an entry in photoGallery for consistency with other photos
     try {
-      const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
-      const content = getNotificationMessage('avatarChange', actorName, 'fr');
-
-      if (updatedUser.avatar) {
-        const profileChangePost = await prisma.post.create({
-          data: {
-            content,
-            userId: updatedUser.id,
-            media: {
-              create: [
-                {
-                  type: 'image',
-                  url: updatedUser.avatar,
-                },
-              ],
-            },
-          },
-        });
-        profileChangePostId = profileChangePost.id;
-      }
-    } catch (postErr) {
-      console.error('Failed to create profile-change post:', postErr);
+      await (prisma as any).photoGallery.create({
+        data: {
+          userId: session.user.id,
+          url: avatarUrl,
+          type: 'profile',
+          caption: null,
+        },
+      });
+    } catch (photoErr) {
+      console.warn('Failed to create photoGallery entry for profile photo:', photoErr);
+      // Continue - the main avatar update succeeded
     }
 
-    // Notify friends (accepted friendships)
+    // Create a post for avatar change visibility
+    try {
+      const post = await (prisma as any).post.create({
+        data: {
+          userId: session.user.id,
+          content: `${updatedUser.fullName || updatedUser.username} updated their profile photo`,
+          isPublic: true,
+          background: null,
+          media: {
+            create: {
+              type: 'image',
+              url: avatarUrl,
+            },
+          },
+        },
+        include: { media: true },
+      });
+    } catch (postErr) {
+      console.warn('Failed to create post for avatar change:', postErr);
+      // Continue - the main avatar update succeeded
+    }
+
+    // Notify friends ONLY (accepted friendships)
+    // Do NOT create a public post - just send notifications to friends
     try {
       const friendships = await prisma.friendship.findMany({
         where: {
@@ -95,7 +140,7 @@ export async function POST(request: NextRequest) {
         const actorName = updatedUser.fullName || updatedUser.username || 'Utilisateur';
         const notificationTitle = getNotificationTitle('avatarChange', 'fr');
         const notificationContent = getNotificationMessage('avatarChange', actorName, 'fr');
-        const notificationUrl = profileChangePostId ? `/posts/${profileChangePostId}` : `/users/${updatedUser.id}`;
+        const notificationUrl = `/users/${updatedUser.id}`;
         
         const notifData = friendIds.map((fid) => ({
           type: 'profile',
@@ -178,6 +223,34 @@ export async function DELETE(request: NextRequest) {
         avatar: true,
       },
     });
+
+    // Also delete photoGallery entries with type 'profile' for this user
+    try {
+      await (prisma as any).photoGallery.deleteMany({
+        where: {
+          userId: session.user.id,
+          type: 'profile',
+        },
+      });
+    } catch (photoErr) {
+      console.warn('Failed to delete photoGallery profile photos:', photoErr);
+      // Continue - the main avatar deletion succeeded
+    }
+
+    // Also delete posts created for avatar changes
+    try {
+      await (prisma as any).post.deleteMany({
+        where: {
+          userId: session.user.id,
+          content: {
+            contains: 'updated their profile photo',
+          },
+        },
+      });
+    } catch (postErr) {
+      console.warn('Failed to delete posts for avatar changes:', postErr);
+      // Continue - the main avatar deletion succeeded
+    }
 
     return NextResponse.json({
       success: true,

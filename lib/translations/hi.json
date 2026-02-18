@@ -58,7 +58,9 @@
     "editPost": "पोस्ट संपादित करें",
     "background": "पृष्ठभूमि",
     "shareToGroup": "समूह में साझा करें",
-    "shareToPage": "पृष्ठ में साझा करें"
+    "shareToPage": "पृष्ठ में साझा करें",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "नया संदेश",
@@ -149,7 +151,19 @@
     "groupDescription": "समूह विवरण",
     "privateGroup": "निजी समूह",
     "publicGroup": "सार्वजनिक समूह",
-    "joinCommunities": "रुचि के समुदायों में शामिल हों"
+    "joinCommunities": "रुचि के समुदायों में शामिल हों",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "पृष्ठ",
@@ -302,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "अपनी सेटिंग्स प्रबंधित करें",
     "profilePhoto": "प्रोफ़ाइल फोटो",
-    "coverPhoto": "कवर फोटो"
+    "coverPhoto": "कवर फोटो",
+    "sections": {
+      "accountManagement": "खाता प्रबंधन",
+      "generalSettings": "सामान्य सेटिंग्स"
+    }
   },
   "privacyPolicy": {
     "title": "गोपनीयता नीति",
@@ -361,7 +379,12 @@
     "bio": "जीवनी",
     "dateOfBirth": "जन्म की तारीख",
     "originCity": "मूल शहर",
-    "currentCity": "वर्तमान शहर"
+    "currentCity": "वर्तमान शहर",
+    "gender": {
+      "male": "पुरुष",
+      "female": "महिला",
+      "other": "अन्य"
+    }
   },
   "buttons": {
     "saveChanges": "परिवर्तन सहेजें",
@@ -407,9 +430,8 @@
   "storyForm": {
     "createStoryTitle": "एक कहानी बनाएं",
     "sendMessage": "संदेश भेजें"
-  }
-
-  ,"pageLabels": {
+  },
+  "pageLabels": {
     "noPublications": "अभी तक कोई पोस्ट नहीं",
     "noNotifications": "कोई सूचनाएं नहीं"
   },
@@ -426,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "खाता हटा दिया गया। पुनः निर्देशित किया जा रहा है...",
-    "errorDeletingAccount": "खाता हटाने में त्रुटि"
+    "errorDeletingAccount": "खाता हटाने में त्रुटि",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "पासवर्ड बदलें",
@@ -518,6 +541,37 @@
     "micOn": "माइक चालू",
     "micOff": "माइक बंद",
     "liveBadge": "लाइव"
+  },
+  "locations": {
+    "paris": "पेरिस",
+    "london": "लंदन",
+    "newYork": "न्यूयॉर्क",
+    "tokyo": "टोक्यो",
+    "sydney": "सिडनी"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "जाएं",
+      "contact": "संपर्क करें",
+      "cancel": "रद्द करें",
+      "creating": "बना रहे हैं...",
+      "publishing": "प्रकाशित कर रहे हैं...",
+      "loading": "लोड हो रहा है..."
+    },
+    "labels": {
+      "conversions": "रूपांतरण",
+      "impressions": "इंप्रेशन",
+      "clicks": "क्लिक",
+      "animation": "एनिमेशन",
+      "pageName": "पृष्ठ का नाम",
+      "tagPeople": "लोगों को टैग करें",
+      "searchAndAdd": "लोगों को खोजें और जोड़ें...",
+      "publications": "प्रकाशन",
+      "followers": "अनुसरण करने वाले"
+    }
+  },
+  "company": {
+    "visit": "जाएं",
+    "contact": "संपर्क करें"
   }
 }
-

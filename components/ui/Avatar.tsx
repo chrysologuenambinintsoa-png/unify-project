@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { cn, getInitials } from '@/lib/utils';
+import { generateAvatarUrl } from '@/lib/avatar-utils';
 
 interface AvatarProps {
   src?: string | null;
@@ -11,6 +12,8 @@ interface AvatarProps {
   onClick?: () => void;
   isOnline?: boolean;
   showOnline?: boolean;
+  userId?: string;
+  gender?: string | null;
 }
 
 export function Avatar({
@@ -22,6 +25,8 @@ export function Avatar({
   onClick,
   isOnline,
   showOnline = true,
+  userId,
+  gender,
 }: AvatarProps) {
   const [errored, setErrored] = useState(false);
   const sizes = {
@@ -30,6 +35,9 @@ export function Avatar({
     lg: 'w-16 h-16',
     xl: 'w-24 h-24',
   };
+
+  // Generate avatar URL (falls back to fake avatar if no src)
+  const avatarUrl = userId ? generateAvatarUrl(src, name, userId, gender) : src;
 
   return (
     <div
@@ -41,30 +49,26 @@ export function Avatar({
       )}
       onClick={onClick}
     >
-      {src && !errored ? (
-        // If the image is a locally uploaded avatar, render a plain <img>
-        // to avoid Next.js image optimization/resizing so original bytes are preserved.
-        (src.startsWith?.('/uploads/avatars/') ? (
-          // browser will scale/display the image without server-side re-encoding
-          // we keep object-cover so it crops to the circular container visually,
-          // but the file served remains the original
+      {avatarUrl && !errored ? (
+        // Use plain <img> for local avatars and Dicebear SVGs (can't be optimized by Next.js Image)
+        (avatarUrl.startsWith?.('/uploads/avatars/') || avatarUrl.includes('api.dicebear.com')) ? (
           // eslint-disable-next-line jsx-a11y/alt-text
           <img
-            src={src}
+            src={avatarUrl}
             alt={alt || name || 'Avatar'}
             className="object-cover w-full h-full"
             onError={() => setErrored(true)}
           />
         ) : (
           <Image
-            src={src}
+            src={avatarUrl}
             alt={alt || name || 'Avatar'}
             width={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
             height={size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'md' ? 48 : 32}
             className="object-cover w-full h-full"
             onError={() => setErrored(true)}
           />
-        ))
+        )
       ) : (
         <span className={cn(
           'font-semibold text-gray-600',

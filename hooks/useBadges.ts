@@ -83,8 +83,8 @@ export const useBadges = () => {
   useEffect(() => {
     fetchBadges();
 
-    // Refresh badges every 30 seconds
-    const interval = setInterval(fetchBadges, 30000);
+    // Refresh badges every 15 seconds to stay in sync with header unread counts
+    const interval = setInterval(fetchBadges, 15000);
 
     return () => clearInterval(interval);
   }, [fetchBadges]);
@@ -100,6 +100,19 @@ export const useBadges = () => {
     window.addEventListener('message', handleMessageEvent);
     return () => window.removeEventListener('message', handleMessageEvent);
   }, []);
+
+  // Broadcast Badge updates to other listeners (Header's useUnreadCounts hook)
+  useEffect(() => {
+    if (badges.notifications > 0 || badges.messages > 0) {
+      window.postMessage({
+        type: 'COUNTS_UPDATED',
+        counts: {
+          notifications: badges.notifications,
+          messages: badges.messages,
+        }
+      }, '*');
+    }
+  }, [badges.notifications, badges.messages]);
 
   return {
     badges,

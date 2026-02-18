@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { receiverId, content, image, document } = body;
 
-    if (!receiverId || !content) {
+    if (!receiverId || (!content && !image)) {
       return NextResponse.json(
-        { error: 'Receiver ID and content are required' },
+        { error: 'Receiver and either content or image is required' },
         { status: 400 }
       );
     }

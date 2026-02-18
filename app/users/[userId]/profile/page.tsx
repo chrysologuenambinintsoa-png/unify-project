@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import CompanyHeader from '@/components/profile/CompanyHeader';
+import { CoverImageUploadModal } from '@/components/CoverImageUploadModal';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -12,8 +13,11 @@ import { Button } from '@/components/ui/Button';
 import { PhotoGallery } from '@/components/profile/PhotoGallery';
 import { About } from '@/components/profile/About';
 import Post from '@/components/Post';
+import { Avatar } from '@/components/ui/Avatar';
 import { optimizeAvatarUrl, optimizeCoverUrl } from '@/lib/cloudinaryOptimizer';
 import { Mail, Calendar, Image, FileText, Users } from 'lucide-react';
+import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton';
+import { SendMessageRequestModal } from '@/components/messaging/SendMessageRequestModal';
 
 interface Photo {
   id: string;
@@ -84,6 +88,8 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false);
+  const [showCoverUpload, setShowCoverUpload] = useState(false);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
@@ -92,6 +98,8 @@ export default function UserProfilePage() {
   const [photosLoading, setPhotosLoading] = useState(false);
   const [friendsLoaded, setFriendsLoaded] = useState(false);
   const [selectedSection, setSelectedSection] = useState<'about' | 'gallery' | 'posts' | 'friends' | null>(null);
+  const [showMessageRequestModal, setShowMessageRequestModal] = useState(false);
+  const [messageRequestLoading, setMessageRequestLoading] = useState(false);
 
   useEffect(() => {
     // Guard: only fetch if userId is defined and not undefined
@@ -306,6 +314,30 @@ export default function UserProfilePage() {
     }
   };
 
+  const handleSendMessageRequest = async (content: string) => {
+    try {
+      setMessageRequestLoading(true);
+      const response = await fetch('/api/messages/message-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ receiverId: userId, content }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to send message request');
+      }
+
+      setShowMessageRequestModal(false);
+    } catch (err) {
+      console.error('Error sending message request:', err);
+      throw err;
+    } finally {
+      setMessageRequestLoading(false);
+    }
+  };
+
   const handlePhotoUpload = (newPhoto: Photo) => {
     setPhotos(prev => [newPhoto, ...prev]);
   };
@@ -314,8 +346,51 @@ export default function UserProfilePage() {
       setPhotos(prev => prev.filter(p => p.id !== photoId));
     };
 
+    const uploadToUserProfile = async (file: File, field: 'avatar' | 'cover') => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('field', field);
+
+        const res = await fetch(`/api/users/${userId}/upload-profile`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Upload failed');
+        }
+
+        const data = await res.json();
+        if (field === 'avatar') {
+          setProfile(prev => prev ? { ...prev, avatar: data.url } : prev);
+        } else {
+          setProfile(prev => prev ? { ...prev, coverImage: data.url } : prev);
+        }
+      } catch (err) {
+        console.error('Error uploading profile image:', err);
+        throw err;
+      } finally {
+        setShowAvatarUpload(false);
+        setShowCoverUpload(false);
+      }
+    };
+
+    const handleAvatarUpload = async (file: File) => {
+      await uploadToUserProfile(file, 'avatar');
+    };
+
+    const handleCoverUpload = async (file: File) => {
+      await uploadToUserProfile(file, 'cover');
+    };
+
   if (loading) {
-    return null;
+    return (
+      <MainLayout>
+        <ProfileSkeleton />
+      </MainLayout>
+    );
   }
 
   if (error || !profile) {
@@ -365,23 +440,35 @@ export default function UserProfilePage() {
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-primary-dark to-accent-dark" />
             )}
+            {isOwnProfile && (
+              <button
+                onClick={() => setShowCoverUpload(true)}
+                className="absolute right-3 top-3 bg-white/90 px-3 py-1 rounded-md text-sm text-slate-700 shadow"
+              >
+                Changer la couverture
+              </button>
+            )}
           </div>
 
           <div className="px-3 md:px-6 pb-4 md:pb-6 -mt-8 md:-mt-16 relative z-10">
             <div className="flex flex-col md:flex-row items-start md:items-end gap-3 md:gap-4 mb-4 md:mb-6">
-              {profile.avatar ? (
-                <img
-                  src={optimizeAvatarUrl(profile.avatar, 256) || profile.avatar}
-                  alt={profile.username}
-                  className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white object-cover object-center shadow-lg flex-shrink-0 will-change-transform bg-gradient-to-br from-primary-dark to-accent-dark"
-                  loading="eager"
-                  decoding="async"
+              <div className="relative">
+                <Avatar 
+                  src={optimizeAvatarUrl(profile.avatar, 256) || profile.avatar || null} 
+                  name={profile.username} 
+                  userId={profile.id}
+                  size="xl" 
+                  className="w-20 h-20 md:w-32 md:h-32 border-4 border-white shadow-lg flex-shrink-0 will-change-transform bg-gradient-to-br from-primary-dark to-accent-dark" 
                 />
-              ) : (
-                <div className="w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-white bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white text-2xl md:text-4xl font-bold shadow-lg flex-shrink-0">
-                  {profile.username?.charAt(0).toUpperCase()}
-                </div>
-              )}
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setShowAvatarUpload(true)}
+                    className="absolute -bottom-1 -right-1 bg-white/90 p-1 rounded-full text-xs text-slate-700 shadow"
+                  >
+                    Modifier
+                  </button>
+                )}
+              </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -399,7 +486,7 @@ export default function UserProfilePage() {
               </div>
 
               {!isOwnProfile && (
-                <div className="w-full md:w-auto md:mb-1">
+                <div className="w-full md:w-auto md:mb-1 flex flex-col gap-2">
                   {friendshipStatus === 'self' ? null : friendshipStatus === 'accepted' ? (
                     <Button
                       onClick={handleRemoveFriend}
@@ -424,15 +511,7 @@ export default function UserProfilePage() {
                     >
                       {friendshipLoading ? 'Acceptation...' : 'Accepter'}
                     </Button>
-                  ) : (
-                    <Button
-                      onClick={handleAddFriend}
-                      disabled={friendshipLoading}
-                      className="w-full bg-primary-dark hover:bg-accent-dark text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {friendshipLoading ? (translation.messages?.addingFriend || 'Sending...') : (translation.buttons?.addFriend || 'Add friend')}
-                    </Button>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -468,17 +547,44 @@ export default function UserProfilePage() {
         {/* Additional Actions */}
         {!isOwnProfile && (
           <div className="flex flex-col md:flex-row gap-2 md:gap-3 mb-4 md:mb-6">
-            <Button
-              onClick={() => router.push(`/messages?user=${profile.id}`)}
-              className="flex-1 bg-primary-dark hover:bg-accent-dark text-sm md:text-base"
-            >
-              {translation.buttons?.sendMessage || 'Send message'}
-            </Button>
-            <Link href={`/users/${profile.id}/posts`} className="flex-1">
-              <Button className="w-full bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm md:text-base">
-                Voir les publications
-              </Button>
-            </Link>
+            {friendshipStatus === 'accepted' ? (
+              <>
+                <Button
+                  onClick={() => router.push(`/messages?user=${profile.id}`)}
+                  className="bg-primary-dark hover:opacity-90 text-white text-xs md:text-sm px-4 md:px-5 py-1.5 md:py-2 flex items-center justify-center gap-2"
+                >
+                  <Mail size={14} />
+                  Envoyer un message
+                </Button>
+                <Button
+                  onClick={handleRemoveFriend}
+                  disabled={friendshipLoading}
+                  className="bg-red-500 hover:bg-red-600 text-white text-xs md:text-sm px-4 md:px-5 py-1.5 md:py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {friendshipLoading ? 'Suppression...' : 'Supprimer'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setShowMessageRequestModal(true)}
+                  disabled={messageRequestLoading}
+                  className="bg-primary-dark hover:opacity-90 text-white text-xs md:text-sm px-4 md:px-5 py-1.5 md:py-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Mail size={14} />
+                  Demande de message
+                </Button>
+                {friendshipStatus === 'none' && (
+                  <Button
+                    onClick={handleAddFriend}
+                    disabled={friendshipLoading}
+                    className="bg-accent-dark hover:opacity-90 text-white text-xs md:text-sm px-4 md:px-5 py-1.5 md:py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {friendshipLoading ? 'Ajout...' : 'Ajouter'}
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         )}
 
@@ -625,10 +731,12 @@ export default function UserProfilePage() {
                   {friends.map((friend) => (
                     <Link key={friend.id || friend.friend?.id} href={`/users/${friend.id || friend.friend?.id}/profile`}>
                       <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 cursor-pointer text-center">
-                        <img
-                          src={friend.avatar || friend.friend?.avatar || '/default-avatar.png'}
-                          alt={friend.fullName || friend.friend?.fullName}
-                          className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover mx-auto mb-1.5"
+                        <Avatar 
+                          src={friend.avatar || friend.friend?.avatar} 
+                          name={friend.fullName || friend.friend?.fullName} 
+                          userId={friend.id || friend.friend?.id}
+                          size="lg"
+                          className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-1.5" 
                         />
                         <p className="font-medium text-xs md:text-sm truncate">{friend.fullName || friend.friend?.fullName}</p>
                         <p className="text-xs text-gray-500 truncate">@{friend.username || friend.friend?.username}</p>
@@ -645,6 +753,34 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Upload modals */}
+      <CoverImageUploadModal
+        isOpen={showAvatarUpload}
+        onClose={() => setShowAvatarUpload(false)}
+        onUpload={handleAvatarUpload}
+        currentImage={profile.avatar || undefined}
+        title="Changer l'avatar"
+      />
+      <CoverImageUploadModal
+        isOpen={showCoverUpload}
+        onClose={() => setShowCoverUpload(false)}
+        onUpload={handleCoverUpload}
+        currentImage={profile.coverImage || undefined}
+        title="Changer la couverture"
+      />
+
+      {/* Message Request Modal */}
+      {profile && (
+        <SendMessageRequestModal
+          recipientId={profile.id}
+          recipientName={profile.fullName}
+          recipientAvatar={profile.avatar || undefined}
+          isOpen={showMessageRequestModal}
+          onClose={() => setShowMessageRequestModal(false)}
+          onSend={handleSendMessageRequest}
+        />
+      )}
 
       <style jsx>{`
         @keyframes fadeIn {

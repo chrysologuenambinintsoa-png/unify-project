@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface UnreadCounts {
@@ -14,7 +14,7 @@ export function useUnreadCounts() {
   });
   const [loading, setLoading] = useState(false);
 
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     if (!session?.user?.id) return;
 
     try {
@@ -40,19 +40,41 @@ export function useUnreadCounts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
 
-  const refreshCounts = () => {
+  const refreshCounts = useCallback(() => {
     fetchCounts();
-  };
+  }, [fetchCounts]);
 
+  // Load counts on mount and when session changes
   useEffect(() => {
     if (session?.user?.id) {
       fetchCounts();
     }
-  }, [session?.user?.id]);
+  }, [session?.user?.id, fetchCounts]);
 
-  // Auto-refresh disabled - only manual refresh allowed
+  // Auto-refresh every 15 seconds to stay in sync with sidebar badges
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const interval = setInterval(() => {
+      fetchCounts();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [session?.user?.id, fetchCounts]);
+
+  // Listen for real-time updates via postMessage
+  useEffect(() => {
+    const handleMessageEvent = (event: MessageEvent) => {
+      if (event.data.type === 'COUNTS_UPDATED') {
+        setCounts(event.data.counts);
+      }
+    };
+
+    window.addEventListener('message', handleMessageEvent);
+    return () => window.removeEventListener('message', handleMessageEvent);
+  }, []);
 
   return {
     counts,

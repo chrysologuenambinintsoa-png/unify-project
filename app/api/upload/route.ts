@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import imageSize from 'image-size';
 import { authOptions } from '@/lib/auth';
-import { uploadImage, uploadVideo } from '@/lib/cloudinary';
+import { v4 as uuidv4 } from 'uuid';
 
 // Note: `export const config` with `maxDuration` is deprecated for app routes
 // and cannot be statically parsed by Next.js. If you need longer timeouts
@@ -12,9 +11,17 @@ import { uploadImage, uploadVideo } from '@/lib/cloudinary';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (err) {
+      console.error('Failed to get session:', err instanceof Error ? err.message : String(err));
+      session = null;
+    }
+    console.log('Upload request - Session:', session?.user?.id ? 'Authenticated' : 'Not authenticated');
 
     if (!session?.user?.id) {
+      console.warn('Upload request without authentication');
       return NextResponse.json(
         { 
           error: 'Unauthorized',
@@ -44,6 +51,12 @@ export async function POST(req: NextRequest) {
     const files = formData.getAll('files') as File[];
     const type = formData.get('type') as string;
 
+    console.log('Upload request:', {
+      filesCount: files.length,
+      type,
+      fileTypes: files.map(f => ({ name: f.name, type: f.type, size: f.size }))
+    });
+
     if (!files || files.length === 0) {
       return NextResponse.json(
         { 
@@ -69,50 +82,52 @@ export async function POST(req: NextRequest) {
     const uploadedUrls: string[] = [];
     const errors: Array<{ file: string; message: string }> = [];
 
+    console.log(`Processing ${files.length} files for upload...`);
     for (const file of files) {
       try {
+        console.log(`Processing file: ${file.name}`);
         // Validate file
         if (!file || !(file instanceof File)) {
           errors.push({ file: 'unknown', message: 'Invalid file object' });
           continue;
         }
 
-        // Convert File to buffer and validate dimensions (max 1024x1024)
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        try {
-          // @ts-ignore
-          const dims = imageSize(buffer);
-          if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
-            if (dims.width > 1024 || dims.height > 1024) {
-              errors.push({ file: file.name, message: 'Image dimensions too large. Maximum allowed is 1024x1024 px.' });
-              continue;
-            }
+        if (file.size > 50 * 1024 * 1024) {
+          // 50MB limit
+          errors.push({ file: file.name, message: 'File size must be less than 50MB' });
+          continue;
+        }
+
+        // Upload to Cloudinary using unsigned upload with upload_preset
+        const cloudinaryFormData = new FormData();
+        cloudinaryFormData.append('file', file);
+        cloudinaryFormData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'unify_uploads');
+        cloudinaryFormData.append('folder', type === 'image' ? 'unify/posts' : 'unify/posts/videos');
+        cloudinaryFormData.append('public_id', `${type}_${session.user.id}_${uuidv4()}`);
+
+        console.log(`Uploading ${file.name} to Cloudinary...`);
+        const cloudinaryResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`,
+          {
+            method: 'POST',
+            body: cloudinaryFormData,
           }
-        } catch (err) {
-          errors.push({ file: file.name, message: 'Unable to read image dimensions.' });
+        );
+
+        if (!cloudinaryResponse.ok) {
+          const error = await cloudinaryResponse.json().catch(() => ({}));
+          console.error('Cloudinary upload error:', error);
+          errors.push({ file: file.name, message: 'Failed to upload to cloud storage' });
           continue;
         }
 
-        const base64 = buffer.toString('base64');
-        const mimeType = file.type;
-        const dataUrl = `data:${mimeType};base64,${base64}`;
-
-        let uploadResult;
-        if (type === 'image') {
-          uploadResult = await uploadImage(dataUrl, 'unify/posts');
-        } else if (type === 'video') {
-          uploadResult = await uploadVideo(dataUrl, 'unify/posts/videos');
-        } else {
-          errors.push({ file: file.name, message: `Unsupported type: ${type}` });
-          continue;
+        const cloudinaryData = await cloudinaryResponse.json();
+        if (!cloudinaryData.secure_url) {
+          throw new Error('No URL returned from Cloudinary');
         }
         
-        if (!uploadResult?.url) {
-          throw new Error('No URL returned from upload service');
-        }
-        
-        uploadedUrls.push(uploadResult.url);
+        console.log(`Successfully uploaded ${file.name}: ${cloudinaryData.secure_url}`);
+        uploadedUrls.push(cloudinaryData.secure_url);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         console.error(`Error uploading file ${file.name}:`, {
@@ -152,7 +167,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('Error in upload handler:', errorMsg, error);
+    console.error('Error in upload handler:', {
+      message: errorMsg,
+      error: String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
       { 
         error: 'Upload failed',

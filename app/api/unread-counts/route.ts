@@ -9,34 +9,62 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({
+        notifications: 0,
+        messages: 0,
+      });
     }
 
-    // Count unread notifications
-    const unreadNotifications = await prisma.notification.count({
-      where: {
-        userId: session.user.id,
-        isRead: false,
-      },
-    });
+    try {
+      // Count unread notifications with timeout
+      const unreadNotifications = await Promise.race([
+        prisma.notification.count({
+          where: {
+            userId: session.user.id,
+            isRead: false,
+          },
+        }),
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('Notifications query timeout')), 15000)
+        ),
+      ]).catch((err) => {
+        console.warn('Error counting notifications:', err?.message);
+        return 0;
+      });
 
-    // Count unread messages (messages from others that haven't been read)
-    const unreadMessages = await prisma.message.count({
-      where: {
-        receiverId: session.user.id,
-        isRead: false,
-      },
-    });
+      // Count unread messages with timeout
+      const unreadMessages = await Promise.race([
+        prisma.message.count({
+          where: {
+            receiverId: session.user.id,
+            isRead: false,
+          },
+        }),
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('Messages query timeout')), 15000)
+        ),
+      ]).catch((err) => {
+        console.warn('Error counting messages:', err?.message);
+        return 0;
+      });
 
-    return NextResponse.json({
-      notifications: unreadNotifications,
-      messages: unreadMessages,
-    });
+      return NextResponse.json({
+        notifications: unreadNotifications || 0,
+        messages: unreadMessages || 0,
+      });
+    } catch (dbError) {
+      console.warn('Database error in unread-counts:', dbError);
+      // Return 0 counts if database is unavailable
+      return NextResponse.json({
+        notifications: 0,
+        messages: 0,
+      });
+    }
   } catch (error) {
-    console.error('Error fetching unread counts:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch unread counts' },
-      { status: 500 }
-    );
+    console.error('Error in unread-counts API:', error);
+    return NextResponse.json({
+      notifications: 0,
+      messages: 0,
+    });
   }
 }

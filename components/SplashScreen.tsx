@@ -165,26 +165,34 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           ))}
         </motion.div>
 
-        {/* Texte "From NCH" avec animation */}
+        {/* Logo NCH avec animation */}
         <motion.div
-          className="absolute bottom-8 w-full px-6"
+          className="absolute bottom-20 w-full px-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.6 }}
         >
-          <motion.p
-            className="text-white/40 text-sm font-light tracking-widest"
+          <motion.div
             animate={{ 
-              opacity: [0.4, 0.8, 0.4],
+              opacity: [0.6, 1, 0.6],
             }}
             transition={{
               duration: 3,
               repeat: Infinity,
               ease: 'easeInOut',
             }}
+            className="flex justify-center"
           >
-            From NCH
-          </motion.p>
+            <svg width="200" height="80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+              <rect width="100%" height="100%" fill="transparent"/>
+              <g transform="translate(20,20)">
+                <path d="M10 10 C15 0, 25 0, 30 10 C35 20, 25 30, 20 30 C15 30, 5 20, 10 10 Z" fill="#10b981"/>
+                <line x1="20" y1="10" x2="20" y2="30" stroke="white" strokeWidth="2"/>
+              </g>
+              <text x="60" y="40" fontFamily="Arial, sans-serif" fontSize="28" fill="#10b981" fontWeight="bold">NCH</text>
+              <text x="60" y="70" fontFamily="Arial, sans-serif" fontSize="16" fill="#ef4444" fontWeight="bold">MADAGASCAR</text>
+            </svg>
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>

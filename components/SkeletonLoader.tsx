@@ -1,30 +1,34 @@
 'use client';
 
 import { Loader } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface SkeletonLoaderProps {
   count?: number;
   message?: string;
+  subMessage?: string;
 }
 
-export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ count = 3, message = 'Chargement...' }) => {
+export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
+  count = 3,
+  message = 'Chargement en cours...',
+  subMessage = 'Veuillez patienter',
+}) => {
   return (
-    <div className="space-y-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="bg-gray-200 dark:bg-gray-800 rounded-lg h-24"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-      ))}
-      {message && (
-        <div className="text-center py-8">
-          <Loader className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
-          <p className="text-gray-600 dark:text-gray-400 text-sm">{message}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-1.5 h-96 bg-gradient-to-b from-blue-500/20 to-transparent blur-md animate-pulse" style={{ top: '20%', left: '15%' }} />
+        <div className="absolute w-1.5 h-96 bg-gradient-to-b from-purple-500/20 to-transparent blur-md animate-pulse" style={{ top: '20%', right: '15%' }} />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 text-center">
+        <div className="inline-flex items-center justify-center mb-6">
+          <Loader className="w-12 h-12 text-blue-500 animate-spin" />
         </div>
-      )}
+        <h2 className="text-xl font-semibold text-white mb-2">{message}</h2>
+        <p className="text-slate-400 text-sm">{subMessage}</p>
+      </div>
     </div>
   );
 };

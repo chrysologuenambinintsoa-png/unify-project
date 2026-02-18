@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChevronLeft, ChevronRight, Share2, Heart, MessageCircle } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
+import UnifiedViewer from '@/components/viewer/UnifiedViewer';
 
 interface Post {
   id: string;
@@ -64,6 +65,7 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
   const [commentText, setCommentText] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [reactions, setReactions] = useState<Array<{ emoji: string; count: number }>>([]);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     fetchPost();
@@ -71,9 +73,15 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
   }, [postId]);
 
   const fetchPost = async () => {
+    if (isFetchingRef.current) {
+      console.debug('[PhotoViewerClient] fetchPost skipped: already fetching');
+      return;
+    }
     try {
+      isFetchingRef.current = true;
       setLoading(true);
       const response = await fetch(`/api/posts/${postId}`);
+      console.debug('[PhotoViewerClient] fetch /api/posts/', postId, 'status', response.status);
       if (!response.ok) throw new Error('Failed to fetch post');
       const data = await response.json();
       setPost(data);
@@ -82,12 +90,18 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
       console.error('Error fetching post:', err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
   const fetchReactions = async () => {
+    if (isFetchingRef.current) {
+      console.debug('[PhotoViewerClient] fetchReactions skipped: post fetch in progress');
+      return;
+    }
     try {
       const response = await fetch(`/api/posts/${postId}/reactions`);
+      console.debug('[PhotoViewerClient] fetch /api/posts/' + postId + '/reactions status', response.status);
       if (response.ok) {
         const data = await response.json();
         setReactions(data.reactions || []);
@@ -199,175 +213,20 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
           Retour
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="lg:col-span-2 bg-black flex items-center justify-center min-h-96">
-            {currentMedia && (
-              <div className="w-full h-full flex items-center justify-center">
-                {currentMedia.type === 'image' ? (
-                  <img
-                    src={currentMedia.url}
-                    alt="Photo"
-                    className="max-w-full max-h-96 object-contain"
-                  />
-                ) : (
-                  <video
-                    src={currentMedia.url}
-                    controls
-                    className="max-w-full max-h-96 object-contain"
-                  />
-                )}
-              </div>
-            )}
-
-            {post.media.length > 1 && (
-              <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-                <button
-                  onClick={() =>
-                    setMediaIndex((prev) =>
-                      prev === 0 ? post.media.length - 1 : prev - 1
-                    )
-                  }
-                  className="bg-black bg-opacity-60 text-white p-2 rounded hover:bg-opacity-80"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <div className="flex-1 flex items-center justify-center text-white text-sm bg-black bg-opacity-60 rounded">
-                  {mediaIndex + 1} / {post.media.length}
-                </div>
-                <button
-                  onClick={() =>
-                    setMediaIndex((prev) =>
-                      prev === post.media.length - 1 ? 0 : prev + 1
-                    )
-                  }
-                  className="bg-black bg-opacity-60 text-white p-2 rounded hover:bg-opacity-80"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-1 p-6 flex flex-col bg-gray-50">
-              <div className="mb-6 pb-6 border-b">
-              <div className="flex items-center gap-3">
-                <Avatar src={post.user.avatar || null} name={post.user.fullName} size="lg" className="w-14 h-14" />
-                <div className="flex-1">
-                  <div className="font-bold text-lg">{post.user.fullName}</div>
-                  <div className="text-gray-600 text-sm">@{post.user.username}</div>
-                  {post.user.isVerified && (
-                    <div className="text-blue-600 text-xs font-semibold">✓ Vérifié</div>
-                  )}
-                </div>
-              </div>
-              <p className="mt-4 text-gray-700">{post.content}</p>
-            </div>
-
-            <div className="mb-4 p-4 bg-white rounded border border-gray-200">
-              <div className="grid grid-cols-3 text-center text-sm">
-                <div>
-                  <div className="font-bold text-lg">{post._count?.likes || 0}</div>
-                  <div className="text-gray-600">Likes</div>
-                </div>
-                <div>
-                  <div className="font-bold text-lg">{post._count?.comments || 0}</div>
-                  <div className="text-gray-600">Commentaires</div>
-                </div>
-                <div>
-                  <div className="font-bold text-lg">{post._count?.reactions || 0}</div>
-                  <div className="text-gray-600">Réactions</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-600 mb-2">RÉAGIR</p>
-              <div className="grid grid-cols-3 gap-2">
-                {['👍', '❤️', '😂', '😢', '😡', '🎉'].map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => addReaction(emoji)}
-                    className="p-2 bg-white border border-gray-300 rounded hover:bg-gray-100 text-xl transition"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              {reactions.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {reactions.map((r) => (
-                    <span key={r.emoji} className="text-xs bg-white border border-gray-200 rounded px-2 py-1">
-                      {r.emoji} {r.count}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <button
-                onClick={() => {
-                  const input = document.querySelector('input[placeholder="Commentaire..."]') as HTMLInputElement;
-                  input?.focus();
-                }}
-                className="flex items-center justify-center gap-2 p-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition"
-              >
-                <Share2 size={16} />
-                Partager
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.querySelector('input[placeholder="Commentaire..."]') as HTMLInputElement;
-                  input?.focus();
-                }}
-                className="flex items-center justify-center gap-2 p-2 bg-green-600 text-white rounded font-medium hover:bg-green-700 transition"
-              >
-                <MessageCircle size={16} />
-                Commenter
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && submitComment()}
-                placeholder="Commentaire..."
-                className="w-full p-2 border border-gray-300 rounded text-sm"
-              />
-              <button
-                onClick={submitComment}
-                disabled={commentLoading || !commentText.trim()}
-                className="w-full mt-2 p-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400 transition"
-              >
-                {commentLoading ? (translation.messages?.sendingComment || 'Sending...') : (translation.buttons?.send || 'Send')}
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              <p className="text-xs font-semibold text-gray-600 mb-3">COMMENTAIRES ({post.comments.length})</p>
-              <div className="space-y-3">
-                {post.comments.length > 0 ? (
-                  post.comments.map((comment) => (
-                    <div key={comment.id} className="p-3 bg-white rounded border border-gray-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Avatar src={comment.user.avatar || null} name={comment.user.fullName} size="sm" />
-                        <div className="text-sm">
-                          <div className="font-semibold">{comment.user.fullName}</div>
-                          <div className="text-xs text-gray-600">@{comment.user.username}</div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-700">{comment.content}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-500 text-center py-4">Aucun commentaire</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <UnifiedViewer
+          post={post}
+          initialIndex={mediaIndex}
+          isOpen={true}
+          onClose={() => router.back()}
+          onLike={async (postId: string) => {
+            try {
+              await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+              await fetchPost();
+            } catch (err) {
+              console.error('Like error', err);
+            }
+          }}
+        />
       </div>
     </MainLayout>
   );

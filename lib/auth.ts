@@ -75,13 +75,41 @@ export const authOptions: NextAuthOptions = {
             throw new Error('No password set for this account');
           }
 
-          const isCorrectPassword = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
+          // Check if password is a valid bcrypt hash (starts with $2a$, $2b$, or $2y$)
+          const isBcryptHash = /^\$2[aby]\$/.test(user.password);
+          let isCorrectPassword = false;
+
+          if (isBcryptHash) {
+            // Handle bcrypt hash
+            console.log('[Auth] Using bcrypt comparison for:', credentials.email);
+            isCorrectPassword = await bcrypt.compare(
+              credentials.password,
+              user.password
+            );
+          } else {
+            // Fallback: handle plain text passwords (for legacy accounts)
+            console.log('[Auth] Detected plain text password for:', credentials.email, '- attempting direct comparison');
+            // Compare directly (with trim to handle whitespace)
+            isCorrectPassword = credentials.password.trim() === user.password.trim();
+            
+            if (isCorrectPassword) {
+              // Re-hash the password and update the database
+              try {
+                const hashedPassword = await bcrypt.hash(credentials.password, 12);
+                await prisma.user.update({
+                  where: { id: user.id },
+                  data: { password: hashedPassword },
+                });
+                console.log('[Auth] Successfully converted plain text password to bcrypt for user:', credentials.email);
+              } catch (updateErr) {
+                console.error('[Auth] Failed to update password hash:', updateErr);
+                // Continue anyway - auth is still successful, just couldn't update hash
+              }
+            }
+          }
 
           if (!isCorrectPassword) {
-            console.log('[Auth] Invalid password attempt for:', credentials.email);
+            console.log('[Auth] Password verification failed for:', credentials.email, 'isBcryptHash:', isBcryptHash);
             throw new Error('Invalid password');
           }
 
@@ -127,6 +155,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
+        token.avatar = (user as any).avatar || undefined;
       }
       return token;
     },
@@ -166,6 +195,10 @@ export const authOptions: NextAuthOptions = {
             session.user.fullName = dbUser.fullName || undefined;
             session.user.image = dbUser.avatar || undefined;
             session.user.avatar = dbUser.avatar || undefined;
+          } else {
+            // If database query failed, try to use avatar from token as fallback
+            console.warn('[Auth] Failed to fetch user from DB for session:', token.id);
+            session.user.avatar = (token as any).avatar || session.user.image || undefined;
           }
         }
       } catch (err) {

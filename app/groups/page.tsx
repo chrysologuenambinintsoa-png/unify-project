@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
 import { Plus, Users, Lock, Globe, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -28,6 +30,8 @@ interface Group {
 
 export default function GroupsPage() {
   const { translation } = useLanguage();
+  const { isReady } = useRequireAuth();
+  const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'my-groups' | 'discover'>('my-groups');
@@ -35,11 +39,9 @@ export default function GroupsPage() {
   const [myGroupsLoaded, setMyGroupsLoaded] = useState(false);
   const [discoverGroupsLoaded, setDiscoverGroupsLoaded] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchGroups();
-  }, [activeTab]);
-
+  // Fonction pour charger les groupes
   const fetchGroups = async () => {
     try {
       setTabLoading(true);
@@ -63,6 +65,17 @@ export default function GroupsPage() {
     }
   };
 
+  useEffect(() => {
+    if (isReady) {
+      fetchGroups();
+    }
+  }, [activeTab, isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return null;
+  }
+
   const handleCreateGroup = async (data: { name: string; description: string; image?: string; isPrivate: boolean }) => {
     const response = await fetch('/api/groups', {
       method: 'POST',
@@ -71,6 +84,33 @@ export default function GroupsPage() {
     });
     if (!response.ok) throw new Error('Failed to create group');
     fetchGroups();
+  };
+
+  const handleViewGroup = (groupId: string) => {
+    router.push(`/groups/${groupId}`);
+  };
+
+  const handleJoinGroup = async (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    try {
+      setJoinLoading(groupId);
+      const response = await fetch('/api/groups/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId }),
+      });
+      if (!response.ok) throw new Error('Failed to join group');
+      fetchGroups();
+    } catch (error) {
+      console.error('Error joining group:', error);
+    } finally {
+      setJoinLoading(null);
+    }
+  };
+
+  const handleSettings = (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    router.push(`/groups/${groupId}?tab=settings`);
   };
 
 
@@ -105,7 +145,7 @@ export default function GroupsPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Mes groupes
+              {translation.group?.myGroups || 'Mes groupes'}
             </button>
             <button
               onClick={() => setActiveTab('discover')}
@@ -115,28 +155,62 @@ export default function GroupsPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Découvrir
+              {translation.group?.discover || 'Découvrir'}
             </button>
           </div>
         </div>
 
         {/* Groups Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={activeTab === 'my-groups' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'}>
           {groups.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {activeTab === 'my-groups' ? 'Aucun groupe' : 'Aucun groupe trouvé'}
+                {activeTab === 'my-groups' ? translation.group?.noGroups : translation.group?.noGroupsFound}
               </h3>
               <p className="text-gray-500 mb-4">
                 {activeTab === 'my-groups'
-                  ? 'Vous n\'avez rejoint aucun groupe pour le moment.'
-                  : 'Aucun groupe ne correspond à vos critères.'}
+                  ? translation.group?.noGroupsJoined
+                  : translation.group?.noGroupsMatch}
               </p>
               {activeTab === 'discover' && (
-                <Button>Explorer plus de groupes</Button>
+                <Button>{translation.group?.explorMore || 'Explorer plus de groupes'}</Button>
               )}
             </div>
+          ) : activeTab === 'my-groups' ? (
+            // Simplified view for "Mes groupes" - just avatar and name
+            groups.map((group) => (
+              <motion.div
+                key={group.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => router.push(`/groups/${group.id}`)}
+                className="flex flex-col items-center cursor-pointer group"
+              >
+                <div className="relative mb-2">
+                  <img
+                    src={group.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=group'}
+                    alt={group.name}
+                    className="w-16 h-16 rounded-lg object-cover group-hover:opacity-80 transition-opacity"
+                  />
+                  <div className="absolute -bottom-1 -right-1">
+                    {group.isPrivate ? (
+                      <div className="bg-gray-800 text-white p-1 rounded-full">
+                        <Lock className="w-3 h-3" />
+                      </div>
+                    ) : (
+                      <div className="bg-green-600 text-white p-1 rounded-full">
+                        <Globe className="w-3 h-3" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="font-medium text-gray-900 text-center text-sm line-clamp-2 group-hover:text-blue-600">
+                  {group.name}
+                </p>
+              </motion.div>
+            ))
           ) : (
             groups.map((group) => (
               <motion.div
@@ -187,21 +261,27 @@ export default function GroupsPage() {
                     </div>
 
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                      <span>{group.memberCount} membres</span>
+                      <span>{group.memberCount} {translation.group?.members || 'membres'}</span>
                       <span>
-                        {group.isPrivate ? 'Privé' : 'Public'}
+                        {group.isPrivate ? translation.group?.private : translation.group?.public}
                       </span>
                     </div>
 
                     <div className="flex space-x-2">
-                      <Button className="flex-1" size="sm">
-                        {activeTab === 'my-groups' ? 'Voir le groupe' : 'Rejoindre'}
+                      <Button 
+                        className="flex-1" 
+                        size="sm"
+                        onClick={() => router.push(`/groups/${group.id}`)}
+                      >
+                        {translation.group?.viewGroup || 'Voir le groupe'}
                       </Button>
-                      {activeTab === 'my-groups' && (
-                        <Button variant="secondary" size="sm">
-                          <Settings className="w-4 h-4" />
+                      <Button 
+                        variant="secondary" 
+                        size="sm"
+                        onClick={() => fetch(`/api/groups/${group.id}/join`, { method: 'POST' }).then(() => fetchGroups()).catch(() => {})}
+                      >
+                        {translation.group?.join || 'Rejoindre'}
                         </Button>
-                      )}
                     </div>
                   </div>
                 </Card>

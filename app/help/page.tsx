@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -15,9 +15,16 @@ export default function HelpPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const { translation } = useLanguage();
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Rediriger vers welcome si pas connecté
+  // Rediriger vers welcome si pas connecté (après vérification du statut)
   useEffect(() => {
+    // Attendre le chargement initial de la session
+    if (status === 'loading') return;
+
+    setHasInitialized(true);
+
+    // Seulement rediriger vers welcome si réellement pas authentifié
     if (status === 'unauthenticated') {
       router.push('/welcome');
     }

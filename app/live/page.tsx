@@ -1,18 +1,42 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import useLive from '@/hooks/useLive';
 import LiveStreamer from '@/components/live/LiveStreamer';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { LiveSkeleton } from '@/components/skeletons/LiveSkeleton';
 
 export default function LivePage() {
+  const { isReady } = useRequireAuth();
   const { rooms } = useLive();
   const { translation } = useLanguage();
   const [displayName, setDisplayName] = useState('Guest');
   const [role, setRole] = useState<'host' | 'participant' | 'viewer'>('participant');
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    // Simulate loading - rooms data comes from useLive hook
+    if (rooms) {
+      setLoading(false);
+    }
+  }, [rooms]);
+
+  // Conditional rendering (after all hooks)
+  if (!isReady) {
+    return <LiveSkeleton />;
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <LiveSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

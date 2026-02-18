@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Trash2, Shield } from 'lucide-react';
+import { Users, Trash2, Plus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import MemberInviteModal from './MemberInviteModal';
 
 interface Member {
   id: string;
@@ -24,6 +25,7 @@ export function PageMembers({ pageId, isAdmin }: PageMembersProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -79,9 +81,21 @@ export function PageMembers({ pageId, isAdmin }: PageMembersProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center space-x-2 mb-4">
-        <Users className="w-5 h-5 text-amber-500" />
-        <h3 className="text-lg font-semibold">Members ({members.length})</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <Users className="w-5 h-5 text-amber-500" />
+          <h3 className="text-lg font-semibold">Administrators ({members.length})</h3>
+        </div>
+        {isAdmin && (
+          <Button
+            onClick={() => setShowInviteModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+            size="sm"
+          >
+            <Plus size={16} />
+            Inviter
+          </Button>
+        )}
       </div>
 
       {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg text-sm">{error}</div>}
@@ -131,6 +145,14 @@ export function PageMembers({ pageId, isAdmin }: PageMembersProps) {
           </div>
         ))}
       </div>
+
+      <MemberInviteModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        targetId={pageId}
+        targetType="page"
+        onSuccess={fetchMembers}
+      />
     </div>
   );
 }

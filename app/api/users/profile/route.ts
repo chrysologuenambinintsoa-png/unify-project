@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
@@ -35,14 +35,67 @@ export async function GET(request: NextRequest) {
         pseudonym: true,
         mobileContact: true,
         familyRelations: true,
+        gender: true,
       },
     });
 
+    // If user doesn't exist, create them from session data
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      try {
+        console.log('[Users Profile GET] Creating missing user:', session.user.id);
+        
+        // Generate a readable username
+        let username = session.user.username;
+        if (!username) {
+          // Try to extract from email
+          if (session.user.email) {
+            username = session.user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_').substring(0, 20);
+          } else if (session.user.fullName) {
+            username = session.user.fullName.toLowerCase().replace(/[^a-z0-9_\s]/g, '').replace(/\s+/g, '_').substring(0, 20);
+          } else {
+            username = `user_${Math.random().toString(36).substring(7)}`;
+          }
+        }
+        
+        user = await prisma.user.create({
+          data: {
+            id: session.user.id,
+            email: session.user.email || `user_${session.user.id}@local`,
+            username: username,
+            fullName: session.user.fullName || session.user.name || 'User',
+            avatar: session.user.avatar || session.user.image || null,
+          },
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            fullName: true,
+            bio: true,
+            avatar: true,
+            coverImage: true,
+            isVerified: true,
+            createdAt: true,
+            updatedAt: true,
+            dateOfBirth: true,
+            originCity: true,
+            currentCity: true,
+            collegeInfo: true,
+            highSchoolInfo: true,
+            universityInfo: true,
+            skills: true,
+            pseudonym: true,
+            mobileContact: true,
+            familyRelations: true,
+            gender: true,
+          },
+        });
+      } catch (createErr) {
+        console.error('[Users Profile GET] Failed to create missing user:', createErr);
+        return NextResponse.json(
+          { error: 'Failed to initialize user profile. Please log in again.' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json(user);
@@ -71,32 +124,86 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Ensure user exists before updating
+    let userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      try {
+        console.log('[Users Profile PATCH] Creating missing user:', session.user.id);
+        
+        // Generate a readable username
+        let username = session.user.username;
+        if (!username) {
+          // Try to extract from email
+          if (session.user.email) {
+            username = session.user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_').substring(0, 20);
+          } else if (session.user.fullName) {
+            username = session.user.fullName.toLowerCase().replace(/[^a-z0-9_\s]/g, '').replace(/\s+/g, '_').substring(0, 20);
+          } else {
+            username = `user_${Math.random().toString(36).substring(7)}`;
+          }
+        }
+        
+        await prisma.user.create({
+          data: {
+            id: session.user.id,
+            email: session.user.email || `user_${session.user.id}@local`,
+            username: username,
+            fullName: session.user.fullName || session.user.name || 'User',
+            avatar: session.user.avatar || session.user.image || null,
+          },
+        });
+      } catch (createErr) {
+        console.error('[Users Profile PATCH] Failed to create missing user:', createErr);
+        return NextResponse.json(
+          { error: 'Failed to initialize user profile. Please log in again.' },
+          { status: 500 }
+        );
+      }
+    }
+
     const body = await request.json();
     const {
       fullName,
       bio,
       coverImage,
+      dateOfBirth,
+      originCity,
+      currentCity,
+      college,
+      highSchool,
+      university,
+      skills,
+      pseudonym,
+      mobileContact,
+      familyRelations,
+      gender,
     } = body;
 
-    // optional about fields
-    const { dateOfBirth, originCity, currentCity, college, highSchool, university, skills, pseudonym, mobileContact, familyRelations } = body;
+    // Build update data with only provided fields
+    const updateData: any = {};
+
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (bio !== undefined) updateData.bio = bio;
+    if (coverImage !== undefined) updateData.coverImage = coverImage;
+    if (dateOfBirth) updateData.dateOfBirth = new Date(dateOfBirth);
+    if (originCity !== undefined) updateData.originCity = originCity;
+    if (currentCity !== undefined) updateData.currentCity = currentCity;
+    if (college) updateData.collegeInfo = college;
+    if (highSchool) updateData.highSchoolInfo = highSchool;
+    if (university) updateData.universityInfo = university;
+    if (skills) updateData.skills = JSON.stringify(skills);
+    if (pseudonym !== undefined) updateData.pseudonym = pseudonym;
+    if (mobileContact !== undefined) updateData.mobileContact = mobileContact;
+    if (familyRelations !== undefined) updateData.familyRelations = familyRelations;
+    if (gender !== undefined) updateData.gender = gender;
 
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        fullName,
-        bio,
-        coverImage,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        originCity,
-        currentCity,
-        collegeInfo: college ? college : undefined,
-        highSchoolInfo: highSchool ? highSchool : undefined,
-        universityInfo: university ? university : undefined,
-        mobileContact,
-        familyRelations,
-        skills: skills ? JSON.stringify(skills) : undefined,
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
@@ -118,6 +225,7 @@ export async function PATCH(request: NextRequest) {
         pseudonym: true,
         mobileContact: true,
         familyRelations: true,
+        gender: true,
       },
     });
 

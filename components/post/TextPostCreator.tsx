@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TextPostCreatorProps {
   onCreatePost?: (post: any) => void;
@@ -31,6 +32,7 @@ const ANIMATIONS = [
 
 export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) {
   const { data: session } = useSession();
+  const { translation } = useLanguage();
   const [text, setText] = useState('');
   const [selectedBackground, setSelectedBackground] = useState('gradient-1');
   const [selectedAnimation, setSelectedAnimation] = useState('none');
@@ -227,14 +229,14 @@ export default function TextPostCreator({ onCreatePost }: TextPostCreatorProps) 
           }}
           className="flex-1 px-3 md:px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm md:text-base"
         >
-          Annuler
+          {translation.common?.cancel || 'Annuler'}
         </button>
         <button
           onClick={handleCreatePost}
           disabled={!text.trim() || isCreating}
           className="flex-1 px-3 md:px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark disabled:bg-gray-400 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition text-sm md:text-base"
         >
-          {isCreating ? 'Création...' : 'Publier'}
+          {isCreating ? (translation.ui?.buttons?.creating || 'Création...') : (translation.post?.post || 'Publier')}
         </button>
       </div>
     </div>

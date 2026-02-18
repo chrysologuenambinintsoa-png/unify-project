@@ -53,8 +53,7 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     setIsOpen(false);
-    await signOut({ redirect: false });
-    router.push('/welcome');
+    router.push('/auth/logout');
   };
 
   // Show login button if not authenticated or still loading
@@ -102,8 +101,8 @@ export function UserMenu() {
             <p className="text-sm font-semibold text-gray-900">
               {session.user.fullName || session.user.username}
             </p>
-            {session.user.email && (
-              <p className="text-xs text-gray-500 truncate">{session.user.email}</p>
+            {session.user.username && (
+              <p className="text-xs text-gray-500 truncate">@{session.user.username}</p>
             )}
           </div>
 
@@ -153,11 +152,12 @@ export function UserMenu() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1 rounded-full hover:ring-2 hover:ring-primary-dark transition-all"
+        className="p-1 rounded-full bg-primary-dark dark:bg-primary-dark hover:bg-primary-light dark:hover:bg-primary-light transition-all"
       >
         <Avatar
-          src={session.user.avatar}
+          src={session.user.avatar || null}
           name={session.user.fullName || session.user.username}
+          userId={session.user.id}
           size="sm"
         />
       </motion.button>

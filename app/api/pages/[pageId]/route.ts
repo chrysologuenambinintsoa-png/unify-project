@@ -10,13 +10,59 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ page
     const page = await prisma.page.findUnique({
       where: { id: pageId },
       include: {
-        admins: { include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } } },
-        members: { include: { user: { select: { id: true, username: true, fullName: true, avatar: true } } } },
-        posts: { orderBy: { createdAt: 'desc' }, take: 20 },
+        admins: {
+          include: {
+            user: { select: { id: true, username: true, fullName: true, avatar: true } },
+          },
+        },
+        members: {
+          include: {
+            user: { select: { id: true, username: true, fullName: true, avatar: true } },
+          },
+        },
+        posts: { 
+          orderBy: { createdAt: 'desc' }, 
+          take: 20 
+        },
+        _count: {
+          select: {
+            members: true,
+            admins: true,
+            posts: true,
+          },
+        },
       },
     });
     if (!page) return NextResponse.json({ error: 'Page not found' }, { status: 404 });
-    return NextResponse.json(page);
+
+    // Enrich posts with author information
+    const postsWithAuthors = await Promise.all(
+      (page.posts || []).map(async (post: any) => {
+        const author = await prisma.user.findUnique({
+          where: { id: post.authorId },
+          select: { id: true, username: true, fullName: true, avatar: true },
+        });
+        return {
+          ...post,
+          author: author || { id: post.authorId, username: 'Unknown', fullName: 'Unknown User', avatar: null },
+        };
+      })
+    );
+
+    // Get owner from first admin
+    const pageData = page as any;
+    const ownerAdmin = pageData.admins && pageData.admins.length > 0 ? pageData.admins[0] : null;
+
+    return NextResponse.json({
+      ...page,
+      posts: postsWithAuthors,
+      owner: ownerAdmin?.user || {
+        id: 'unknown',
+        username: 'Unknown',
+        fullName: 'Unknown',
+        avatar: null,
+      },
+    });
   } catch (error) {
     console.error('Error fetching page:', error);
     return NextResponse.json({ error: 'Failed to fetch page' }, { status: 500 });

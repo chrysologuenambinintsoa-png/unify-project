@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SponsoredPost {
   id: string;
@@ -31,6 +32,7 @@ interface SponsoredFormProps {
 }
 
 export default function SponsoredForm({ post, onClose, onSuccess }: SponsoredFormProps) {
+  const { translation } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -342,7 +344,7 @@ export default function SponsoredForm({ post, onClose, onSuccess }: SponsoredFor
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Conversions
+                  {translation.ui?.labels?.conversions || 'Conversions'}
                 </label>
                 <input
                   type="number"
@@ -364,17 +366,17 @@ export default function SponsoredForm({ post, onClose, onSuccess }: SponsoredFor
               onClick={onClose}
               disabled={loading}
             >
-              Annuler
+              {translation.common?.cancel || 'Cancel'}
             </Button>
             <Button
               type="submit"
               disabled={loading}
             >
               {loading
-                ? 'Enregistrement...'
+                ? (translation.ui?.buttons?.loading || 'Loading...')
                 : post
-                ? 'Modifier'
-                : 'Créer'}
+                ? (translation.buttons?.editPost || 'Edit')
+                : (translation.buttons?.saveChanges || 'Create')}
             </Button>
           </div>
         </form>

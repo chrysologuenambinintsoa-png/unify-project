@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/Card';
+import { Avatar } from '@/components/ui/Avatar';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Trash2 } from 'lucide-react';
@@ -131,8 +132,8 @@ export default function LoginPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('🔐 Le mot de passe doit contenir au moins 6 caractères');
+    if (password.length < 8) {
+      setError('🔐 Le mot de passe doit contenir au moins 8 caractères');
       setLoading(false);
       return;
     }
@@ -290,21 +291,15 @@ export default function LoginPage() {
                       className="w-full text-left flex items-center gap-4"
                       type="button"
                     >
-                      {login?.user?.avatar ? (
-                        <motion.img
-                          whileHover={{ scale: 1.1 }}
-                          src={optimizeAvatarUrl(login.user.avatar, 56) || login.user.avatar}
-                          alt={login.user?.fullName ?? login.email}
-                          className="w-14 h-14 rounded-full object-cover border-2 border-white/50"
+                      <motion.div whileHover={{ scale: 1.1 }}>
+                        <Avatar 
+                          src={optimizeAvatarUrl(login?.user?.avatar, 56) || login?.user?.avatar || null}
+                          name={login?.user?.fullName}
+                          userId={login?.user?.id}
+                          size="lg"
+                          className="w-14 h-14 border-2 border-white/50"
                         />
-                      ) : (
-                        <motion.div 
-                          whileHover={{ scale: 1.1 }}
-                          className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-dark to-accent-dark flex items-center justify-center text-white font-bold text-lg border-2 border-white/50"
-                        >
-                          {(login?.user?.fullName?.charAt(0) || login.email?.charAt(0) || 'U').toUpperCase()}
-                        </motion.div>
-                      )}
+                      </motion.div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-semibold truncate">{login.user?.fullName ?? 'Utilisateur'}</p>
                         <p className="text-white/70 text-sm truncate">@{login.user?.username ?? (login.email?.split('@')[0] ?? login.email)}</p>

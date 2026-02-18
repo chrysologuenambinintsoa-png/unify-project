@@ -58,7 +58,9 @@
     "editPost": "تعديل المنشور",
     "background": "الخلفية",
     "shareToGroup": "المشاركة مع مجموعة",
-    "shareToPage": "المشاركة مع صفحة"
+    "shareToPage": "المشاركة مع صفحة",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "رسالة جديدة",
@@ -149,7 +151,19 @@
     "groupDescription": "وصف المجموعة",
     "privateGroup": "مجموعة خاصة",
     "publicGroup": "مجموعة عامة",
-    "joinCommunities": "انضم إلى المجتمعات التي تهمك"
+    "joinCommunities": "انضم إلى المجتمعات التي تهمك",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "الصفحات",
@@ -302,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "إدارة تفضيلاتك",
     "profilePhoto": "صورة الملف الشخصي",
-    "coverPhoto": "صورة الغلاف"
+    "coverPhoto": "صورة الغلاف",
+    "sections": {
+      "accountManagement": "إدارة الحساب",
+      "generalSettings": "الإعدادات العامة"
+    }
   },
   "privacyPolicy": {
     "title": "سياسة الخصوصية",
@@ -361,7 +379,12 @@
     "bio": "السيرة الذاتية",
     "dateOfBirth": "تاريخ الميلاد",
     "originCity": "مدينة الأصل",
-    "currentCity": "المدينة الحالية"
+    "currentCity": "المدينة الحالية",
+    "gender": {
+      "male": "ذكر",
+      "female": "أنثى",
+      "other": "آخر"
+    }
   },
   "buttons": {
     "saveChanges": "حفظ التغييرات",
@@ -425,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "تم حذف الحساب. جاري إعادة التوجيه...",
-    "errorDeletingAccount": "خطأ عند حذف الحساب"
+    "errorDeletingAccount": "خطأ عند حذف الحساب",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "تغيير كلمة المرور",
@@ -517,5 +541,37 @@
     "micOn": "الميكروفون قيد التشغيل",
     "micOff": "الميكروفون مطفأ",
     "liveBadge": "بث"
+  },
+  "locations": {
+    "paris": "باريس",
+    "london": "لندن",
+    "newYork": "نيويورك",
+    "tokyo": "طوكيو",
+    "sydney": "سيدني"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "زيارة",
+      "contact": "اتصال",
+      "cancel": "إلغاء",
+      "creating": "جاري الإنشاء...",
+      "publishing": "جاري النشر...",
+      "loading": "جاري التحميل..."
+    },
+    "labels": {
+      "conversions": "التحويلات",
+      "impressions": "الانطباعات",
+      "clicks": "النقرات",
+      "animation": "الرسوم المتحركة",
+      "pageName": "اسم الصفحة",
+      "tagPeople": "وسم الأشخاص",
+      "searchAndAdd": "البحث عن الأشخاص وإضافتهم...",
+      "publications": "المنشورات",
+      "followers": "المتابعون"
+    }
+  },
+  "company": {
+    "visit": "زيارة",
+    "contact": "اتصال"
   }
 }

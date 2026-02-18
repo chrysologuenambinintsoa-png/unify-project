@@ -5,11 +5,14 @@ import { prisma } from '@/lib/prisma';
 
 // GET /api/notifications - Get notifications for current user
 export async function GET(request: NextRequest) {
+  let session: any = null;
+  
   try {
-    const session = await getServerSession(authOptions);
+    session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.warn('No session found for notifications request');
+      return NextResponse.json({ error: 'Unauthorized - Please log in' }, { status: 401 });
     }
 
     const notifications = await prisma.notification.findMany({
@@ -56,18 +59,40 @@ export async function GET(request: NextRequest) {
       unreadCount,
     });
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const isDbError = errorMessage.toLowerCase().includes('database') || 
+                      errorMessage.toLowerCase().includes('connection') ||
+                      errorMessage.toLowerCase().includes('timeout') ||
+                      errorMessage.toLowerCase().includes('econnrefused') ||
+                      errorMessage.toLowerCase().includes('enotfound');
+
+    console.error('Error fetching notifications:', {
+      error: errorMessage,
+      isDatabaseError: isDbError,
+      timestamp: new Date().toISOString(),
+      userId: session?.user?.id,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // Return 503 for DB errors (client should retry)
+    // Return 500 for other errors
     return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
-      { status: 500 }
+      { 
+        error: isDbError 
+          ? 'Database connection temporarily unavailable - please try again shortly' 
+          : `Failed to fetch notifications: ${errorMessage}`,
+        isRetryable: isDbError,
+      },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }
 
 // PATCH /api/notifications - Mark notifications as read
 export async function PATCH(request: NextRequest) {
+  let session: any = null;
   try {
-    const session = await getServerSession(authOptions);
+    session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -114,10 +139,29 @@ export async function PATCH(request: NextRequest) {
       unreadCount 
     });
   } catch (error) {
-    console.error('Error updating notifications:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const isDbError = errorMessage.toLowerCase().includes('database') || 
+                      errorMessage.toLowerCase().includes('connection') ||
+                      errorMessage.toLowerCase().includes('timeout') ||
+                      errorMessage.toLowerCase().includes('econnrefused') ||
+                      errorMessage.toLowerCase().includes('enotfound');
+
+    console.error('Error updating notifications:', {
+      error: errorMessage,
+      isDatabaseError: isDbError,
+      timestamp: new Date().toISOString(),
+      userId: session?.user?.id,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return NextResponse.json(
-      { error: 'Failed to update notifications' },
-      { status: 500 }
+      { 
+        error: isDbError 
+          ? 'Database connection temporarily unavailable - please try again shortly' 
+          : `Failed to update notifications: ${errorMessage}`,
+        isRetryable: isDbError,
+      },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }

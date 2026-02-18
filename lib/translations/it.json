@@ -58,7 +58,9 @@
     "editPost": "Modifica post",
     "background": "Sfondo",
     "shareToGroup": "Condividi con gruppo",
-    "shareToPage": "Condividi con pagina"
+    "shareToPage": "Condividi con pagina",
+    "location": "Lieu",
+    "locationPlaceholder": "Où êtes-vous ? (ex. : Paris, France)"
   },
   "message": {
     "newMessage": "Nuovo messaggio",
@@ -102,7 +104,24 @@
     "deleteForEveryoneDescription": "Tutti vedranno il messaggio come eliminato",
     "noMediaFound": "Nessun media trovato.",
     "loading": "Caricamento...",
-    "noFriendsFound": "Nessun amico trovato"
+    "noFriendsFound": "Nessun amico trovato",
+    "attachmentAdded": "Fichier joint",
+    "likeEmoji": "Aimer",
+    "thumpEmoji": "J'aime",
+    "funnyEmoji": "Amusant",
+    "sadEmoji": "Triste",
+    "surprisedEmoji": "Surpris",
+    "hotEmoji": "Chaud",
+    "deleteMessageOption": "Supprimer",
+    "cancelButton": "Annuler",
+    "mediaTitle": "Médias de la conversation",
+    "resetSearch": "Réinitialiser la recherche",
+    "closeButton": "Fermer",
+    "fileLabel": "Fichier",
+    "deleteMessageTitle": "Supprimer le message?",
+    "deleteMessageQuestion": "Comment souhaitez-vous supprimer ce message?",
+    "deleteForMeOnly": "Pour moi uniquement",
+    "deleteForMeDescription": "Seul vous verrez le message supprimé"
   },
   "story": {
     "addStory": "Aggiungi storia",
@@ -132,7 +151,19 @@
     "groupDescription": "Descrizione gruppo",
     "privateGroup": "Gruppo privato",
     "publicGroup": "Gruppo pubblico",
-    "joinCommunities": "Unisciti a comunità che ti interessano"
+    "joinCommunities": "Unisciti a comunità che ti interessano",
+    "myGroups": "Mes groupes",
+    "discover": "Découvrir",
+    "noGroups": "Aucun groupe",
+    "noGroupsFound": "Aucun groupe trouvé",
+    "noGroupsJoined": "Vous n'avez rejoint aucun groupe pour le moment.",
+    "noGroupsMatch": "Aucun groupe ne correspond à vos critères.",
+    "explorMore": "Explorer plus de groupes",
+    "members": "membres",
+    "private": "Privé",
+    "public": "Public",
+    "viewGroup": "Voir le groupe",
+    "join": "Rejoindre"
   },
   "page": {
     "pages": "Pagine",
@@ -285,7 +316,11 @@
   "settingsPage": {
     "managePreferences": "Gestisci le tue preferenze e impostazioni dell'account",
     "profilePhoto": "Foto profilo",
-    "coverPhoto": "Foto di copertina"
+    "coverPhoto": "Foto di copertina",
+    "sections": {
+      "accountManagement": "Gestione account",
+      "generalSettings": "Impostazioni generali"
+    }
   },
   "privacyPolicy": {
     "title": "Informativa sulla privacy",
@@ -337,13 +372,19 @@
     "socialPlatform": "Una piattaforma sociale per connettere comunità",
     "privacyLink": "Privacy",
     "termsLink": "Termini",
-    "helpLink": "Aiuto"  },
+    "helpLink": "Aiuto"
+  },
   "forms": {
     "fullName": "Nome completo",
     "bio": "Bio",
     "dateOfBirth": "Data di nascita",
     "originCity": "Città di origine",
-    "currentCity": "Città attuale"
+    "currentCity": "Città attuale",
+    "gender": {
+      "male": "Maschio",
+      "female": "Femmina",
+      "other": "Altro"
+    }
   },
   "buttons": {
     "saveChanges": "Salva modifiche",
@@ -388,7 +429,8 @@
   },
   "storyForm": {
     "createStoryTitle": "Crea una storia",
-    "sendMessage": "Invia messaggio"  },
+    "sendMessage": "Invia messaggio"
+  },
   "pageLabels": {
     "noPublications": "Nessuna pubblicazione ancora",
     "noNotifications": "Nessuna notifica"
@@ -406,7 +448,8 @@
   },
   "alerts": {
     "accountDeletedRedirecting": "Account eliminato. Reindirizzamento...",
-    "errorDeletingAccount": "Errore durante l'eliminazione dell'account"
+    "errorDeletingAccount": "Errore durante l'eliminazione dell'account",
+    "confirmDelete": "Veuillez confirmer la suppression"
   },
   "passwordSection": {
     "changePassword": "Cambia password",
@@ -498,6 +541,37 @@
     "micOn": "Microfono acceso",
     "micOff": "Microfono spento",
     "liveBadge": "DIRETTA"
+  },
+  "locations": {
+    "paris": "Parigi",
+    "london": "Londra",
+    "newYork": "New York",
+    "tokyo": "Tokyo",
+    "sydney": "Sydney"
+  },
+  "ui": {
+    "buttons": {
+      "visit": "Visita",
+      "contact": "Contatto",
+      "cancel": "Annulla",
+      "creating": "Creazione...",
+      "publishing": "Pubblicazione...",
+      "loading": "Caricamento..."
+    },
+    "labels": {
+      "conversions": "Conversioni",
+      "impressions": "Impressioni",
+      "clicks": "Clic",
+      "animation": "Animazione",
+      "pageName": "Nome pagina",
+      "tagPeople": "Etichetta persone",
+      "searchAndAdd": "Cerca e aggiungi persone...",
+      "publications": "Pubblicazioni",
+      "followers": "Follower"
+    }
+  },
+  "company": {
+    "visit": "Visita",
+    "contact": "Contatto"
   }
 }
-

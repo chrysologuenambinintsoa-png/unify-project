@@ -4,6 +4,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { Avatar } from '@/components/ui/Avatar';
 import { optimizeCoverUrl, optimizeAvatarUrl } from '@/lib/cloudinaryOptimizer';
 
 interface CompanyProfileProps {
@@ -30,11 +31,7 @@ export default function CompanyHeader({ profile }: CompanyProfileProps) {
       <div className="px-4 md:px-6 pb-4 md:pb-6 -mt-12 relative z-10">
         <div className="flex items-start md:items-center gap-4">
           <div className="w-20 h-20 md:w-28 md:h-28 rounded-lg overflow-hidden border-2 border-white bg-white flex-shrink-0 shadow-lg">
-            {profile.avatar ? (
-              <img src={optimizeAvatarUrl(profile.avatar, 256) || profile.avatar} alt={profile.fullName} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-primary-dark flex items-center justify-center text-white font-bold">{(profile.fullName || profile.username || '').charAt(0)}</div>
-            )}
+            <Avatar src={optimizeAvatarUrl(profile.avatar, 256) || profile.avatar || null} name={profile.fullName || profile.username} userId={profile.id} size="lg" className="w-full h-full" />
           </div>
 
           <div className="flex-1 min-w-0">

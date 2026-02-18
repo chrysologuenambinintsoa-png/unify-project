@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useBadges } from '@/hooks/useBadges';
 import { SidebarBadge } from '@/components/SidebarBadge';
+import { Avatar } from '@/components/ui/Avatar';
 
 export function SidebarUser() {
   const { data: session } = useSession();
   const { badges } = useBadges();
-  const [imageError, setImageError] = useState(false);
 
   if (!session?.user) return null;
 
@@ -29,18 +29,13 @@ export function SidebarUser() {
       >
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-accent-dark group-hover:border-accent-light transition-colors bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
-            {session.user.image && !imageError ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || 'User'}
-                className="w-full h-full object-cover"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <span>{session.user.name?.[0]?.toUpperCase() || 'U'}</span>
-            )}
-          </div>
+          <Avatar
+            src={session.user.image || session.user.avatar || null}
+            name={session.user.name || 'User'}
+            userId={session.user.id}
+            size="sm"
+            className="border-2 border-accent-dark group-hover:border-accent-light transition-colors"
+          />
 
           {/* Badge total */}
           {totalBadges > 0 && (
@@ -59,7 +54,7 @@ export function SidebarUser() {
             {session.user.name || 'User'}
           </p>
           <p className="text-blue-200 text-xs truncate group-hover:text-accent-light transition-colors">
-            @{session.user.email?.split('@')[0] || 'user'}
+            @{session.user.username || 'user'}
           </p>
         </div>
 

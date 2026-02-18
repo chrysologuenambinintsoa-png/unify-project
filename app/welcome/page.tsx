@@ -13,10 +13,13 @@ export default function WelcomePage() {
   const { language, translation, setLanguage } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
 
-  // Rediriger vers la page d'accueil si connecté
+  // D'abord, vérifier le localStorage dès que possible
   useEffect(() => {
-    const onboard = typeof window !== 'undefined' && localStorage.getItem('unify:showOnboard') === 'true';
+    if (typeof window === 'undefined') return;
+
+    const onboard = localStorage.getItem('unify:showOnboard') === 'true';
 
     if (onboard) {
       setIsOnboarding(true);
@@ -29,10 +32,19 @@ export default function WelcomePage() {
       }
     }
 
-    if (status === 'authenticated' && !onboard) {
+    setHasCheckedStorage(true);
+  }, []); // Empty dependency array - run only once on mount
+
+  // Rediriger vers la page d'accueil SEULEMENT si authentifié ET pas en mode onboarding
+  useEffect(() => {
+    // Wait until we've checked storage before deciding to redirect
+    if (!hasCheckedStorage) return;
+
+    // Only redirect if authenticated and NOT onboarding
+    if (status === 'authenticated' && !isOnboarding) {
       router.push('/');
     }
-  }, [status, router]);
+  }, [status, router, hasCheckedStorage, isOnboarding]);
 
   const slides = [
     {
@@ -147,11 +159,15 @@ export default function WelcomePage() {
             className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white/50"
           >
             <option value="fr" className="text-gray-900">🇫🇷 Français</option>
-            <option value="mg" className="text-gray-900">🇲🇬 Malagasy</option>
             <option value="en" className="text-gray-900">🇬🇧 English</option>
             <option value="es" className="text-gray-900">🇪🇸 Español</option>
             <option value="de" className="text-gray-900">🇩🇪 Deutsch</option>
+            <option value="it" className="text-gray-900">🇮🇹 Italiano</option>
+            <option value="pt" className="text-gray-900">🇵🇹 Português</option>
             <option value="ch" className="text-gray-900">🇨🇳 中文</option>
+            <option value="hi" className="text-gray-900">🇮🇳 हिन्दी</option>
+            <option value="ar" className="text-gray-900">🇸🇦 العربية</option>
+            <option value="mg" className="text-gray-900">🇲🇬 Malagasy</option>
           </select>
         </div>
 

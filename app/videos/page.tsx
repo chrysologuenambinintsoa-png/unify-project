@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { Upload, Play } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { VideosSkeleton } from '@/components/skeletons/VideosSkeleton';
 
 interface Video {
   id: string;
@@ -21,8 +21,7 @@ interface Video {
 }
 
 export default function VideosPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { isReady, session } = useRequireAuth();
   const { translation } = useLanguage();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,18 +32,7 @@ export default function VideosPage() {
   const [uploadDescription, setUploadDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login');
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchVideos();
-    }
-  }, [session]);
-
+  // Fonction pour charger les vidéos
   const fetchVideos = async () => {
     try {
       setLoading(true);
@@ -61,6 +49,29 @@ export default function VideosPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (session?.user?.id && isReady) {
+      fetchVideos();
+    }
+  }, [session, isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return (
+      <MainLayout>
+        <VideosSkeleton />
+      </MainLayout>
+    );
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <VideosSkeleton />
+      </MainLayout>
+    );
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

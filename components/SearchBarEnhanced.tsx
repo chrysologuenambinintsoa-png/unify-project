@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { Avatar } from '@/components/ui/Avatar';
 
 interface SearchResult {
   personnes: any[];
@@ -207,9 +208,7 @@ export const SearchBarEnhanced: React.FC<SearchBarEnhancedProps> = ({ onClose })
                     {results.personnes.map((person) => (
                       <div key={person.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          {person.avatar && (
-                            <img src={person.avatar} alt={person.username} className="w-10 h-10 rounded-full" />
-                          )}
+                          <Avatar src={person.avatar} name={person.fullName || person.username} userId={person.id} size="sm" className="w-10 h-10" />
                           <div>
                             <p className="font-medium">
                               {person.fullName} {person.isVerified && '✓'}

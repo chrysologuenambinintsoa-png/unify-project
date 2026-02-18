@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import Post from "@/components/Post";
-import { LoadingPage } from "@/components/LoadingPage";
-import { Loader } from "lucide-react";
 
 interface PostData {
   id: string;
@@ -27,25 +24,13 @@ interface PostData {
 }
 
 export default function PostsPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { isReady, session } = useRequireAuth();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postsLoaded, setPostsLoaded] = useState(false);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchPosts();
-    }
-  }, [session]);
-
+  // Fonction pour charger les posts
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -63,7 +48,16 @@ export default function PostsPage() {
     }
   };
 
-  const handleDeletePost = async (postId: string) => {
+  useEffect(() => {
+    if (session?.user?.id && isReady) {
+      fetchPosts();
+    }
+  }, [session, isReady]);
+
+  // Ne rien retourner si pas prêt (évite page vide/grise)
+  if (!isReady) {
+    return null;
+  }  const handleDeletePost = async (postId: string) => {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
@@ -91,9 +85,7 @@ export default function PostsPage() {
     }
   };
 
-  if (status === "loading" || loading) {
-    return <LoadingPage message="Chargement des publications..." />;
-  }
+
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-br from-gray-50 to-gray-100">

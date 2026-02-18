@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id;
 
-    // Get groups the user is already a member of or admin of
+    // Get groups the user is already a member of, admin of, or created
     const memberGroups = await prisma.groupMember.findMany({ where: { userId }, select: { groupId: true } });
     const adminGroups = await prisma.group.findMany({ where: { adminId: userId }, select: { id: true } });
     const userGroupIds = new Set<string>([...memberGroups.map(g => g.groupId), ...adminGroups.map(g => g.id)]);

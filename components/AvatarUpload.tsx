@@ -197,12 +197,25 @@ export function AvatarUpload({ currentAvatar, onAvatarChange, size = 'lg' }: Ava
         onMouseEnter={() => setShowOptions(true)}
         onMouseLeave={() => setShowOptions(false)}
       >
-        <Avatar
-          src={currentAvatar}
-          name={session?.user?.fullName || session?.user?.username}
-          size={size}
-          className="ring-4 ring-white shadow-lg"
-        />
+        <div className={`transition-all duration-300 ${isUploading ? 'blur-sm opacity-60' : ''}`}>
+          <Avatar
+            src={currentAvatar}
+            name={session?.user?.fullName || session?.user?.username}
+            userId={session?.user?.id}
+            size={size}
+            className="ring-4 ring-white shadow-lg"
+          />
+        </div>
+
+        {/* Upload progress overlay */}
+        {isUploading && (
+          <div className="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+              <p className="text-xs font-semibold">Uploading...</p>
+            </div>
+          </div>
+        )}
 
         {/* Upload overlay */}
         {showOptions && !isUploading && (

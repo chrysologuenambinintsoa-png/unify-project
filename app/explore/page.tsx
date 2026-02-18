@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { fetchWithTimeout } from '@/lib/fetchWithTimeout';
+import { ExploreSkeleton } from '@/components/skeletons/ExploreSkeleton';
+import { fetchWithTimeout, fetchWithRetry } from '@/lib/fetchWithTimeout';
 import { Search, TrendingUp, Users, Hash, Heart, MessageCircle, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -33,6 +35,7 @@ interface SuggestedUser {
 }
 
 export default function ExplorePage() {
+  const { isReady } = useRequireAuth();
   const { translation } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'trending' | 'people' | 'topics'>('trending');
@@ -62,10 +65,15 @@ export default function ExplorePage() {
     }
   }, [activeTab, trendingLoaded, usersLoaded, topicsLoaded]);
 
+  // Conditional rendering (after all hooks)
+  if (!isReady) {
+    return <ExploreSkeleton />;
+  }
+
   const loadTrendingData = async () => {
     try {
       setActiveTabLoading(true);
-      const response = await fetchWithTimeout('/api/explore', undefined, 10000);
+      const response = await fetchWithRetry('/api/explore', undefined, 25000, 2);
       if (response.ok) {
         const data = await response.json();
         setTrendingPosts(data.trendingPosts || []);
@@ -81,7 +89,7 @@ export default function ExplorePage() {
   const loadUsersData = async () => {
     try {
       setActiveTabLoading(true);
-      const response = await fetchWithTimeout('/api/explore', undefined, 10000);
+      const response = await fetchWithRetry('/api/explore', undefined, 25000, 2);
       if (response.ok) {
         const data = await response.json();
         setSuggestedUsers(data.suggestedUsers || []);
@@ -97,7 +105,7 @@ export default function ExplorePage() {
   const loadTopicsData = async () => {
     try {
       setActiveTabLoading(true);
-      const response = await fetchWithTimeout('/api/explore/trends', undefined, 10000);
+      const response = await fetchWithRetry('/api/explore/trends', undefined, 25000, 2);
       if (response.ok) {
         const data = await response.json();
         setTrendingTopics(Array.isArray(data) ? data : []);
@@ -114,8 +122,8 @@ export default function ExplorePage() {
     try {
       setLoading(true);
       const [exploreRes, trendsRes] = await Promise.all([
-        fetchWithTimeout('/api/explore', undefined, 10000),
-        fetchWithTimeout('/api/explore/trends', undefined, 10000),
+        fetchWithRetry('/api/explore', undefined, 25000, 2),
+        fetchWithRetry('/api/explore/trends', undefined, 25000, 2),
       ]);
       
       if (exploreRes.ok) {
@@ -157,6 +165,14 @@ export default function ExplorePage() {
       console.error('Error following user:', err);
     }
   };
+
+  if (loading && !trendingLoaded && !usersLoaded && !topicsLoaded) {
+    return (
+      <MainLayout>
+        <ExploreSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

@@ -39,10 +39,13 @@ export async function GET(request: NextRequest) {
             status: 'pending'
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Friend requests count error:', err?.message);
+        return 0;
+      });
 
       // Récupérer les messages non lus
       const unreadMessagesCount = await Promise.race([
@@ -52,10 +55,13 @@ export async function GET(request: NextRequest) {
             isRead: false
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Unread messages count error:', err?.message);
+        return 0;
+      });
 
       // Récupérer les notifications non lues
       const unreadNotificationsCount = await Promise.race([
@@ -65,10 +71,13 @@ export async function GET(request: NextRequest) {
             isRead: false
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Unread notifications count error:', err?.message);
+        return 0;
+      });
 
       // Récupérer les invitations de groupe en attente
       // The GroupMember.joinedAt is non-nullable in schema; there is no explicit 'pending' flag.
@@ -82,10 +91,13 @@ export async function GET(request: NextRequest) {
             userId: userId
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Page invites count error:', err?.message);
+        return 0;
+      });
 
       // Récupérer le nombre d'amis
       const friendsCount = await Promise.race([
@@ -97,10 +109,13 @@ export async function GET(request: NextRequest) {
             ]
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Friends count error:', err?.message);
+        return 0;
+      });
 
       // Récupérer le nombre de groupes (tous les memberships pour cet utilisateur)
       const groupsCount = await Promise.race([
@@ -109,10 +124,13 @@ export async function GET(request: NextRequest) {
             userId: userId,
           }
         }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 15000)
         )
-      ]).catch(() => 0);
+      ]).catch((err) => {
+        console.warn('Groups count error:', err?.message);
+        return 0;
+      });
 
       const badges = {
         friends: friendRequestsCount || 0,

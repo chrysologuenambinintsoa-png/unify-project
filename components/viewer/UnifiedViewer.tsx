@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, Share2, Bookmark, M
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar } from '@/components/ui/Avatar';
 import { Header } from '@/components/layout/Header';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface UnifiedViewerProps {
   post: any;
@@ -33,6 +35,10 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
   const [commentText, setCommentText] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
@@ -50,6 +56,26 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, prev, next, onClose]);
+
+  // Close "more" menu on outside click or Escape
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!moreMenuRef.current) return;
+      const target = e.target as Node;
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowMoreMenu(false);
+    };
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !post) return;
@@ -162,7 +188,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
 
         {/* Viewer Content */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          <button onClick={onClose} className="fixed top-20 right-4 z-[10000] text-white p-2 bg-black/30 rounded-full hover:scale-105 transition-transform md:top-4">
+          <button onClick={onClose} className="fixed top-4 right-4 z-[10000] text-white p-2 bg-black/30 rounded-full hover:scale-105 transition-transform">
             <X size={28} />
           </button>
 
@@ -194,7 +220,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
           </div>
 
           {/* Right: Panel */}
-          <motion.aside className="w-full md:w-1/3 bg-white dark:bg-gray-900 flex flex-col border-l border-gray-200 h-[50vh] md:h-auto z-[10001]" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+          <motion.aside className="w-full md:w-1/3 bg-white dark:bg-gray-900 flex flex-col border-l border-gray-200 h-[calc(100vh-4rem)] md:h-auto z-[10001]" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
             {/* Author Header */}
             <div className="flex items-center gap-3 p-4 border-b">
               <Avatar src={post?.user?.avatar || post?.author?.avatar || null} name={post?.user?.name || post?.author?.name || 'User'} userId={post?.user?.id || post?.author?.id} size="md" />
@@ -203,9 +229,89 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                 <div className="font-bold text-sm">{post?.user?.name || post?.author?.name || 'User'}</div>
                 <div className="text-xs text-gray-500">{new Date(post?.createdAt || post?.timestamp || Date.now()).toLocaleString()}</div>
               </div>
-              <button className="p-2 hover:bg-gray-100 rounded-full">
-                <MoreHorizontal size={18} />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowMoreMenu((s) => !s); }}
+                  aria-expanded={showMoreMenu}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  title="Options"
+                >
+                  <MoreHorizontal size={18} />
+                </button>
+
+                {showMoreMenu && (
+                  <div ref={moreMenuRef} onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 ring-1 ring-black/5">
+                    <div className="flex flex-col py-1">
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          try {
+                            if (navigator.share) {
+                              await navigator.share({ title: document.title, url: `${window.location.origin}/posts/${post.id}` });
+                            } else {
+                              await navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
+                              alert('Lien copié dans le presse-papiers');
+                            }
+                          } catch (err) {
+                            console.warn('Share failed', err);
+                          }
+                          setShowMoreMenu(false);
+                        }}
+                        className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Partager
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          try {
+                            navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
+                            alert('Lien copié dans le presse-papiers');
+                          } catch (err) {
+                            console.warn('Copy link failed', err);
+                          }
+                          setShowMoreMenu(false);
+                        }}
+                        className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Copier le lien
+                      </button>
+
+                      {session?.user?.id === (post?.user?.id || post?.author?.id) ? (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (confirm('Supprimer cette publication ?')) {
+                              onDelete?.(post.id);
+                            }
+                            setShowMoreMenu(false);
+                          }}
+                          className="text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Supprimer
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // navigate to report flow
+                            try { router.push(`/posts/${post.id}?report=1`); } catch (err) { window.location.href = `/posts/${post.id}?report=1`; }
+                            setShowMoreMenu(false);
+                          }}
+                          className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Signaler
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Content + Stats */}
@@ -215,7 +321,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Action Buttons */}
-            <div className="px-4 py-2 border-b flex items-center gap-2">
+            <div className="px-4 py-2 border-b flex items-center gap-2 flex-wrap">
               <button onClick={handleLike} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors ${liked ? 'bg-accent text-black' : 'bg-gray-100 hover:bg-gray-200'}`}>
                 <Heart size={16} /> <span className="text-sm">J'aime</span>
               </button>

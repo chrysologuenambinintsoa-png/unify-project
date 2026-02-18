@@ -118,8 +118,14 @@ export default function HomePage() {
 
       // Auto-refresh posts every 30 seconds
       const refreshInterval = setInterval(() => {
-        console.log('[HomePage] Auto-refreshing posts...');
-        fetchAllData();
+        try {
+          // Only refresh when the document is visible to avoid unnecessary reloads
+          if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+          console.log('[HomePage] Auto-refreshing posts...');
+          fetchAllData();
+        } catch (e) {
+          console.warn('[HomePage] Auto-refresh skipped due to visibility check error', e);
+        }
       }, 30000); // 30 seconds
 
       return () => clearInterval(refreshInterval);

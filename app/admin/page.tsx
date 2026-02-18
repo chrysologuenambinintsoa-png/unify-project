@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AdminSkeleton } from '@/components/skeletons/AdminSkeleton';
 import { Card } from '@/components/ui/Card';
 import { motion } from 'framer-motion';
 import { Settings, Megaphone, BarChart3, Users } from 'lucide-react';
@@ -14,7 +15,11 @@ export default function AdminPage() {
 
   // Ne rien retourner si pas prêt (évite page vide/grise)
   if (!isReady) {
-    return null;
+    return (
+      <MainLayout>
+        <AdminSkeleton />
+      </MainLayout>
+    );
   }
 
   const adminSections = [

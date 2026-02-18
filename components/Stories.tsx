@@ -522,8 +522,10 @@ export default function Stories({ stories, currentUser, onCreated }: StoriesProp
               </div>
               <button
                 onClick={handleCloseStory}
-                className="ml-auto text-white text-3xl font-bold hover:text-gray-300 hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-colors duration-200"
+                className="ml-auto text-white text-3xl font-bold hover:text-gray-300 hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-colors duration-200 z-50 bg-black/30"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
                 title="Fermer"
+                aria-label="Fermer la story"
               >
                 ✕
               </button>

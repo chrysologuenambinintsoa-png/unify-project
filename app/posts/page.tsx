@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { MainLayout } from '@/components/layout/MainLayout';
+import { PostListSkeleton } from '@/components/skeletons/PostListSkeleton';
 import Post from "@/components/Post";
 
 interface PostData {
@@ -56,8 +58,14 @@ export default function PostsPage() {
 
   // Ne rien retourner si pas prêt (évite page vide/grise)
   if (!isReady) {
-    return null;
-  }  const handleDeletePost = async (postId: string) => {
+    return (
+      <MainLayout>
+        <PostListSkeleton />
+      </MainLayout>
+    );
+  }
+
+  const handleDeletePost = async (postId: string) => {
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {

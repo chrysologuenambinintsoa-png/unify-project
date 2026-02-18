@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { PageSkeleton } from '@/components/skeletons/PageSkeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
@@ -63,7 +64,11 @@ export default function PagesPage() {
 
   // Ne rien retourner si pas prêt (évite page vide/grise)
   if (!isReady) {
-    return null;
+    return (
+      <MainLayout>
+        <PageSkeleton />
+      </MainLayout>
+    );
   }
 
   const handleCreatePage = async (data: { name: string; description: string; image?: string }) => {

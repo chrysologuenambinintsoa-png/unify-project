@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AdminSkeleton } from '@/components/skeletons/AdminSkeleton';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, X } from 'lucide-react';
@@ -62,7 +63,11 @@ export default function AdminSponsoredPage() {
 
   // Ne rien retourner si pas prêt (évite page vide/grise)
   if (!isReady) {
-    return null;
+    return (
+      <MainLayout>
+        <AdminSkeleton />
+      </MainLayout>
+    );
   }
 
   const handleDelete = async (id: string) => {

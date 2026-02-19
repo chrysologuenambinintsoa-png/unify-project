@@ -14,7 +14,6 @@ export const metadata: Metadata = {
     shortcut: '/logo.svg',
     apple: '/logo.svg',
   },
-  colorScheme: 'light dark',
 };
 
 export const viewport: Viewport = {
@@ -24,6 +23,7 @@ export const viewport: Viewport = {
   userScalable: true,
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
+  colorScheme: 'light dark',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
     { media: '(prefers-color-scheme: dark)', color: '#0F172A' },

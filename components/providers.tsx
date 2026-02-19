@@ -10,11 +10,13 @@ import { ToastContainer } from './ToastContainer';
 import { SplashScreenWrapper } from './SplashScreenWrapper';
 import { StyleInjector } from './StyleInjector';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 function ProvidersContent({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const [isInitializing, setIsInitializing] = useState(true);
   const [cssLoaded, setCssLoaded] = useState(false);
+  const pathname = usePathname();
 
   // Ensure CSS is fully loaded
   useEffect(() => {
@@ -41,6 +43,17 @@ function ProvidersContent({ children }: { children: React.ReactNode }) {
       return () => clearTimeout(timer);
     }
   }, [status, cssLoaded]);
+
+  // Track last route into sessionStorage so the splash hook can decide
+  // whether to show the splash (we avoid showing it right after login/register flows)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (pathname) sessionStorage.setItem('unify:last-route', pathname);
+    } catch (e) {
+      // ignore sessionStorage errors
+    }
+  }, [pathname]);
 
   return (
     <>

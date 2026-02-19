@@ -53,15 +53,32 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLike = (reaction: string = 'Like') => {
+    // Cases:
+    // - not liked: add like with reaction -> increment count
+    // - liked and same reaction: remove like -> decrement count
+    // - liked and different reaction: switch reaction (no count change)
     if (!liked) {
       setLiked(true);
       setCurrentReaction(reaction);
       setLikeCount(prev => prev + 1);
-    } else {
+      // Increment home activity badge if user is not on home page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        incrementHomeActivity();
+      }
+      return;
+    }
+
+    // already liked
+    if (currentReaction === reaction) {
+      // toggle off
       setLiked(false);
       setCurrentReaction('');
-      setLikeCount(prev => prev - 1);
+      setLikeCount(prev => Math.max(0, prev - 1));
+    } else {
+      // change reaction without affecting total like count
+      setCurrentReaction(reaction);
     }
+
     // Increment home activity badge if user is not on home page
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
       incrementHomeActivity();

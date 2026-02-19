@@ -106,7 +106,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
     // load comments when viewer opens
     (async () => {
       try {
-        const res = await fetch(`/api/posts/${post.id}/comments`);
+        const res = await fetch(`/api/posts/${post.id}/comments`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setComments(data.comments || data || []);
@@ -135,6 +135,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
       const res = await fetch(`/api/posts/${post.id}/comments/${commentId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -147,6 +148,9 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             return s;
           });
         }
+      } else {
+        const text = await res.text();
+        console.error('[Viewer] Comment like failed', res.status, text);
       }
     } catch (err) {
       console.error('[Viewer] Comment like error', err);
@@ -412,7 +416,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             <div className="px-3 md:px-4 py-2 md:py-3 border-b flex flex-col gap-2 md:gap-3">
               <div className="grid grid-cols-4 gap-1 md:gap-2">
                 <button onClick={handleLike} className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
-                  <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
+                  <Heart size={20} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
                 </button>
                 <button className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium">
                   <MessageCircle size={16} /> <span className="hidden md:inline">Commenter</span>
@@ -481,8 +485,8 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                           <div className="text-sm text-gray-700">{c.content || c.text}</div>
                         </div>
                         <div className="flex items-center gap-3 mt-1 pl-12">
-                          <button onClick={() => handleCommentLike(c.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(c.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
-                          <button onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
+                          <button type="button" onClick={() => handleCommentLike(c.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(c.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
+                          <button type="button" onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
                           <span className="text-xs text-gray-400">{new Date(c.createdAt || Date.now()).toLocaleString()}</span>
                         </div>
                       </div>
@@ -503,8 +507,8 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                                 <div className="text-xs text-gray-700">{reply.content || reply.text}</div>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5 pl-0">
-                                <button onClick={() => handleCommentLike(reply.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(reply.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
-                                <button onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
+                                <button type="button" onClick={() => handleCommentLike(reply.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(reply.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
+                                <button type="button" onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
                               </div>
                             </div>
                           </div>

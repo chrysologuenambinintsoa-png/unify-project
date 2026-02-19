@@ -99,6 +99,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(isThumb ? {} : { emoji: reaction }),
+        credentials: 'include',
       });
 
       if (!response.ok) throw new Error('Failed to add reaction');
@@ -152,7 +153,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
       try {
         const entries = await Promise.all(comments.map(async (c) => {
           try {
-            const res = await fetch(`/api/posts/${postId}/comments/${c.id}/reactions`);
+            const res = await fetch(`/api/posts/${postId}/comments/${c.id}/reactions`, { credentials: 'include' });
             if (!res.ok) return [c.id, []];
             const json = await res.json();
             const groups = Array.isArray(json.reactions) ? json.reactions.map((r: any) => ({ emoji: r.emoji, count: r.count })) : [];
@@ -254,6 +255,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                   {REACTIONS.map(emoji => (
                     <button
                       key={emoji}
+                      type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         handleAddReaction(comment.id, emoji);

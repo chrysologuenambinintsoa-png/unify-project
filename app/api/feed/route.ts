@@ -17,15 +17,38 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Get posts (currently returns user's own posts; follow-logic can be reintroduced when Prisma schema aligns)
-    const posts = await prisma.post.findMany({
+    // Get posts: include user's own posts, friends' posts (accepted friendships), and public posts
+    // so that actions like avatar/cover updates (which create posts) appear in the home feed.
+    const friendships = await prisma.friendship.findMany({
       where: {
         OR: [
-          // User's own posts
-          { userId: session.user.id },
+          { user1Id: session.user.id, status: 'accepted' },
+          { user2Id: session.user.id, status: 'accepted' },
         ],
-        isDeleted: false,
       },
+      select: { user1Id: true, user2Id: true },
+    });
+
+    const friendIds = friendships
+      .map((f: any) => (f.user1Id === session.user.id ? f.user2Id : f.user1Id))
+      .filter(Boolean);
+
+    const baseOr: any[] = [
+      { userId: session.user.id },
+      { isPublic: true },
+    ];
+
+    if (friendIds.length) {
+      baseOr.push({ userId: { in: friendIds } });
+    }
+
+    const whereClause: any = {
+      isDeleted: false,
+      AND: [{ OR: baseOr }],
+    };
+
+    const posts = await prisma.post.findMany({
+      where: whereClause,
       include: {
         user: {
           select: {

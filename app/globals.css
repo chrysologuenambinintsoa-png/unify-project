@@ -2,26 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Force CSS reset and base styles */
+* {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
 :root {
+  color-scheme: light;
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
   --background-rgb: 255, 255, 255;
   --border-rgb: 229, 231, 235;
+  /* Ensure variables are set early */
+  --text-color: rgb(0, 0, 0);
+  --bg-color: rgb(255, 255, 255);
 }
 
 /* Light mode - default */
 html:not(.dark) {
+  color-scheme: light;
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 255, 255, 255;
   --border-rgb: 229, 231, 235;
+  --text-color: rgb(0, 0, 0);
+  --bg-color: rgb(255, 255, 255);
+  background-color: rgb(255, 255, 255) !important;
+  color: rgb(0, 0, 0) !important;
 }
 
 /* Dark mode - when dark class is applied */
 html.dark {
+  color-scheme: dark;
   --foreground-rgb: 255, 255, 255;
   --background-rgb: 15, 23, 42;
   --border-rgb: 51, 65, 85;
+  --text-color: rgb(255, 255, 255);
+  --bg-color: rgb(15, 23, 42);
+  background-color: rgb(15, 23, 42) !important;
+  color: rgb(255, 255, 255) !important;
 }
 
 html {
@@ -54,7 +76,7 @@ body {
   padding-right: max(env(safe-area-inset-right), 0px);
 }
 
-/* Fix iOS scrolling issues */
+/* Fix iOS and Android rendering */
 html, body, #__next {
   height: 100%;
   width: 100%;
@@ -63,12 +85,16 @@ html, body, #__next {
   -webkit-touch-callout: none;
 }
 
+/* Ensure proper rendering on real devices */
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    background: rgb(var(--background-rgb));
   }
 }
 

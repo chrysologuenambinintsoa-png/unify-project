@@ -17,15 +17,46 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Load theme from localStorage on mount
+  // Initialize theme immediately on first render (critical for mobile)
   useEffect(() => {
-    try {
-      const savedTheme = localStorage.getItem('unify-theme') as Theme | null;
-      if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
-        setThemeState(savedTheme as Theme);
+    // Prioritize system preference detection early
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        const savedTheme = localStorage.getItem('unify-theme') as Theme | null;
+        let selectedTheme: Theme = (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) 
+          ? (savedTheme as Theme)
+          : 'auto';
+
+        // Determine effective theme
+        let effectiveTheme: 'light' | 'dark' = selectedTheme === 'auto'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          : (selectedTheme as 'light' | 'dark');
+
+        // Apply immediately (before render)
+        const htmlElement = document.documentElement;
+        if (effectiveTheme === 'dark') {
+          htmlElement.classList.add('dark');
+        } else {
+          htmlElement.classList.remove('dark');
+        }
+
+        // Reset CSS variables
+        if (effectiveTheme === 'dark') {
+          htmlElement.style.colorScheme = 'dark';
+        } else {
+          htmlElement.style.colorScheme = 'light';
+        }
+
+        setThemeState(selectedTheme);
+        setIsDark(effectiveTheme === 'dark');
+      } catch (error) {
+        console.warn('Theme initialization error:', error);
+        // Fallback: detect system preference
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+          setIsDark(true);
+        }
       }
-    } catch (error) {
-      console.warn('LocalStorage not available:', error);
     }
     setMounted(true);
   }, []);

@@ -6,6 +6,12 @@ const nextConfig = {
   // Permettre l'accès depuis d'autres appareils sur le réseau local
   reactStrictMode: true,
   
+  // Optimizations for mobile
+  swcMinify: true,
+  compress: true,
+  optimizeFonts: true,
+  productionBrowserSourceMaps: false,
+  
   images: {
     remotePatterns: [
       {
@@ -26,7 +32,7 @@ const nextConfig = {
     ],
   },
   
-  // En-têtes de sécurité
+  // En-têtes de sécurité et cache
   headers: async () => {
     return [
       {

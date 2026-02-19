@@ -89,16 +89,22 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
 
   const handleAddReaction = async (commentId: string, reaction: string) => {
     try {
-      const response = await fetch(`/api/posts/${postId}/comments/${commentId}/reactions`, {
+      // Use the dedicated like endpoint for thumbs up to match backend schema
+      const isThumb = reaction === '👍';
+      const url = isThumb
+        ? `/api/posts/${postId}/comments/${commentId}/like`
+        : `/api/posts/${postId}/comments/${commentId}/reactions`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emoji: reaction }),
+        body: JSON.stringify(isThumb ? {} : { emoji: reaction }),
       });
 
       if (!response.ok) throw new Error('Failed to add reaction');
 
       const data = await response.json();
-      const action = data.action;
+      const action = data.action || (data.liked ? 'added' : 'removed');
 
       // Update grouped reactions map
       setCommentReactions(prev => {
@@ -130,7 +136,7 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
       }));
 
       // Toggle local user-liked flag for thumbs
-      if (reaction === '👍') {
+      if (isThumb) {
         setCommentUserLiked(prev => ({ ...prev, [commentId]: action === 'added' }));
       }
 
@@ -341,12 +347,12 @@ export function CommentThread({ postId, comments, onCommentAdded }: CommentThrea
                   ...prev,
                   [comment.id]: !prev[comment.id]
                 }))}
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:text-primary-dark font-semibold transition-colors"
               >
-                {showReplies[comment.id] ? 'Hide' : `Show ${comment.replies.length}`} repl{comment.replies.length !== 1 ? 'ies' : 'y'}
+                {showReplies[comment.id] ? '▼ Masquer les réponses' : `▶ Afficher ${comment.replies.length} réponse${comment.replies.length > 1 ? 's' : ''}`}
               </button>
               {showReplies[comment.id] && (
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 space-y-3 border-l-2 border-gray-200 pl-3 ml-2">
                   {comment.replies.map((reply: any) => renderComment(reply, depth + 1))}
                 </div>
               )}

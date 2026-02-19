@@ -43,6 +43,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
+  const [expandedReplies, setExpandedReplies] = useState<{ [key: string]: boolean }>({});
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState<{ x: number; y: number } | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -439,17 +440,38 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
                       <button className="text-xs text-gray-500 hover:text-gray-700">Reply</button>
                       <span className="text-xs text-gray-400">{formatTime(comment.timestamp)}</span>
                     </div>
-                    {/* Replies */}
+                    {/* Show/Hide Replies Button */}
                     {comment.replies && comment.replies.length > 0 && (
-                      <div className="ml-8 mt-2 space-y-2">
+                      <button
+                        onClick={() => setExpandedReplies(prev => ({
+                          ...prev,
+                          [comment.id]: !prev[comment.id]
+                        }))}
+                        className="mt-1 ml-2 text-xs text-primary hover:text-primary-dark font-semibold"
+                      >
+                        {expandedReplies[comment.id] 
+                          ? '▼ Masquer les réponses' 
+                          : `▶ Afficher ${comment.replies.length} réponse${comment.replies.length > 1 ? 's' : ''}`
+                        }
+                      </button>
+                    )}
+                    {/* Replies Section */}
+                    {comment.replies && comment.replies.length > 0 && expandedReplies[comment.id] && (
+                      <div className="ml-8 mt-3 space-y-2 border-l-2 border-gray-200 pl-2">
                         {comment.replies.map((reply) => (
                           <div key={reply.id} className="flex items-start space-x-2">
                             <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">
                               {reply.avatar}
                             </div>
-                            <div className="bg-gray-100 rounded-lg px-2 py-1 flex-1">
-                              <p className="font-semibold text-xs text-gray-800">{reply.user}</p>
-                              <p className="text-xs text-gray-700">{reply.content}</p>
+                            <div className="flex-1">
+                              <div className="bg-gray-50 rounded-lg px-2 py-1">
+                                <p className="font-semibold text-xs text-gray-800">{reply.user}</p>
+                                <p className="text-xs text-gray-700">{reply.content}</p>
+                              </div>
+                              <div className="flex items-center space-x-3 mt-0.5 ml-0 text-xs">
+                                <button className="text-gray-500 hover:text-gray-700">Like</button>
+                                <span className="text-gray-400">{formatTime(reply.timestamp)}</span>
+                              </div>
                             </div>
                           </div>
                         ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, Share2, Bookmark, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Flag, Trash2, Copy, Share } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar } from '@/components/ui/Avatar';
 import { Header } from '@/components/layout/Header';
@@ -20,6 +20,7 @@ interface UnifiedViewerProps {
 export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose, onLike, onDelete }: UnifiedViewerProps) {
   const [index, setIndex] = useState(initialIndex);
   const [liked, setLiked] = useState(!!post?.liked);
+  const [likeCount, setLikeCount] = useState<number>(post?._count?.likes ?? 0);
   const [reactions, setReactions] = useState<Array<{ id: string; emoji: string }>>([]);
   const [reactionsCount, setReactionsCount] = useState<number>(post?._count?.reactions ?? 0);
   const images: string[] = post?.images ?? (post?.media ? post.media.filter((m: any) => m.type === 'image').map((m: any) => m.url) : []);
@@ -44,6 +45,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const prev = useCallback(() => setIndex((i) => (i === 0 ? allMedia.length - 1 : i - 1)), [allMedia.length]);
   const next = useCallback(() => setIndex((i) => (i === allMedia.length - 1 ? 0 : i + 1)), [allMedia.length]);
@@ -119,8 +121,10 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
 
   const handleLike = () => {
     console.debug('[Viewer] Like clicked, current liked state:', liked);
-    setLiked(!liked);
-    if (!liked) {
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+    if (newLiked) {
       onLike?.(post.id);
     }
   };
@@ -203,26 +207,32 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
         animate="visible"
         exit="exit"
       >
+        {/* Close Button - Desktop only */}
+        <button 
+          onClick={onClose} 
+          className="hidden md:flex fixed top-6 right-6 z-[10002] text-white p-2 bg-black/50 hover:bg-black/70 rounded-full transition-all hover:scale-110"
+          aria-label="Close viewer"
+        >
+          <X size={28} />
+        </button>
+
         {/* Global Header */}
-        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hidden md:block">
           <Header onMenuClick={() => {}} />
         </div>
 
         {/* Viewer Content */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          <button onClick={onClose} className="fixed top-4 right-4 z-[10000] text-white p-2 bg-black/30 rounded-full hover:scale-105 transition-transform">
-            <X size={28} />
-          </button>
 
           {/* Left: Media */}
-          <div className="flex-1 md:w-2/3 flex items-center justify-center relative p-4 h-[50vh] md:h-auto">
+          <div className="flex-1 md:w-2/3 flex items-center justify-center relative p-2 md:p-4 h-[40vh] md:h-auto">
             <div className="w-full h-full flex items-center justify-center">
               <AnimatePresence mode="wait">
-                <motion.div key={`media-${index}`} variants={mediaVariants} initial="enter" animate="center" exit="exit" className="max-w-full max-h-[85vh] md:max-h-[80vh]">
+                <motion.div key={`media-${index}`} variants={mediaVariants} initial="enter" animate="center" exit="exit" className="max-w-full max-h-full">
                   {current.type === 'image' ? (
-                    <motion.img src={current.url} alt={`media-${index}`} className="max-w-full max-h-[85vh] md:max-h-[80vh] object-contain drop-shadow-lg rounded" />
+                    <motion.img src={current.url} alt={`media-${index}`} className="max-w-full max-h-full object-contain drop-shadow-lg rounded" />
                   ) : (
-                    <motion.video src={current.url} controls className="max-w-full max-h-[85vh] md:max-h-[80vh] object-contain drop-shadow-lg rounded" />
+                    <motion.video src={current.url} controls className="max-w-full max-h-full object-contain drop-shadow-lg rounded" />
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -241,29 +251,38 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             )}
           </div>
 
-          {/* Right: Panel */}
-          <motion.aside className="w-full md:w-1/3 bg-white dark:bg-gray-900 flex flex-col border-l border-gray-200 h-[calc(100vh-4rem)] md:h-auto z-[10001]" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+          {/* Right: Panel - Mobile bottom, Desktop right */}
+          <motion.aside className="w-full md:w-1/3 bg-white dark:bg-gray-900 flex flex-col border-t md:border-t-0 md:border-l border-gray-200 h-1/2 md:h-auto z-[10001] order-last md:order-none" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
             {/* Author Header */}
-            <div className="flex items-center gap-3 p-4 border-b">
-              <Avatar src={post?.user?.avatar || post?.author?.avatar || null} name={post?.user?.name || post?.author?.name || 'User'} userId={post?.user?.id || post?.author?.id} size="md" />
+            <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-b">
+              {/* Mobile Close Button */}
+              <button 
+                onClick={onClose} 
+                className="md:hidden text-gray-500 hover:text-gray-700 p-1 flex-shrink-0"
+                aria-label="Close viewer"
+              >
+                <X size={20} />
+              </button>
+              <Avatar src={post?.user?.avatar || post?.author?.avatar || null} name={post?.user?.name || post?.author?.name || 'User'} userId={post?.user?.id || post?.author?.id} size="sm" className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm">{post?.user?.username || post?.author?.username || '@user'}</div>
-                <div className="font-bold text-sm">{post?.user?.name || post?.author?.name || 'User'}</div>
-                <div className="text-xs text-gray-500">{new Date(post?.createdAt || post?.timestamp || Date.now()).toLocaleString()}</div>
+                <div className="font-semibold text-xs md:text-sm">{post?.user?.username || post?.author?.username || '@user'}</div>
+                <div className="font-bold text-xs md:text-sm">{post?.user?.name || post?.author?.name || 'User'}</div>
+                <div className="text-xs text-gray-500 hidden md:block">{new Date(post?.createdAt || post?.timestamp || Date.now()).toLocaleString()}</div>
               </div>
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowMoreMenu((s) => !s); }}
                   aria-expanded={showMoreMenu}
-                  className="p-2 hover:bg-gray-100 rounded-full"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                   title="Options"
                 >
                   <MoreHorizontal size={18} />
                 </button>
 
                 {showMoreMenu && (
-                  <div ref={moreMenuRef} onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 ring-1 ring-black/5">
+                  <div ref={moreMenuRef} onClick={(e) => e.stopPropagation()} className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl z-50 ring-1 ring-black/5 overflow-hidden">
                     <div className="flex flex-col py-1">
+                      {/* Share Section */}
                       <button
                         onClick={async (e) => {
                           e.preventDefault();
@@ -273,16 +292,18 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                               await navigator.share({ title: document.title, url: `${window.location.origin}/posts/${post.id}` });
                             } else {
                               await navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
-                              alert('Lien copié dans le presse-papiers');
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2000);
                             }
                           } catch (err) {
                             console.warn('Share failed', err);
                           }
                           setShowMoreMenu(false);
                         }}
-                        className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-gray-700 dark:text-gray-300"
                       >
-                        Partager
+                        <Share size={16} />
+                        <span className="font-medium">Partager</span>
                       </button>
 
                       <button
@@ -291,44 +312,89 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                           e.stopPropagation();
                           try {
                             navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
-                            alert('Lien copié dans le presse-papiers');
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
                           } catch (err) {
                             console.warn('Copy link failed', err);
                           }
                           setShowMoreMenu(false);
                         }}
-                        className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-gray-700 dark:text-gray-300"
                       >
-                        Copier le lien
+                        <Copy size={16} />
+                        <span className="font-medium">{copied ? 'Copié ✓' : 'Copier le lien'}</span>
                       </button>
 
+                      {/* Divider */}
+                      <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+
                       {session?.user?.id === (post?.user?.id || post?.author?.id) ? (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (confirm('Supprimer cette publication ?')) {
-                              onDelete?.(post.id);
-                            }
-                            setShowMoreMenu(false);
-                          }}
-                          className="text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          Supprimer
-                        </button>
+                        <>
+                          {/* Edit Option (future) */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              // Navigate to edit or open edit modal
+                              console.log('Edit post:', post.id);
+                              setShowMoreMenu(false);
+                            }}
+                            className="text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                          >
+                            <MessageCircle size={16} />
+                            <span className="font-medium">Éditer</span>
+                          </button>
+
+                          {/* Delete Option */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const confirmed = confirm('Êtes-vous sûr de vouloir supprimer cette publication ?');
+                              if (confirmed) {
+                                (async () => {
+                                  try {
+                                    const res = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' });
+                                    if (res.ok) {
+                                      onDelete?.(post.id);
+                                      onClose?.();
+                                    } else {
+                                      alert('Erreur lors de la suppression');
+                                    }
+                                  } catch (err) {
+                                    console.error('Delete error:', err);
+                                    alert('Erreur lors de la suppression');
+                                  }
+                                })();
+                              }
+                              setShowMoreMenu(false);
+                            }}
+                            className="text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 text-red-600 dark:text-red-400"
+                          >
+                            <Trash2 size={16} />
+                            <span className="font-medium">Supprimer</span>
+                          </button>
+                        </>
                       ) : (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // navigate to report flow
-                            try { router.push(`/posts/${post.id}?report=1`); } catch (err) { window.location.href = `/posts/${post.id}?report=1`; }
-                            setShowMoreMenu(false);
-                          }}
-                          className="text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          Signaler
-                        </button>
+                        <>
+                          {/* Report Option */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              try {
+                                router.push(`/posts/${post.id}?report=1`);
+                              } catch (err) {
+                                window.location.href = `/posts/${post.id}?report=1`;
+                              }
+                              setShowMoreMenu(false);
+                            }}
+                            className="text-left px-4 py-2.5 text-sm hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-3 text-orange-600 dark:text-orange-400"
+                          >
+                            <Flag size={16} />
+                            <span className="font-medium">Signaler</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -337,30 +403,30 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Content + Stats */}
-            <div className="px-4 py-3 border-b">
-              {post?.content && <p className="text-sm text-gray-800">{post.content}</p>}
-              <div className="mt-3 text-xs text-gray-500">{post._count?.likes || 0} j'aime • {post._count?.comments || 0} commentaires</div>
+            <div className="px-3 md:px-4 py-2 md:py-3 border-b">
+              {post?.content && <p className="text-xs md:text-sm text-gray-800">{post.content}</p>}
+              <div className="mt-2 md:mt-3 text-xs text-gray-500">{likeCount || post._count?.likes || 0} j'aime • {post._count?.comments || 0} commentaires</div>
             </div>
 
             {/* Action Buttons */}
-            <div className="px-4 py-3 border-b flex flex-col gap-3">
-              <div className="grid grid-cols-4 gap-2">
-                <button onClick={handleLike} className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg transition-colors text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
-                  <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden sm:inline">J'aime</span>
+            <div className="px-3 md:px-4 py-2 md:py-3 border-b flex flex-col gap-2 md:gap-3">
+              <div className="grid grid-cols-4 gap-1 md:gap-2">
+                <button onClick={handleLike} className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+                  <Heart size={16} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
-                  <MessageCircle size={18} /> <span className="hidden sm:inline">Commenter</span>
+                <button className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium">
+                  <MessageCircle size={16} /> <span className="hidden md:inline">Commenter</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
-                  <Share2 size={18} /> <span className="hidden sm:inline">Partager</span>
+                <button className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium">
+                  <Share2 size={16} /> <span className="hidden md:inline">Partager</span>
                 </button>
                 <div className="relative">
                   <button 
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`w-full flex items-center justify-center gap-2 px-2 py-2 rounded-lg transition-colors text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    className={`w-full flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                     title="Ajouter une réaction"
                   >
-                    <span className="text-lg">😊</span> <span className="hidden sm:inline">Réagir</span>
+                    <span className="text-lg">😊</span> <span className="hidden md:inline">Réagir</span>
                   </button>
                   
                   {/* Emoji Picker Card */}
@@ -399,7 +465,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Comments Section */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+            <div className="flex-1 overflow-y-auto px-3 md:px-4 py-2 md:py-3 space-y-2 md:space-y-4">
               {comments && comments.length > 0 ? (
                 comments.map((c) => (
                   <div key={c.id} className="space-y-2">
@@ -483,9 +549,9 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Comment Input */}
-            <div className="px-4 py-3 border-t">
-              <div className="flex items-center gap-2">
-                <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Écrire un commentaire..." className="flex-1 px-3 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm" />
+            <div className="px-3 md:px-4 py-2 md:py-3 border-t">
+              <div className="flex items-center gap-1 md:gap-2">
+                <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Écrire un commentaire..." className="flex-1 px-3 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-xs md:text-sm" />
                 <button onClick={async () => {
                   if (!commentText.trim()) return;
                   try {
@@ -506,7 +572,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                     }
                   } catch (err) { console.error('[Viewer] Comment post error', err); }
                   finally { setCommentLoading(false); }
-                }} className="bg-primary text-white px-4 py-2 rounded-full text-sm">{commentLoading ? '...' : 'Envoyer'}</button>
+                }} className="bg-primary text-white px-3 md:px-4 py-2 rounded-full text-xs md:text-sm">{commentLoading ? '...' : 'Envoyer'}</button>
               </div>
             </div>
           </motion.aside>

@@ -47,6 +47,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        userAgent: { label: 'User Agent', type: 'text' },
       },
       async authorize(credentials) {
         try {
@@ -135,12 +136,15 @@ export const authOptions: NextAuthOptions = {
       if (credentials) {
         try {
           if (user?.email) {
+            // Extract userAgent and ipAddress from credentials (passed by client)
+            const userAgent = (credentials as any)?.userAgent || null;
+            
             await prisma.loginHistory.create({
               data: {
                 userId: user.id as string,
                 email: user.email,
-                userAgent: null, // IP will be captured server-side if needed
-                ipAddress: null,
+                userAgent: userAgent,
+                ipAddress: null, // Will be captured via API if needed
               },
             });
           }

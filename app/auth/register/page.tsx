@@ -78,9 +78,11 @@ export default function RegisterPage() {
         // router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}&purpose=signup`);
         
         // Auto-login the user
+        const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
         const signInResult = await signIn('credentials', {
           email: formData.email,
           password: formData.password,
+          userAgent,
           redirect: false,
         });
 

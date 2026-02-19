@@ -484,6 +484,7 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
       const response = await fetch('/api/messages/message-request', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ messageId, action: 'accept' }),
       });
 
@@ -492,11 +493,16 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
         throw new Error(data.error || 'Failed to accept message request');
       }
 
+      const data = await response.json();
+      
       // Clear message request - polling will refresh messages automatically
       setMessageRequest(null);
       setShowMessageRequestModal(false);
+      
+      return data;
     } catch (error) {
       console.error('Error accepting message request:', error);
+      throw error;
     } finally {
       setMessageRequestLoading(false);
     }
@@ -508,6 +514,7 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
       const response = await fetch('/api/messages/message-request', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ messageId, action: 'reject' }),
       });
 
@@ -516,13 +523,18 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
         throw new Error(data.error || 'Failed to reject message request');
       }
 
+      const data = await response.json();
+      
       setMessageRequest(null);
       setShowMessageRequestModal(false);
       
       // Navigate back to messages
       router.push('/messages');
+      
+      return data;
     } catch (error) {
       console.error('Error rejecting message request:', error);
+      throw error;
     } finally {
       setMessageRequestLoading(false);
     }
@@ -680,8 +692,8 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
                 <MessageRequestBubble
                   request={messageRequest}
                   isLoading={messageRequestLoading}
-                  onAccept={() => handleAcceptMessageRequest(messageRequest.id)}
-                  onReject={() => handleRejectMessageRequest(messageRequest.id)}
+                  onAccept={async (messageId: string) => handleAcceptMessageRequest(messageId)}
+                  onReject={async (messageId: string) => handleRejectMessageRequest(messageId)}
                 />
               )}
               

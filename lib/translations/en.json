@@ -11,7 +11,8 @@
     "back": "Back",
     "next": "Next",
     "submit": "Submit",
-    "search": "Search..."
+    "search": "Search...",
+    "start": "Get Started"
   },
   "auth": {
     "login": "Login",

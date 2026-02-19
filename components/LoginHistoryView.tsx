@@ -65,6 +65,28 @@ export default function LoginHistoryView({ userId }: LoginHistoryViewProps) {
     return 'Autre navigateur';
   };
 
+  const formatDevice = (userAgent?: string) => {
+    if (!userAgent) return 'Appareil inconnu';
+
+    // Detect operating system
+    let os = 'Système inconnu';
+    if (userAgent.includes('Windows')) os = 'Windows';
+    else if (userAgent.includes('Mac OS X')) os = 'macOS';
+    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Android')) os = 'Android';
+    else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
+
+    // Detect device type
+    let deviceType = 'Ordinateur';
+    if (userAgent.includes('Mobile') || userAgent.includes('iPhone') || userAgent.includes('Android')) {
+      deviceType = 'Téléphone';
+    } else if (userAgent.includes('iPad') || userAgent.includes('Tablet')) {
+      deviceType = 'Tablette';
+    }
+
+    return `${os} ${deviceType}`;
+  };
+
 
 
   return (
@@ -98,11 +120,14 @@ export default function LoginHistoryView({ userId }: LoginHistoryViewProps) {
                         {formatDate(login.loginAt)}
                       </p>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       {formatBrowser(login.userAgent)}
                     </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {formatDevice(login.userAgent)}
+                    </p>
                     {login.ipAddress && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-2">
                         IP: {login.ipAddress}
                       </p>
                     )}

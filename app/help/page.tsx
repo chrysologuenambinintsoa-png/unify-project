@@ -195,6 +195,24 @@ export default function HelpPage() {
           </Link>
         </motion.div>
 
+        {/* Get Started Button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="text-center mb-12"
+        >
+          <Link href="/">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-10 py-4 bg-yellow-700 hover:bg-yellow-800 text-white rounded-xl font-bold text-lg transition-colors shadow-lg"
+            >
+              {translation?.common?.start || 'Commencer'}
+            </motion.button>
+          </Link>
+        </motion.div>
+
         <CopyrighFooter />
       </div>
     </div>

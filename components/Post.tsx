@@ -379,9 +379,12 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
           <Avatar src={optimizeAvatarUrl(author.avatar, 80) || author.avatar || null} name={author.name} userId={author.id} size="md" className="w-10 h-10 flex-shrink-0" />
           {/* User Info */}
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base truncate">{author.name}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'} • {formatDate(createdAt)}</p>
+              <p className="font-semibold text-gray-900 dark:text-white text-sm md:text-base truncate">{author.name}</p>
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">@{author.username || 'username'}</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{formatDate(createdAt)}</span>
               {/* Display group/page context */}
               {post?.group && (
                 <span className="text-xs md:text-sm text-blue-600 dark:text-blue-400 font-medium truncate flex items-center gap-1">
@@ -500,7 +503,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
                 <div className="w-full h-full flex items-center justify-center px-6 md:px-8 lg:px-12">
                   <div className="max-w-[760px] mx-auto">
                     <motion.p {...variants} className="text-center text-white font-bold text-2xl md:text-4xl lg:text-5xl leading-relaxed md:leading-snug break-words text-post-shadow">
-                      <PostContent content={post.content} contentType={post.contentType} />
+                      <PostContent content={post.content} contentType={post.contentType} isPostOwner={isPostOwner} />
                     </motion.p>
                   </div>
                 </div>
@@ -512,7 +515,7 @@ export default function Post({ post, onEdit, onDelete, onLike, onCommentAdded }:
         <div className="p-4">
           <div className="max-w-[760px] mx-auto">
             <p className="text-gray-900 dark:text-gray-100 leading-relaxed break-words text-sm md:text-base">
-              <PostContent content={post.content} contentType={post.contentType} />
+              <PostContent content={post.content} contentType={post.contentType} isPostOwner={isPostOwner} />
             </p>
           </div>
         </div>

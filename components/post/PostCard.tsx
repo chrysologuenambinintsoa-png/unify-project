@@ -368,54 +368,56 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
       )}
 
       {/* Reaction Stats */}
-      <div className="px-4 py-2 flex items-center justify-between text-gray-500 text-sm border-b">
-        <div className="flex items-center space-x-2">
+      <div className="px-4 py-2 md:py-3 flex items-center justify-between text-gray-500 text-xs md:text-sm border-b">
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap">
           {likeCount > 0 && (
-            <span className="flex items-center">
-              <span className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-1 shadow-md">
+            <span className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 rounded-full">
+              <span className="inline-flex items-center justify-center text-sm">
                 {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : '👍'}
               </span>
-              <span className="font-semibold text-gray-700">{likeCount}</span>
+              <span className="font-semibold text-gray-700 dark:text-gray-300 ml-1">{likeCount}</span>
             </span>
           )}
         </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-gray-600">{commentCount} {translation.messages?.comments || 'comments'}</span>
-          <span className="text-gray-600">{shareCount} {translation.messages?.shares || 'shares'}</span>
+        <div className="flex items-center gap-2 md:gap-4 text-gray-600 dark:text-gray-400">
+          <button type="button" className="hover:underline transition">{commentCount} {translation.messages?.comments || 'comments'}</button>
+          <button type="button" className="hover:underline transition">{shareCount} {translation.messages?.shares || 'shares'}</button>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="px-4 py-3 flex items-center justify-around border-b relative">
-        <button
-          ref={likeButtonRef}
-          onClick={() => handleLike()}
-          onMouseEnter={handleLikeButtonLongPress}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-            liked ? 'text-amber-600 bg-amber-50' : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <div className="text-2xl">
-            {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : liked ? <HeartIcon className="w-6 h-6" fill={true} /> : <HeartIcon className="w-6 h-6" fill={false} />}
-          </div>
-          <span className="font-semibold">{currentReaction || translation.buttons?.like || 'Like'}</span>
-        </button>
+      <div className="px-2 md:px-4 py-2 md:py-3 border-b relative">
+        <div className="grid grid-cols-3 gap-1 md:gap-0 md:flex md:items-center md:justify-around">
+          <button
+            ref={likeButtonRef}
+            onClick={() => handleLike()}
+            onMouseEnter={handleLikeButtonLongPress}
+            className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2 rounded-lg transition text-xs md:text-sm font-medium ${
+              liked ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <div className="text-lg md:text-2xl">
+              {currentReaction === 'Love' ? '❤️' : currentReaction === 'Haha' ? '😂' : currentReaction === 'Wow' ? '😮' : currentReaction === 'Sad' ? '😢' : currentReaction === 'Angry' ? '😡' : currentReaction === 'Fire' ? '🔥' : currentReaction === 'Celebrate' ? '🎉' : liked ? <HeartIcon className="w-5 h-5 md:w-6 md:h-6" fill={true} /> : <HeartIcon className="w-5 h-5 md:w-6 md:h-6" fill={false} />}
+            </div>
+            <span className="hidden md:inline font-semibold">{currentReaction || translation.buttons?.like || 'Like'}</span>
+          </button>
 
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
-        >
-          <span className="text-2xl">💬</span>
-          <span>{translation.buttons?.comment || 'Comment'}</span>
-        </button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2 px-2 md:px-4 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs md:text-sm font-medium"
+          >
+            <span className="text-lg md:text-2xl">💬</span>
+            <span className="hidden md:inline">{translation.buttons?.comment || 'Comment'}</span>
+          </button>
 
-        <button
-          onClick={handleShare}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-semibold"
-        >
-          <span className="text-2xl">🔄</span>
-          <span>{translation.buttons?.share || 'Share'}</span>
-        </button>
+          <button
+            onClick={handleShare}
+            className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2 px-2 md:px-4 py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition text-xs md:text-sm font-medium"
+          >
+            <span className="text-lg md:text-2xl">🔄</span>
+            <span className="hidden md:inline">{translation.buttons?.share || 'Share'}</span>
+          </button>
+        </div>
 
         {/* Reaction Picker */}
         {showReactionPicker && reactionPickerPosition && (

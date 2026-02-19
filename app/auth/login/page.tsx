@@ -74,9 +74,11 @@ export default function LoginPage() {
       setLoading(true);
       (async () => {
         try {
+          const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
           const result = await signIn('credentials', {
             email: userEmail,
             password: saved,
+            userAgent,
             redirect: false,
           });
 
@@ -139,9 +141,13 @@ export default function LoginPage() {
     }
 
     try {
+      // Capture userAgent for device tracking
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      
       const result = await signIn('credentials', {
         email,
         password,
+        userAgent,
         redirect: false,
       });
 

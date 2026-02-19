@@ -37,18 +37,24 @@ export const MessageRequestBubble: React.FC<MessageRequestBubbleProps> = ({
   const handleAccept = async () => {
     try {
       setError(null);
-      await onAccept(request.id);
+      const result = await onAccept(request.id);
+      return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to accept request');
+      const message = err instanceof Error ? err.message : 'Failed to accept request';
+      setError(message);
+      throw err;
     }
   };
 
   const handleReject = async () => {
     try {
       setError(null);
-      await onReject(request.id);
+      const result = await onReject(request.id);
+      return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reject request');
+      const message = err instanceof Error ? err.message : 'Failed to reject request';
+      setError(message);
+      throw err;
     }
   };
 
@@ -119,6 +125,7 @@ export const MessageRequestBubble: React.FC<MessageRequestBubbleProps> = ({
         {/* Action Buttons */}
         <div className="px-6 py-4 flex gap-3">
           <button
+            type="button"
             onClick={handleReject}
             disabled={isLoading}
             className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2"
@@ -127,6 +134,7 @@ export const MessageRequestBubble: React.FC<MessageRequestBubbleProps> = ({
             {isLoading ? (translation.common?.loading || 'Loading...') : (translation.message?.decline || 'Decline')}
           </button>
           <button
+            type="button"
             onClick={handleAccept}
             disabled={isLoading}
             className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-primary-light dark:from-primary-dark dark:to-primary text-white hover:from-primary-light hover:to-primary-light dark:hover:from-primary dark:hover:to-primary-light disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm flex items-center justify-center gap-2 shadow-sm"

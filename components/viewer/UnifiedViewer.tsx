@@ -413,27 +413,41 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
             </div>
 
             {/* Action Buttons */}
-            <div className="px-3 md:px-4 py-2 md:py-3 border-b flex flex-col gap-2 md:gap-3">
+            <div className="px-2 md:px-4 py-2 md:py-3 border-b">
               <div className="grid grid-cols-4 gap-1 md:gap-2">
-                <button onClick={handleLike} className={`flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
-                  <Heart size={20} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
+                <button 
+                  type="button"
+                  onClick={handleLike} 
+                  className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                  title="J'aime"
+                >
+                  <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
                 </button>
-                <button className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium">
-                  <MessageCircle size={16} /> <span className="hidden md:inline">Commenter</span>
+                <button 
+                  type="button"
+                  className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium"
+                  title="Commenter"
+                >
+                  <MessageCircle size={18} /> <span className="hidden md:inline">Commenter</span>
                 </button>
-                <button className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium">
-                  <Share2 size={16} /> <span className="hidden md:inline">Partager</span>
+                <button 
+                  type="button"
+                  className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium"
+                  title="Partager"
+                >
+                  <Share2 size={18} /> <span className="hidden md:inline">Partager</span>
                 </button>
-                <div className="relative">
+                <div className="relative flex items-stretch">
                   <button 
+                    type="button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`w-full flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    className={`flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                     title="Ajouter une réaction"
                   >
-                    <span className="text-lg">😊</span> <span className="hidden md:inline">Réagir</span>
+                    <span className="text-base md:text-lg">😊</span> <span className="hidden md:inline">Réagir</span>
                   </button>
                   
-                  {/* Emoji Picker Card */}
+                  {/* Emoji Picker Card - Fixed positioning for mobile */}
                   {showEmojiPicker && (
                     <motion.div 
                       ref={emojiPickerRef}
@@ -441,7 +455,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 z-50 w-56"
+                      className="absolute bottom-full right-0 md:right-auto md:left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 z-50 w-48 md:w-56"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Ajouter une réaction</div>
@@ -449,13 +463,14 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                         {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) => (
                           <motion.button
                             key={emoji}
+                            type="button"
                             whileHover={{ scale: 1.2 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
                               triggerReaction(emoji);
                               setShowEmojiPicker(false);
                             }}
-                            className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
+                            className="text-xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
                             title={`Réagir avec ${emoji}`}
                           >
                             {emoji}

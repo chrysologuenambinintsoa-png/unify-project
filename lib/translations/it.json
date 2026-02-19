@@ -11,7 +11,8 @@
     "back": "Indietro",
     "next": "Successivo",
     "submit": "Invia",
-    "search": "Cerca..."
+    "search": "Cerca...",
+    "start": "Iniziare"
   },
   "auth": {
     "login": "Accedi",

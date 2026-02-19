@@ -11,7 +11,8 @@
     "back": "Atrás",
     "next": "Siguiente",
     "submit": "Enviar",
-    "search": "Buscar..."
+    "search": "Buscar...",
+    "start": "Comenzar"
   },
   "auth": {
     "login": "Iniciar sesión",

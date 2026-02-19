@@ -7,9 +7,7 @@ const nextConfig = {
   reactStrictMode: true,
   
   // Optimizations for mobile
-  swcMinify: true,
   compress: true,
-  optimizeFonts: true,
   productionBrowserSourceMaps: false,
   
   images: {

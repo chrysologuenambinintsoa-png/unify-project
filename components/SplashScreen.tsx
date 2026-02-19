@@ -6,38 +6,20 @@ import Image from 'next/image';
 
 interface SplashScreenProps {
   isLoading: boolean;
-  onComplete?: () => void;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({
-  isLoading,
-  onComplete,
-}) => {
+export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoading }) => {
   const [showSplash, setShowSplash] = useState(isLoading);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     if (!isLoading) {
+      // Delay hiding to let exit animation play
       const timer = setTimeout(() => {
         setShowSplash(false);
-        onComplete?.();
-      }, 1200);
-
+      }, 800);
       return () => clearTimeout(timer);
     }
-  }, [isLoading, onComplete]);
-
-  // Animate progress from 0 to 100%
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) return 100;
-        return prev + Math.random() * 25;
-      });
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [isLoading]);
 
   if (!showSplash) return null;
 
@@ -47,11 +29,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.3 }}
     >
-      {/* Fond animé avec des lignes modernes */}
+      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Ligne gauche animée */}
         <motion.div
           className="absolute w-1.5 h-96 bg-gradient-to-b from-blue-500/20 via-blue-500/10 to-transparent rounded-full blur-md"
           animate={{
@@ -65,8 +46,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           }}
           style={{ top: '20%', left: '15%' }}
         />
-
-        {/* Ligne droite animée */}
         <motion.div
           className="absolute w-1.5 h-96 bg-gradient-to-b from-purple-500/20 via-purple-500/10 to-transparent rounded-full blur-md"
           animate={{
@@ -80,8 +59,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           }}
           style={{ top: '20%', right: '15%' }}
         />
-
-        {/* Point central subtle */}
         <motion.div
           className="absolute w-32 h-32 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-3xl"
           animate={{
@@ -98,7 +75,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       </div>
 
       <div className="relative z-10 text-center px-6 w-full max-w-lg">
-        {/* Logo Unify */}
+        {/* Logo */}
         <motion.div
           className="flex justify-center mb-10"
           initial={{ scale: 0.8, opacity: 0 }}
@@ -130,7 +107,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </motion.div>
         </motion.div>
 
-        {/* Texte principal - Typography moderne */}
+        {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -144,55 +121,22 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
           </p>
         </motion.div>
 
-        {/* Progress bar avec 3 points */}
+        {/* Loading indicator */}
         <motion.div
           className="mt-12 flex items-center justify-center gap-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="h-1 rounded-full bg-white/30"
-              animate={{
-                width: progress > i * 33 ? '24px' : '6px',
-                opacity: progress > i * 33 ? 1 : 0.3,
-                backgroundColor: progress > i * 33 ? 'rgb(59, 130, 246)' : 'rgb(255, 255, 255, 0.3)',
-              }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
-            />
-          ))}
-        </motion.div>
-
-        {/* Logo NCH avec animation */}
-        <motion.div
-          className="absolute bottom-20 w-full px-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
           <motion.div
-            animate={{ 
-              opacity: [0.6, 1, 0.6],
-            }}
+            className="h-1 bg-blue-500 rounded-full"
+            animate={{ width: ['6px', '24px', '6px'] }}
             transition={{
-              duration: 3,
+              duration: 2,
               repeat: Infinity,
               ease: 'easeInOut',
             }}
-            className="flex justify-center"
-          >
-            <svg width="200" height="80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
-              <rect width="100%" height="100%" fill="transparent"/>
-              <g transform="translate(20,20)">
-                <path d="M10 10 C15 0, 25 0, 30 10 C35 20, 25 30, 20 30 C15 30, 5 20, 10 10 Z" fill="#10b981"/>
-                <line x1="20" y1="10" x2="20" y2="30" stroke="white" strokeWidth="2"/>
-              </g>
-              <text x="60" y="40" fontFamily="Arial, sans-serif" fontSize="28" fill="#10b981" fontWeight="bold">NCH</text>
-              <text x="60" y="70" fontFamily="Arial, sans-serif" fontSize="16" fill="#ef4444" fontWeight="bold">MADAGASCAR</text>
-            </svg>
-          </motion.div>
+          />
         </motion.div>
       </div>
     </motion.div>

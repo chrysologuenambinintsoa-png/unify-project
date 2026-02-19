@@ -5,49 +5,28 @@ import { useSplashScreen } from '@/hooks/useSplashScreen';
 import { SplashScreen } from './SplashScreen';
 
 export const SplashScreenWrapper: React.FC = () => {
-  const showSplashTrigger = useSplashScreen();
-  const [isLoading, setIsLoading] = useState(showSplashTrigger);
+  const shouldShow = useSplashScreen();
+  const [isVisible, setIsVisible] = useState(false);
   const [hasClientMounted, setHasClientMounted] = useState(false);
 
-  // Ensure component mounts on client
   useEffect(() => {
     setHasClientMounted(true);
   }, []);
 
   useEffect(() => {
-    if (showSplashTrigger) {
-      console.log('[SplashScreenWrapper] Showing splash');
-      setIsLoading(true);
-      // Afficher le splash pendant 2 secondes
+    if (shouldShow && hasClientMounted) {
+      setIsVisible(true);
+      // Auto-hide after 2.5 seconds
       const timer = setTimeout(() => {
-        console.log('[SplashScreenWrapper] Hiding splash');
-        setIsLoading(false);
-      }, 2000);
+        setIsVisible(false);
+      }, 2500);
       return () => clearTimeout(timer);
-    } else {
-      console.log('[SplashScreenWrapper] Not showing splash');
-      setIsLoading(false);
     }
-  }, [showSplashTrigger]);
+  }, [shouldShow, hasClientMounted]);
 
-  // Don't render anything until client mounted
-  if (!hasClientMounted) {
+  if (!hasClientMounted || !isVisible) {
     return null;
   }
 
-  // Only return the splash if we should show it
-  if (!showSplashTrigger && !isLoading) {
-    console.log('[SplashScreenWrapper] Not rendering - splash not needed');
-    return null;
-  }
-
-  return (
-    <SplashScreen
-      isLoading={isLoading}
-      onComplete={() => {
-        console.log('[SplashScreenWrapper] Splash completed');
-        // Splash screen will hide automatically
-      }}
-    />
-  );
+  return <SplashScreen isLoading={isVisible} />;
 };

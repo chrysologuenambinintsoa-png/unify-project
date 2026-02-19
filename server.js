@@ -17,7 +17,7 @@ app.prepare().then(() => {
   // Broadcast helper
   const clients = new Set();
 
-  // Live room management
+  // Live room management (use the existing JS helper module)
   const { createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms');
 
   wss.on('connection', (ws, request) => {

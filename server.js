@@ -19,14 +19,30 @@ app.prepare().then(() => {
 
   // Live room management (resolve path via __dirname for deployments where CWD differs)
   const path = require('path');
+  const fs = require('fs');
   let createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants;
+
+  // Diagnostic checks to help deployments (Render) where module resolution fails
   try {
-    const liveRoomsModule = require(path.join(__dirname, 'lib', 'liveRooms'));
+    const absPath = path.join(__dirname, 'lib', 'liveRooms.js');
+    const relPath = path.join(process.cwd(), 'lib', 'liveRooms.js');
+    console.log('[startup] __dirname=', __dirname);
+    console.log('[startup] process.cwd()=', process.cwd());
+    console.log('[startup] exists absPath=', absPath, fs.existsSync(absPath));
+    console.log('[startup] exists relPath=', relPath, fs.existsSync(relPath));
+
+    const liveRoomsModule = require(absPath);
     ({ createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = liveRoomsModule);
   } catch (err) {
-    // Fallback to relative require and surface a clear log for deployment debugging
-    console.error('Could not require lib/liveRooms via __dirname, falling back to relative require:', err && err.message);
-    ({ createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms'));
+    console.error('[startup] Could not require lib/liveRooms via __dirname - attempting relative require. Error:', err && err.message);
+    try {
+      ({ createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms'));
+    } catch (err2) {
+      console.error('[startup] Relative require failed. This likely means lib/liveRooms.js is missing in the deployed bundle.');
+      console.error('[startup] Final error:', err2 && err2.message);
+      // Re-throw so process exits and Render shows the error in build/runtime logs
+      throw err2;
+    }
   }
 
   wss.on('connection', (ws, request) => {

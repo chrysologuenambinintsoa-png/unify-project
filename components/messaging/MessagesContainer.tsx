@@ -7,6 +7,7 @@ import { MessageInput } from './MessageInput';
 import { MessageBubble } from './MessageBubble';
 import { ForwardMessageModal } from './ForwardMessageModal';
 import { MessageRequestBubble } from './MessageRequestBubble';
+import { MessageRequestModal } from './MessageRequestModal';
 import { 
   Send, 
   Paperclip, 
@@ -235,10 +236,11 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
           const pendingMessageReq = allMessages.find((msg: any) => 
             msg.isMessageRequest && msg.messageRequestStatus === 'pending' && msg.receiverId === currentUserId
           );
-          
+
           if (pendingMessageReq) {
             setMessageRequest(pendingMessageReq);
-            setShowMessageRequestModal(false); // We show it inline now
+            // Open modal for recipient by default
+            setShowMessageRequestModal(true);
           } else {
             // Clear message request if no pending one exists
             setMessageRequest(null);
@@ -689,12 +691,24 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
             <>
               {/* Display message request if it exists */}
               {messageRequest && (
-                <MessageRequestBubble
-                  request={messageRequest}
-                  isLoading={messageRequestLoading}
-                  onAccept={async (messageId: string) => handleAcceptMessageRequest(messageId)}
-                  onReject={async (messageId: string) => handleRejectMessageRequest(messageId)}
-                />
+                <>
+                  <MessageRequestBubble
+                    request={messageRequest}
+                    isLoading={messageRequestLoading}
+                    onAccept={async (messageId: string) => handleAcceptMessageRequest(messageId)}
+                    onReject={async (messageId: string) => handleRejectMessageRequest(messageId)}
+                  />
+
+                  {showMessageRequestModal && (
+                    <MessageRequestModal
+                      request={messageRequest}
+                      isOpen={showMessageRequestModal}
+                      onClose={() => setShowMessageRequestModal(false)}
+                      onAccept={handleAcceptMessageRequest}
+                      onReject={handleRejectMessageRequest}
+                    />
+                  )}
+                </>
               )}
               
               {/* Display regular messages */}

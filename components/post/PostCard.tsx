@@ -34,12 +34,28 @@ interface Comment {
 
 export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
   const { translation } = useLanguage();
-  const [liked, setLiked] = useState(false);
   const { incrementHomeActivity } = useHomeActivity();
   const [currentReaction, setCurrentReaction] = useState<string>('');
-  const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 100));
-  const [commentCount, setCommentCount] = useState(Math.floor(Math.random() * 20));
-  const [shareCount, setShareCount] = useState(Math.floor(Math.random() * 10));
+
+  // Use server-provided counts when available instead of random placeholders
+  const initialLikeCount: number = Array.isArray((post as any).likes)
+    ? (post as any).likes.length
+    : typeof (post as any).likes === 'number'
+    ? (post as any).likes
+    : (post as any)._count?.likes ?? 0;
+
+  const initialCommentCount: number = Array.isArray((post as any).comments)
+    ? (post as any).comments.length
+    : typeof (post as any).comments === 'number'
+    ? (post as any).comments
+    : (post as any)._count?.comments ?? 0;
+
+  const initialShareCount: number = typeof (post as any).shares === 'number' ? (post as any).shares : 0;
+
+  const [liked, setLiked] = useState(!!(post as any).liked);
+  const [likeCount, setLikeCount] = useState<number>(initialLikeCount);
+  const [commentCount, setCommentCount] = useState<number>(initialCommentCount);
+  const [shareCount, setShareCount] = useState<number>(initialShareCount);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -393,7 +409,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
             onClick={() => handleLike()}
             onMouseEnter={handleLikeButtonLongPress}
             className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2 rounded-lg transition text-xs md:text-sm font-medium ${
-              liked ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+              liked ? 'text-primary bg-primary/10 dark:bg-primary-dark/20 dark:text-primary' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
             <div className="text-lg md:text-2xl">

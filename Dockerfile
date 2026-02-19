@@ -2,15 +2,23 @@
 FROM node:20-slim AS builder
 WORKDIR /app
 
-# Install only dev deps needed for build
+# Install system deps needed by Prisma (OpenSSL)
+RUN apt-get update && apt-get install -y openssl libssl-dev --no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Copy package files and prisma schema prior to installing node modules
+# so `prisma generate` triggered by postinstall can find the schema.
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
+
+# Install only deps needed for build
 RUN npm ci --no-audit --no-fund
 
-# Copy source
+# Copy remaining source
 COPY . .
 
 # Generate Prisma client and build Next app
-RUN npx prisma generate || true
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-slim AS runner

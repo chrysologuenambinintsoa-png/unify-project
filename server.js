@@ -17,8 +17,17 @@ app.prepare().then(() => {
   // Broadcast helper
   const clients = new Set();
 
-  // Live room management (use the existing JS helper module)
-  const { createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms');
+  // Live room management (resolve path via __dirname for deployments where CWD differs)
+  const path = require('path');
+  let createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants;
+  try {
+    const liveRoomsModule = require(path.join(__dirname, 'lib', 'liveRooms'));
+    ({ createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = liveRoomsModule);
+  } catch (err) {
+    // Fallback to relative require and surface a clear log for deployment debugging
+    console.error('Could not require lib/liveRooms via __dirname, falling back to relative require:', err && err.message);
+    ({ createRoom, getRoom, listRooms, joinRoom, leaveRoom, getParticipants } = require('./lib/liveRooms'));
+  }
 
   wss.on('connection', (ws, request) => {
     console.log('[WS] New connection established, setting up handlers');

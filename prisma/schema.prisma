@@ -55,6 +55,8 @@ model User {
   groupPollsCreated      GroupPoll[]       @relation("GroupPollCreator")
   hiddenMessages         HiddenMessage[]
   likes                  Like[]
+  hostedLiveSessions     LiveSession[]     @relation("HostedLiveSessions")
+  viewedLiveSessions     LiveViewer[]      @relation("ViewedLiveSessions")
   loginHistory           LoginHistory[]
   messageReactions       MessageReaction[]
   receivedMessages       Message[]         @relation("ReceivedMessages")
@@ -763,4 +765,79 @@ model PageLike {
   @@index([pageId])
   @@index([userId])
   @@map("page_likes")
+}
+
+model LiveSession {
+  id           String         @id @default(cuid())
+  hostId       String
+  title        String?
+  description  String?
+  thumbnail    String?
+  status       String         @default("preparing")
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  totalViewers Int            @default(0)
+  peakViewers  Int            @default(0)
+  messages     LiveMessage[]
+  reactions    LiveReaction[]
+  host         User           @relation("HostedLiveSessions", fields: [hostId], references: [id], onDelete: Cascade)
+  viewers      LiveViewer[]
+
+  @@index([hostId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("live_sessions")
+}
+
+model LiveViewer {
+  id          String         @id @default(cuid())
+  sessionId   String
+  userId      String
+  joinedAt    DateTime       @default(now())
+  leftAt      DateTime?
+  displayName String?
+  role        String         @default("viewer")
+  messages    LiveMessage[]
+  reactions   LiveReaction[]
+  session     LiveSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User           @relation("ViewedLiveSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([joinedAt])
+  @@map("live_viewers")
+}
+
+model LiveMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  viewerId  String
+  content   String
+  type      String      @default("text")
+  createdAt DateTime    @default(now())
+  session   LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  viewer    LiveViewer  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([viewerId])
+  @@index([createdAt])
+  @@map("live_messages")
+}
+
+model LiveReaction {
+  id        String      @id @default(cuid())
+  sessionId String
+  viewerId  String
+  emoji     String
+  createdAt DateTime    @default(now())
+  session   LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  viewer    LiveViewer  @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([viewerId])
+  @@index([createdAt])
+  @@map("live_reactions")
 }

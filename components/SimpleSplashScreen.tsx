@@ -95,21 +95,12 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
             {/* Cercle animé - Logo sans bordure blanche et taille responsive universelle */}
             <motion.div className="mb-6 sm:mb-8 md:mb-10 lg:mb-12 flex justify-center px-4">
               <motion.div
-                // Use inline styles for responsive universal sizing with clamp
-                style={{
-                  width: 'clamp(120px, 28vw, 240px)',
-                  height: 'clamp(120px, 28vw, 240px)'
-                }}
-                className={`rounded-full bg-gradient-to-br ${currentVariant.accentColors} p-0 shadow-2xl flex items-center justify-center overflow-hidden border-0`}
+                className={`w-32 sm:w-40 md:w-48 lg:w-56 aspect-square rounded-full bg-gradient-to-br ${currentVariant.accentColors} p-0 shadow-2xl flex items-center justify-center overflow-hidden border-0`}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
               >
                 <div
-                  style={{
-                    width: 'calc(clamp(120px, 28vw, 240px) - 24px)',
-                    height: 'calc(clamp(120px, 28vw, 240px) - 24px)'
-                  }}
-                  className="rounded-full bg-transparent flex items-center justify-center text-[4rem] sm:text-[5rem] md:text-[6rem] m-0 p-0"
+                  className="w-28 sm:w-36 md:w-44 lg:w-52 aspect-square rounded-full bg-transparent flex items-center justify-center text-[4rem] sm:text-[5rem] md:text-[6rem] m-0 p-0"
                 >
                   {/* Use an SVG or image if available — emoji kept as fallback */}
                   📱
@@ -119,10 +110,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
 
             {/* Texte */}
             <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 px-4"
-              style={{
-                color: variant === 'minimal' ? '#000' : '#fff',
-              }}
+              className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-2 sm:mb-3 md:mb-4 px-4 ${variant === 'minimal' ? 'text-black' : 'text-white'}`}
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
             >
@@ -131,10 +119,7 @@ export const SimpleSplashScreen: React.FC<SimpleSplashScreenProps> = ({
 
             {/* Sous-titre avec animation */}
             <motion.p
-              className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 px-4"
-              style={{
-                color: variant === 'minimal' ? '#666' : '#fff',
-              }}
+              className={`text-base sm:text-lg md:text-xl mb-6 sm:mb-8 px-4 ${variant === 'minimal' ? 'text-gray-600' : 'text-white'}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.8 }}

@@ -6,23 +6,37 @@ import { SplashScreen } from './SplashScreen';
 
 export const SplashScreenWrapper: React.FC = () => {
   const shouldShow = useSplashScreen();
-  // Show splash immediately if needed, without waiting for client mount
-  // This ensures splash displays before page content
   const [isVisible, setIsVisible] = useState(shouldShow);
 
   useEffect(() => {
     if (shouldShow) {
       setIsVisible(true);
-      // Auto-hide after 2.5 seconds
-      const timer = setTimeout(() => {
+
+      // Hide splash after 2.5 seconds minimum
+      const minTimer = setTimeout(() => {
         setIsVisible(false);
       }, 2500);
-      return () => clearTimeout(timer);
+
+      // Also detect when page content is fully loaded and interactive
+      const handlePageReady = () => {
+        // Check if main content has loaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setIsVisible(false);
+        }
+      };
+
+      // Listen for page ready state changes
+      document.addEventListener('DOMContentLoaded', handlePageReady);
+      document.addEventListener('load', handlePageReady);
+
+      return () => {
+        clearTimeout(minTimer);
+        document.removeEventListener('DOMContentLoaded', handlePageReady);
+        document.removeEventListener('load', handlePageReady);
+      };
     }
   }, [shouldShow]);
 
-  // Return null only if we're definitely NOT showing the splash
-  // This prevents content from rendering before the splash
   if (!isVisible) {
     return null;
   }

@@ -68,8 +68,9 @@ export default function LivePage() {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
-            <label className="block text-sm font-medium text-slate-900 mb-2">{translation.live.joinAs}</label>
+            <label htmlFor="role-select" className="block text-sm font-medium text-slate-900 mb-2">{translation.live.joinAs}</label>
             <select
+              id="role-select"
               value={role}
               onChange={(e) => setRole(e.target.value as any)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900"

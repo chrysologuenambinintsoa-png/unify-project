@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unknown-property */
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -44,7 +45,15 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [pinnedComment, setPinnedComment] = useState<{ id: string; from: string; text: string } | null>(null);
 
-  console.log('[LiveStreamer] Render:', { step, canPreview, role, camOn, micOn });
+  // Handle microphone toggle - auto-enable camera when mic is enabled
+  useEffect(() => {
+    if (micOn && !camOn && step === 'setup') {
+      // Auto-enable camera when mic is turned on
+      console.log('[LiveStreamer] Auto-enabling camera when mic is activated');
+      setCamOn(true);
+    }
+  }, [micOn, camOn, step]);
+
 
   // Check available devices on component mount
   useEffect(() => {
@@ -375,6 +384,22 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     }
   };
 
+  const sendInvite = () => {
+    if (!roomId || !myId) return;
+    const inviteLink = `${window.location.origin}/live?roomId=${roomId}&role=participant`;
+    
+    // Try to copy invite link to clipboard
+    navigator.clipboard
+      .writeText(inviteLink)
+      .then(() => {
+        alert(`Invite link copied: ${inviteLink}`);
+      })
+      .catch((e) => {
+        console.error('Failed to copy to clipboard:', e);
+        alert(`Invite link: ${inviteLink}`);
+      });
+  };
+
   const endStream = async () => {
     try {
       // stop local tracks
@@ -388,7 +413,6 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
     setStreamOn(false);
     onClose?.();
   };
-
 
   // mediasoup client setup for producing local tracks
   async function setupMediasoupProducer(roomIdParam: string, localStream: MediaStream) {
@@ -554,9 +578,8 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                     setStep('setup');
                   }
                 }} 
-                className="p-2 hover:bg-white/20 rounded-lg transition text-white text-2xl font-bold cursor-pointer flex-shrink-0" 
+                className="p-2 hover:bg-white/20 rounded-lg transition text-white text-2xl font-bold cursor-pointer flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center" 
                 title="Close"
-                style={{ minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 ✕
               </button>
@@ -712,12 +735,31 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
 
               {/* Floating reactions */}
               <div className="absolute inset-0 pointer-events-none">
-                {reactions.map((r) => (
-                  <div key={r.id} className="absolute text-4xl" style={{ left: `${Math.random() * 80 + 10}%`, bottom: `${Math.random() * 30 + 10}%`, animation: 'float-up 2s ease-out forwards' }}>{r.emoji}</div>
-                ))}
+                {reactions.map((r) => {
+                  const ref = React.useRef<HTMLDivElement>(null);
+                  const left = Math.random() * 80 + 10;
+                  const bottom = Math.random() * 30 + 10;
+                  
+                  React.useEffect(() => {
+                    if (ref.current) {
+                      ref.current.style.left = `${left}%`;
+                      ref.current.style.bottom = `${bottom}%`;
+                    }
+                  }, [left, bottom]);
+
+                  return (
+                    <div 
+                      ref={ref}
+                      key={r.id} 
+                      className="absolute text-4xl floating-reaction"
+                    >
+                      {r.emoji}
+                    </div>
+                  );
+                })}
               </div>
 
-              <style>{`@keyframes float-up { 0%{ transform: translateY(0) scale(1); opacity:1 } 100%{ transform: translateY(-140px) scale(.6); opacity:0 } }`}</style>
+              <style>{`@keyframes float-up { 0%{ transform: translateY(0) scale(1); opacity:1 } 100%{ transform: translateY(-140px) scale(.6); opacity:0 } } .floating-reaction { animation: float-up 2s ease-out forwards; }`}</style>
 
               {/* Top-left live badge */}
               <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
@@ -733,7 +775,7 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                 <button onClick={() => setMicOn((v) => !v)} className={`px-3 py-2 rounded-full ${micOn ? 'bg-white text-slate-900' : 'bg-slate-800 text-white'}`}>{micOn ? '🎙' : '🔇'}</button>
                 <button onClick={() => setCamOn((v) => !v)} className={`px-3 py-2 rounded-full ${camOn ? 'bg-white text-slate-900' : 'bg-slate-800 text-white'}`}>{camOn ? '📷' : '🚫'}</button>
                 <button onClick={() => sendReaction('❤️')} className="px-3 py-2 rounded-full bg-white text-red-600">❤️</button>
-                <button onClick={() => { /* Invite co-host placeholder */ }} className="px-3 py-2 rounded-full bg-white text-slate-900">Inviter</button>
+                <button onClick={sendInvite} title="Copy invite link for guests" className="px-3 py-2 rounded-full bg-white text-slate-900">👥</button>
                 <button onClick={toggleFullscreen} className="px-3 py-2 rounded-full bg-white text-slate-900">⤢</button>
               </div>
             </div>

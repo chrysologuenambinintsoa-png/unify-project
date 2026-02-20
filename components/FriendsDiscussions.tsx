@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -158,10 +159,14 @@ export function FriendsDiscussions({ limit = 8 }: FriendsDiscussionsProps) {
                 )}
 
                 {/* Message Button */}
-                <button className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-1">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="w-full mt-3 text-xs flex items-center justify-center gap-1"
+                >
                   <Send className="w-3 h-3" />
                   Message
-                </button>
+                </Button>
               </div>
             </motion.div>
           </Link>

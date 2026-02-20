@@ -360,8 +360,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
               <img
                 src={image}
                 alt={`Post image ${index + 1}`}
-                className="w-full h-auto object-cover"
-                style={{ maxHeight: post.images.length === 1 ? '500px' : '300px' }}
+                className={`w-full h-auto object-cover ${post.images.length === 1 ? 'max-h-[500px]' : 'max-h-[300px]'}`}
               />
             </div>
           ))}
@@ -376,8 +375,7 @@ export default function PostCard({ post, onEdit, onDelete }: PostCardProps) {
               key={index}
               src={video}
               controls
-              className="w-full"
-              style={{ maxHeight: '500px' }}
+              className="w-full max-h-[500px]"
             />
           ))}
         </div>

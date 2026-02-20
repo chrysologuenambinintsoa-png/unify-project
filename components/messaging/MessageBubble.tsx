@@ -166,6 +166,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             {isEditing && (
               <div className="space-y-2">
                 <textarea
+                  placeholder="Edit message"
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
                   className={`w-full rounded border-2 p-2 text-sm font-normal outline-none resize-none ${

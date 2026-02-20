@@ -24,6 +24,7 @@ import {
 interface Message {
   id: string;
   senderId: string;
+  receiverId?: string;
   senderName: string;
   senderAvatar: string;
   content?: string;
@@ -748,8 +749,8 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
               />
               <div className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-full">
                 <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
               </div>
             </div>
           </motion.div>

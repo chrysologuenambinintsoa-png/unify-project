@@ -2,6 +2,15 @@ const { createServer } = require('http');
 const next = require('next');
 const { WebSocketServer } = require('ws');
 
+// Import Prisma livestream integration
+let prismaLiveStream;
+try {
+  prismaLiveStream = require('./lib/prismaLiveStream');
+} catch (err) {
+  console.warn('[startup] Prisma livestream module not available:', err?.message);
+  prismaLiveStream = null;
+}
+
 const port = Number(process.env.PORT || 3000);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -76,6 +85,12 @@ app.prepare().then(() => {
             const room = createRoom({ id: roomId, title: payload?.title, hostId: payload?.hostId });
             const data = { type: 'roomCreated', room: { id: room.id, title: room.title } };
             ws.send(JSON.stringify(data));
+            
+            // Save to Prisma if available
+            if (prismaLiveStream && payload?.hostId) {
+              prismaLiveStream.createLiveSessionInDB(roomId, payload.hostId, payload?.title)
+                .catch(err => console.error('[Prisma] Failed to create session:', err));
+            }
             break;
           }
           case 'joinRoom': {
@@ -84,6 +99,13 @@ app.prepare().then(() => {
             if (room) {
               joinRoom(roomId, ws, participant);
               ws._joinedRooms.add(roomId);
+              
+              // Save viewer to Prisma if available
+              if (prismaLiveStream && participant.userId) {
+                prismaLiveStream.addViewerInDB(roomId, participant.userId, participant.name || 'Guest', participant.role)
+                  .catch(err => console.error('[Prisma] Failed to add viewer:', err));
+              }
+              
               // send current participants list to the joining socket
               try {
                 const pList = getParticipants(roomId);
@@ -113,8 +135,19 @@ app.prepare().then(() => {
           case 'leaveRoom': {
             const room = getRoom(roomId);
             if (room) {
+              // Get user info before leaving  
+              const roomParticipants = Array.from(room.participants.entries());
+              const leftParticipant = roomParticipants.find(([s, p]) => s === ws)?.[1];
+              
               leaveRoom(roomId, ws);
               ws._joinedRooms.delete(roomId);
+              
+              // Remove viewer from Prisma if available
+              if (prismaLiveStream && leftParticipant?.userId) {
+                prismaLiveStream.removeViewerFromDB(roomId, leftParticipant.userId)
+                  .catch(err => console.error('[Prisma] Failed to remove viewer:', err));
+              }
+              
               for (const [s] of room.participants) {
                 s.send(JSON.stringify({ type: 'participantLeft', roomId, payload }));
               }
@@ -141,6 +174,16 @@ app.prepare().then(() => {
             // broadcast to all participants in the room
             const room = getRoom(roomId);
             if (!room) break;
+            
+            // Save to Prisma if available
+            if (prismaLiveStream && type === 'comment' && payload?.content) {
+              prismaLiveStream.storeMessageInDB(roomId, payload.userId, payload.content)
+                .catch(err => console.error('[Prisma] Failed to save message:', err));
+            } else if (prismaLiveStream && type === 'reaction' && payload?.emoji) {
+              prismaLiveStream.storeReactionInDB(roomId, payload.userId, payload.emoji)
+                .catch(err => console.error('[Prisma] Failed to save reaction:', err));
+            }
+            
             for (const [s] of room.participants) {
               try { s.send(JSON.stringify(msg)); } catch (e) {}
             }

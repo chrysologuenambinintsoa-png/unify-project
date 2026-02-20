@@ -546,6 +546,8 @@ export function CreatePostForm({ onPostCreated }: { onPostCreated: () => void })
           value={background}
           onChange={(e) => setBackground(e.target.value)}
           className="w-12 h-10 border rounded cursor-pointer"
+          title="Sélectionner une couleur de fond"
+          placeholder="#ffffff"
         />
       </div>
 

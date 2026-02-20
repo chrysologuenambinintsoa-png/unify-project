@@ -88,6 +88,7 @@ export async function GET(
       .map((msg) => ({
         id: msg.id,
         senderId: msg.senderId,
+        receiverId: msg.receiverId,
         senderName: msg.sender.fullName || 'Unknown User',
         senderAvatar: generateAvatarUrl(msg.sender.avatar, msg.sender.fullName, msg.sender.id, null),
         content: msg.content || undefined,

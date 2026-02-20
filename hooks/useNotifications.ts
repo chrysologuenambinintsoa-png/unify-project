@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 
 export interface NotificationData {
   id: string;
@@ -16,6 +17,7 @@ export interface NotificationData {
 }
 
 export const useNotifications = () => {
+  const { data: session } = useSession();
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,13 @@ export const useNotifications = () => {
           const errorData = await response.json().catch(() => ({}));
           const statusText = response.statusText || 'Unknown error';
           const message = errorData.error || `HTTP ${response.status}: ${statusText}`;
+          
+          // If it's a 401 (Unauthorized), skip retries and silently fail
+          if (response.status === 401) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+          }
           
           // If it's a 503 (Service Unavailable), retry
           if (response.status === 503 && attempt < MAX_RETRIES - 1) {
@@ -181,6 +190,11 @@ export const useNotifications = () => {
 
   // Setup SSE connection for real-time notifications
   useEffect(() => {
+    // Only setup SSE if user is authenticated
+    if (!session) {
+      return;
+    }
+
     const setupSSE = () => {
       try {
         // Close existing connection if any
@@ -229,15 +243,23 @@ export const useNotifications = () => {
         eventSourceRef.current.close();
       }
     };
-  }, []);
+  }, [session]);
 
-  // Fetch on mount - only once
+  // Fetch on mount - only once, and only if authenticated
   useEffect(() => {
+    if (!session) {
+      // Reset state when not authenticated
+      setNotifications([]);
+      setUnreadCount(0);
+      initialFetchDoneRef.current = false;
+      return;
+    }
+
     if (!initialFetchDoneRef.current) {
       initialFetchDoneRef.current = true;
       fetchNotifications();
     }
-  }, []); // Empty dependency array to run only on mount
+  }, [session, fetchNotifications]);
 
   // Auto-refresh disabled - only manual refresh allowed (SSE handles real-time updates)
 

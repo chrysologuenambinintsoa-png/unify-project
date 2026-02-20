@@ -5,6 +5,7 @@ import { UserPlus } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { CardsSkeleton } from '@/components/skeletons/CardsSkeleton';
 
 interface SuggestedFriend {
@@ -105,20 +106,25 @@ export function FriendSuggestions({ compact = false }: FriendSuggestionsProps) {
             className="flex-shrink-0 w-36"
           >
             <div className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-900/40 rounded-xl p-3 hover:shadow-lg transition-all border border-pink-200 dark:border-pink-700/30 h-full flex flex-col items-center text-center">
-              <Avatar
-                src={suggestion.avatar}
-                name={suggestion.fullName}
-                className="w-12 h-12 rounded-lg mb-2 flex-shrink-0"
-              />
-              <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm w-full px-0.5">{suggestion.fullName}</h4>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 pb-2 border-b border-pink-200 dark:border-pink-700/30 w-full">
-                {(typeof suggestion.friendsCount === 'number'
-                  ? suggestion.friendsCount
-                  : (suggestion.mutualFriends ?? suggestion.mutualFriendsCount ?? 0))} amis
-              </div>
+              <Link href={`/users/${suggestion.id}`} className="flex flex-col items-center text-center w-full flex-grow">
+                <Avatar
+                  src={suggestion.avatar}
+                  name={suggestion.fullName}
+                  className="w-12 h-12 rounded-lg mb-2 flex-shrink-0"
+                />
+                <h4 className="font-semibold text-gray-900 dark:text-white truncate text-sm w-full px-0.5 hover:text-primary-dark transition-colors">{suggestion.fullName}</h4>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 pb-2 border-b border-pink-200 dark:border-pink-700/30 w-full">
+                  {(typeof suggestion.friendsCount === 'number'
+                    ? suggestion.friendsCount
+                    : (suggestion.mutualFriends ?? suggestion.mutualFriendsCount ?? 0))} amis
+                </div>
+              </Link>
               <div className="flex gap-1 flex-col w-full">
                 <Button
-                  onClick={() => handleAddFriend(suggestion.id, suggestion.fullName)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAddFriend(suggestion.id, suggestion.fullName);
+                  }}
                   variant="primary"
                   size="sm"
                   className="w-full text-xs py-2 flex items-center justify-center gap-1"

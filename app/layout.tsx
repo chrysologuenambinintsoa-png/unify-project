@@ -7,13 +7,61 @@ import { DiagnosticsClient } from '@/components/DiagnosticsClient';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Unify',
-  description: 'Plateforme de réseau sociale moderne et élégante',
+  title: 'Unify - Plateforme de Réseau Social',
+  description: 'Unify est une plateforme de réseau social moderne et élégante. Connectez-vous avec vos amis, partagez des moments, découvrez de nouvelles personnes et créez une communauté.',
+  keywords: 'réseau social, communauté, amis, partage, messages, connexion',
   icons: {
     icon: '/logo.svg',
     shortcut: '/logo.svg',
     apple: '/logo.svg',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Unify',
+  },
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://unify.vercel.app'),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'fr_FR',
+    url: process.env.NEXTAUTH_URL || 'https://unify.vercel.app',
+    siteName: 'Unify',
+    title: 'Unify - Plateforme de Réseau Social',
+    description: 'Connectez-vous avec vos amis et découvrez une nouvelle façon de communiquer',
+    images: [
+      {
+        url: '/logo.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Unify - Plateforme de Réseau Social',
+        type: 'image/svg+xml',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Unify - Plateforme de Réseau Social',
+    description: 'Connectez-vous avec vos amis et découvrez une nouvelle façon de communiquer',
+    creator: '@UnifyPlatform',
+  },
+  appLinks: {
+    ios: {
+      url: 'unify://',
+      app_store_id: '',
+    },
+  },
+  category: 'Social Network',
 };
 
 export const viewport: Viewport = {
@@ -39,11 +87,16 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        <meta name="application-name" content="Unify" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Unify" />
-        <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)" />
+        <meta name="msapplication-TileColor" content="#6366f1" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <link rel="apple-touch-icon" href="/logo.svg" />
+        <link rel="alternate" hrefLang="fr" href={process.env.NEXTAUTH_URL || 'https://unify.vercel.app'} />
+        <link rel="canonical" href={process.env.NEXTAUTH_URL || 'https://unify.vercel.app'} />
+        <link rel="manifest" href="/manifest.json" />
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body, #__next {

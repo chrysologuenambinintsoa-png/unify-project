@@ -79,6 +79,8 @@ model User {
   storyViews             StoryView[]
   callerCalls            VideoCall[]       @relation("CallerCalls")
   recipientCalls         VideoCall[]       @relation("RecipientCalls")
+  blockedByMe            BlockedUser[]     @relation("BlockedByMe")
+  blockedMe              BlockedUser[]     @relation("BlockedMe")
 
   @@map("users")
 }
@@ -840,4 +842,19 @@ model LiveReaction {
   @@index([viewerId])
   @@index([createdAt])
   @@map("live_reactions")
+}
+
+model BlockedUser {
+  id        String   @id @default(cuid())
+  userId    String   // The user who blocked
+  blockedId String   // The user who was blocked
+  createdAt DateTime @default(now())
+  
+  user      User     @relation("BlockedByMe", fields: [userId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlockedMe", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, blockedId])
+  @@index([userId])
+  @@index([blockedId])
+  @@map("blocked_users")
 }

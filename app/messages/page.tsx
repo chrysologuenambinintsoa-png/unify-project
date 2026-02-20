@@ -175,6 +175,7 @@ export default function MessagesPage() {
             <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={handleMobileClose}
+                title="Go back"
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"
               >
                 <ArrowLeft className="w-5 h-5" />

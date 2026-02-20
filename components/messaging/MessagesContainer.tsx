@@ -233,9 +233,14 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
           // Separate message requests from regular messages
           const allMessages: any[] = Array.isArray(data) ? data : [];
           
-          // Find pending message request (only show to receiver, not sender)
+          // Find pending message request - show if current user is the RECEIVER
+          // senderId is the one who sent the message request
+          // receiverId is the one who should accept/reject it
           const pendingMessageReq = allMessages.find((msg: any) => 
-            msg.isMessageRequest && msg.messageRequestStatus === 'pending' && msg.receiverId === currentUserId
+            msg.isMessageRequest && 
+            msg.messageRequestStatus === 'pending' && 
+            msg.receiverId === currentUserId &&  // Current user is the one who receives the message request
+            msg.senderId === recipientId  // From the other person in the conversation
           );
 
           if (pendingMessageReq) {

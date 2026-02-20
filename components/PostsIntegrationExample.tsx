@@ -22,47 +22,53 @@ export function usePosts() {
 
     const connect = () => {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      const url = proto + '://' + location.host + '/ws';
+      // Allow overriding the WebSocket URL via NEXT_PUBLIC_LIVE_WS_URL
+      // Default to current location host + /ws if not set
+      const envUrl = (process.env.NEXT_PUBLIC_LIVE_WS_URL as string | undefined) || '';
+      const url = envUrl && envUrl.length > 0 ? envUrl : proto + '://' + location.host + '/ws';
       try {
         ws = new WebSocket(url);
       } catch (e) {
-        // fallback to explicit localhost
-        ws = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') + '://localhost:3000/ws');
+        console.error('Failed to connect to WebSocket at', url, 'Error:', e);
+        // No hardcoded fallback; log error clearly
+        return;
       }
 
-      ws.onmessage = (ev) => {
-        try {
-          const event = JSON.parse(ev.data);
-          if (!event || !event.type) return;
-          setPosts((prev) => {
-            if (event.type === 'created') {
-              return [event.payload, ...prev].filter(Boolean);
-            }
-            if (event.type === 'updated') {
-              return prev.map((p) => (p.id === event.payload.id ? event.payload : p));
-            }
-            if (event.type === 'deleted') {
-              return prev.filter((p) => p.id !== event.payload.id);
-            }
-            if (event.type === 'reaction') {
-              return prev.map((p) => (p.id === event.payload.id ? { ...p, _count: event.payload._count } : p));
-            }
-            return prev;
-          });
-        } catch (e) {
-          // ignore parse errors
-        }
-      };
+      if (ws) {
+        ws.onmessage = (ev) => {
+          try {
+            const event = JSON.parse(ev.data);
+            if (!event || !event.type) return;
+            setPosts((prev) => {
+              if (event.type === 'created') {
+                return [event.payload, ...prev].filter(Boolean);
+              }
+              if (event.type === 'updated') {
+                return prev.map((p) => (p.id === event.payload.id ? event.payload : p));
+              }
+              if (event.type === 'deleted') {
+                return prev.filter((p) => p.id !== event.payload.id);
+              }
+              if (event.type === 'reaction') {
+                return prev.map((p) => (p.id === event.payload.id ? { ...p, _count: event.payload._count } : p));
+              }
+              return prev;
+            });
+          } catch (e) {
+            // ignore parse errors
+          }
+        };
 
-      ws.onclose = () => {
-        // try reconnect
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(connect, 2000);
-      };
+        ws.onclose = () => {
+          // try reconnect
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(connect, 2000);
+        };
 
-      ws.onerror = () => {
-        ws?.close();
-      };
+        ws.onerror = () => {
+          ws?.close();
+        };
+      }
     };
 
     connect();

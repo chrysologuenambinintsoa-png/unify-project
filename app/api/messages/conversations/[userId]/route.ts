@@ -82,9 +82,9 @@ export async function GET(
       },
     });
 
-    // Format messages for frontend - exclude hidden messages and all message requests
+    // Format messages for frontend - exclude hidden messages but include message requests
     const formattedMessages = messages
-      .filter(msg => !hiddenMessageIds.has(msg.id) && !msg.isMessageRequest)
+      .filter(msg => !hiddenMessageIds.has(msg.id))
       .map((msg) => ({
         id: msg.id,
         senderId: msg.senderId,

@@ -21,7 +21,14 @@ export function useWebSocket(userId: string | null, conversationId: string | nul
 
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const wsUrl = `${protocol}://${window.location.host}/api/messages/ws?userId=${userId}&conversationId=${conversationId}`;
+      // Allow overriding the WebSocket URL via NEXT_PUBLIC_LIVE_WS_URL
+      // If NEXT_PUBLIC_LIVE_WS_URL is set, assume it's the base and append /api/messages/ws params
+      // Otherwise default to current location host
+      const envUrl = (process.env.NEXT_PUBLIC_LIVE_WS_URL as string | undefined) || '';
+      const baseUrl = envUrl && envUrl.length > 0 
+        ? envUrl.replace(/\/ws$/, '') // Remove /ws suffix if present
+        : `${protocol}://${window.location.host}`;
+      const wsUrl = `${baseUrl}/api/messages/ws?userId=${userId}&conversationId=${conversationId}`;
 
       wsRef.current = new WebSocket(wsUrl);
 

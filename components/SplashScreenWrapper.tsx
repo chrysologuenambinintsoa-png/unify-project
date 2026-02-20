@@ -6,15 +6,12 @@ import { SplashScreen } from './SplashScreen';
 
 export const SplashScreenWrapper: React.FC = () => {
   const shouldShow = useSplashScreen();
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasClientMounted, setHasClientMounted] = useState(false);
+  // Show splash immediately if needed, without waiting for client mount
+  // This ensures splash displays before page content
+  const [isVisible, setIsVisible] = useState(shouldShow);
 
   useEffect(() => {
-    setHasClientMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (shouldShow && hasClientMounted) {
+    if (shouldShow) {
       setIsVisible(true);
       // Auto-hide after 2.5 seconds
       const timer = setTimeout(() => {
@@ -22,11 +19,13 @@ export const SplashScreenWrapper: React.FC = () => {
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [shouldShow, hasClientMounted]);
+  }, [shouldShow]);
 
-  if (!hasClientMounted || !isVisible) {
+  // Return null only if we're definitely NOT showing the splash
+  // This prevents content from rendering before the splash
+  if (!isVisible) {
     return null;
   }
 
-  return <SplashScreen isLoading={isVisible} />;
+  return <SplashScreen isLoading={true} />;
 };

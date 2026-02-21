@@ -9,30 +9,40 @@ export const SplashScreenWrapper: React.FC = () => {
   const [isVisible, setIsVisible] = useState(shouldShow);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     if (shouldShow) {
       setIsVisible(true);
+
+      // Block page content and scrolling while splash is visible
+      const htmlElement = document.documentElement;
+      const bodyElement = document.body;
+      
+      htmlElement.style.overflow = 'hidden';
+      bodyElement.style.overflow = 'hidden';
+      bodyElement.style.position = 'fixed';
+      bodyElement.style.width = '100%';
+      bodyElement.style.height = '100%';
 
       // Hide splash after 2.5 seconds minimum
       const minTimer = setTimeout(() => {
         setIsVisible(false);
+        // Restore page scrolling
+        htmlElement.style.overflow = '';
+        bodyElement.style.overflow = '';
+        bodyElement.style.position = '';
+        bodyElement.style.width = '';
+        bodyElement.style.height = '';
       }, 2500);
-
-      // Also detect when page content is fully loaded and interactive
-      const handlePageReady = () => {
-        // Check if main content has loaded
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setIsVisible(false);
-        }
-      };
-
-      // Listen for page ready state changes
-      document.addEventListener('DOMContentLoaded', handlePageReady);
-      document.addEventListener('load', handlePageReady);
 
       return () => {
         clearTimeout(minTimer);
-        document.removeEventListener('DOMContentLoaded', handlePageReady);
-        document.removeEventListener('load', handlePageReady);
+        // Cleanup - restore styles
+        htmlElement.style.overflow = '';
+        bodyElement.style.overflow = '';
+        bodyElement.style.position = '';
+        bodyElement.style.width = '';
+        bodyElement.style.height = '';
       };
     }
   }, [shouldShow]);

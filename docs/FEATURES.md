@@ -705,14 +705,48 @@ GET    /api/explore/trends          - Hashtags populaires
 
 ---
 
+## � Monétisation par Sponsorisation
+
+**Description** : Les entreprises peuvent créer des posts sponsorisés et payer pour les montrer aux utilisateurs.
+
+**Fonctionnalités** :
+- ✅ Création de campagnes sponsorisées
+- ✅ Posts sponsorisés affichés dans le feed
+- ✅ Tracking automatique des impressions
+- ✅ Tracking des clics
+- ✅ Gestion du budget par campagne
+- ✅ Statuts des campagnes (active, paused, archived)
+- ✅ Filtrage par dates
+- ✅ API Admin pour gérer les campagnes
+
+**Endpoints** :
+```
+POST   /api/sponsored              - Créer une campagne
+GET    /api/sponsored              - Lister les campagnes
+PUT    /api/sponsored              - Modifier une campagne
+DELETE /api/sponsored              - Supprimer une campagne
+POST   /api/sponsored/:id/track    - Tracker impressions/clics
+```
+
+**Modèles de Paiement** :
+- CPM (Cost Per Mille) - Paiement par 1000 impressions
+- CPC (Cost Per Click) - Paiement par clic
+- Budget Fixe - Afficher jusqu'à épuisement du budget
+
+**Documentation complète** : [MONETIZATION.md](MONETIZATION.md)
+
+---
+
 ## 🗺️ Feuille de Route
 
 Les fonctionnalités suivantes seront ajoutées :
 
+- [x] Monétisation par sponsorisation ✅
 - [ ] Vidéo Live avec streaming
-- [ ] Paiements/Monetization
-- [ ] Système de subscription
-- [ ] Contenu premium
+- [ ] Intégration des paiements réels (Stripe/PayPal)
+- [ ] Tableau de bord annonceur
+- [ ] Système de subscription pour createurs
+- [ ] Contenu premium pour createurs
 - [ ] API publique pour développeurs
 - [ ] Webhooks
 - [ ] Plugins/Extensions

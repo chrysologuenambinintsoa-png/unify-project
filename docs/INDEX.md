@@ -25,7 +25,9 @@ Cette documentation contient tout ce que vous devez savoir pour installer, utili
   - Groupes et Pages
   - Amis et suggestions
   - Notifications
+  - Badges & Réalisations
   - Paramètres utilisateur
+  - Monétisation par sponsorisation 💰
   - Et bien plus...
 
 ### 🔧 Pour les Développeurs
@@ -65,6 +67,13 @@ Cette documentation contient tout ce que vous devez savoir pour installer, utili
   - Stories, Search
   - Erreurs et codes
   - WebSocket events
+
+- **[Monétisation (MONETIZATION.md)](MONETIZATION.md)**
+  - Système de sponsorisation complet
+  - Modèles de paiement (CPM, CPC)
+  - Tracking des impressions et clics
+  - Dashboard annonceur
+  - Prêt pour production
 
 #### Base de Données
 - **[Base de Données (DATABASE.md)](DATABASE.md)**
@@ -160,6 +169,11 @@ Voir [Architecture.md](ARCHITECTURE.md#architecture-websocket)
 - [API: Notifications](API.md#-notifications-endpoints)
 - [Database: Notification Model](DATABASE.md#-notifications)
 
+### Monétisation
+- [Features: Monetization](FEATURES.md#-monétisation-par-sponsorisation)
+- [Monetization: Documentation Complète](MONETIZATION.md)
+- [System de Paiement](#) - Stripe/PayPal integration (À venir)
+
 ### Stories
 - [Features: Stories](FEATURES.md#-stories-24h)
 - [API: Stories](API.md#-stories-endpoints)
@@ -239,6 +253,9 @@ PostgreSQL / SQLite
 
 **Comment déployer en production?**
 > Voir [Installation.md](INSTALLATION.md#-installation-de-production)
+
+**Comment fonctionne le système de sponsorisation?**
+> Voir [MONETIZATION.md](MONETIZATION.md)
 
 ---
 

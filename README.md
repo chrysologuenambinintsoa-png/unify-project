@@ -302,13 +302,15 @@ Cela signifie que :
 
 Pour une compréhension plus approfondie du projet, consultez :
 
-- 📚 [INSTALLATION.md](docs/INSTALLATION.md) - Guide d'installation et configuration
-- 🏗️ [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture du projet
-- ✨ [FEATURES.md](docs/FEATURES.md) - Documentation détaillée de toutes les fonctionnalités
-- 📡 [API.md](docs/API.md) - Endpoints API et documentation
-- 🔧 [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Guide de développement
-- 🧩 [COMPONENTS.md](docs/COMPONENTS.md) - Guide des composants React
-- 🗄️ [DATABASE.md](docs/DATABASE.md) - Schéma et gestion de la base de données
+- 📚 [Index Documentation](docs/INDEX.md) - Guide de navigation complet
+- 📖 [Installation](docs/INSTALLATION.md) - Guide d'installation et configuration
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - Architecture du projet
+- ✨ [Fonctionnalités](docs/FEATURES.md) - Documentation détaillée de toutes les fonctionnalités
+- 📡 [API](docs/API.md) - Endpoints API et documentation
+- 🔧 [Développement](docs/DEVELOPMENT.md) - Guide de développement
+- 🧩 [Composants](docs/COMPONENTS.md) - Guide des composants React
+- 🗄️ [Base de Données](docs/DATABASE.md) - Schéma et gestion de la base de données
+- 💰 [Monétisation](docs/MONETIZATION.md) - Système de sponsorisation et monétisation
 
 ## 👨‍💻 Auteur
 

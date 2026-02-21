@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Maximize, Minimize } from 'lucide-react';
 import useLive from '@/hooks/useLive';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -697,8 +698,12 @@ export default function LiveStreamer({ roomId: initialRoomId, displayName = 'Gue
                 <div className="bg-black/60 text-white px-4 py-2 rounded-lg">👁️ {viewerCount}</div>
               </div>
 
-              <button onClick={toggleFullscreen} className="pointer-events-auto absolute bottom-4 right-4 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors font-semibold">
-                {isFullscreen ? '⛔ ' + translation.live.exitFullscreen : '⛶ Fullscreen'}
+              <button 
+                onClick={toggleFullscreen} 
+                title={isFullscreen ? translation.live.exitFullscreen : translation.live.fullscreen}
+                className="pointer-events-auto absolute bottom-4 right-4 p-3 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+              >
+                {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
               </button>
             </div>
           </div>

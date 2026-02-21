@@ -81,6 +81,7 @@ model User {
   recipientCalls         VideoCall[]       @relation("RecipientCalls")
   blockedByMe            BlockedUser[]     @relation("BlockedByMe")
   blockedMe              BlockedUser[]     @relation("BlockedMe")
+  payments               Payment[]         @relation("UserPayments")
 
   @@map("users")
 }
@@ -857,4 +858,33 @@ model BlockedUser {
   @@index([userId])
   @@index([blockedId])
   @@map("blocked_users")
+}
+
+model Payment {
+  id                      String    @id @default(cuid())
+  userId                  String
+  user                    User      @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  
+  amount                  Float     // Montant en cents (ex: 2500 = $25.00)
+  currency                String    @default("USD")
+  status                  String    @default("pending") // pending, completed, failed, cancelled, refunded
+  stripeStatus            String?   // Statut spécifique Stripe
+  
+  stripePaymentIntentId   String?   @unique
+  stripeChargeId          String?   @unique
+  
+  description             String?   // Description du paiement
+  metadata                Json?     // Données additionnelles (campaignId, impressions prévues, etc.)
+  
+  errorMessage            String?   // Message d'erreur si le paiement a échoué
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@index([stripeChargeId])
+  @@index([createdAt])
+  @@map("payments")
 }

@@ -96,7 +96,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.svg" />
         <link rel="alternate" hrefLang="fr" href={process.env.NEXTAUTH_URL || 'https://unify.vercel.app'} />
         <link rel="canonical" href={process.env.NEXTAUTH_URL || 'https://unify.vercel.app'} />
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body, #__next {

@@ -61,6 +61,13 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
   const [loading, setLoading] = useState(true);
   const [mediaIndex, setMediaIndex] = useState(Number(searchParams?.get('mediaIndex')) || 0);
   const isFetchingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     fetchPost();
@@ -68,8 +75,8 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
   }, [postId]);
 
   const fetchPost = async () => {
-    if (isFetchingRef.current) {
-      console.debug('[PhotoViewerClient] fetchPost skipped: already fetching');
+    if (isFetchingRef.current || !mountedRef.current) {
+      console.debug('[PhotoViewerClient] fetchPost skipped: already fetching or unmounted');
       return;
     }
     try {
@@ -79,12 +86,19 @@ export default function PhotoViewerClient({ postId }: { postId: string }) {
       console.debug('[PhotoViewerClient] fetch /api/posts/', postId, 'status', response.status);
       if (!response.ok) throw new Error('Failed to fetch post');
       const data = await response.json();
-      setPost(data);
+      if (mountedRef.current) {
+        setPost(data);
+      }
     } catch (err) {
       console.error('Error fetching post:', err);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     } finally {
-      setLoading(false);
       isFetchingRef.current = false;
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

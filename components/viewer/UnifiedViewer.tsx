@@ -157,6 +157,26 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
     }
   };
 
+  const handleCommentReaction = async (commentId: string, emoji: string) => {
+    console.debug('[Viewer] Comment reaction:', commentId, emoji);
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments/${commentId}/reaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ emoji }),
+      });
+      if (res.ok) {
+        console.debug('[Viewer] Comment reaction posted successfully');
+      } else {
+        const text = await res.text();
+        console.error('[Viewer] Comment reaction failed', res.status, text);
+      }
+    } catch (err) {
+      console.error('[Viewer] Comment reaction error', err);
+    }
+  };
+
   const triggerReaction = (emoji: string) => {
     const id = `r_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
     setReactions((p) => [...p, { id, emoji }]);
@@ -267,11 +287,11 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
               >
                 <X size={20} />
               </button>
-              <Avatar src={post?.user?.avatar || post?.author?.avatar || null} name={post?.user?.name || post?.author?.name || 'User'} userId={post?.user?.id || post?.author?.id} size="sm" className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0" />
+              <Avatar src={post?.user?.avatar || post?.author?.avatar || null} name={post?.user?.fullName || post?.author?.fullName || post?.user?.name || post?.author?.name || 'User'} userId={post?.user?.id || post?.author?.id} size="sm" className="w-8 h-8 md:w-10 md:h-10 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-xs md:text-sm">{post?.user?.username || post?.author?.username || '@user'}</div>
-                <div className="font-bold text-xs md:text-sm">{post?.user?.name || post?.author?.name || 'User'}</div>
-                <div className="text-xs text-gray-500 hidden md:block">{new Date(post?.createdAt || post?.timestamp || Date.now()).toLocaleString()}</div>
+                <div className="font-bold text-xs md:text-sm">{post?.user?.fullName || post?.author?.fullName || post?.user?.name || post?.author?.name || 'User'}</div>
+                      <div className="text-xs text-gray-500 hidden md:block">{new Date(post?.createdAt || post?.timestamp || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
               </div>
               <div className="relative">
                 <button
@@ -499,10 +519,23 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                           </div>
                           <div className="text-sm text-gray-700">{c.content || c.text}</div>
                         </div>
-                        <div className="flex items-center gap-3 mt-1 pl-12">
-                          <button type="button" onClick={() => handleCommentLike(c.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(c.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
+                        <div className="flex items-center gap-2 mt-1 pl-12">
+                          <button type="button" onClick={() => handleCommentLike(c.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(c.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>❤️ J'aime</button>
+                          <div className="flex items-center gap-1">
+                            {['👍', '😂', '😮', '😢', '😡'].map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => handleCommentReaction(c.id, emoji)}
+                                title={`Réagir avec ${emoji}`}
+                                className="text-sm hover:scale-125 transition-transform"
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
                           <button type="button" onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
-                          <span className="text-xs text-gray-400">{new Date(c.createdAt || Date.now()).toLocaleString()}</span>
+                          <span className="text-xs text-gray-400">{new Date(c.createdAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                         </div>
                       </div>
                     </div>
@@ -522,7 +555,20 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
                                 <div className="text-xs text-gray-700">{reply.content || reply.text}</div>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5 pl-0">
-                                <button type="button" onClick={() => handleCommentLike(reply.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(reply.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>J'aime</button>
+                                <button type="button" onClick={() => handleCommentLike(reply.id)} className={`text-xs font-semibold transition-colors ${likedComments.has(reply.id) ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>❤️ J'aime</button>
+                                <div className="flex items-center gap-1">
+                                  {['👍', '😂', '😮', '😢', '😡'].map((emoji) => (
+                                    <button
+                                      key={emoji}
+                                      type="button"
+                                      onClick={() => handleCommentReaction(reply.id, emoji)}
+                                      title={`Réagir avec ${emoji}`}
+                                      className="text-xs hover:scale-125 transition-transform"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
                                 <button type="button" onClick={() => setReplyToCommentId(c.id)} className="text-xs text-gray-500 hover:text-gray-700 font-semibold">Répondre</button>
                               </div>
                             </div>

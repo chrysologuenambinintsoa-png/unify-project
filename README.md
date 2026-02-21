@@ -291,7 +291,24 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
+Ce projet est sous licence **GNU Affero General Public License v3 (AGPL-3.0)**. 
+
+Cela signifie que :
+- ✅ Vous pouvez utiliser, modifier et distribuer ce code
+- ✅ Si vous utilisez ce code sur un serveur, vous devez publier vos modifications
+- ℹ️ Pour plus de détails, consultez le fichier [LICENSE](LICENSE)
+
+## 🔗 Documentation
+
+Pour une compréhension plus approfondie du projet, consultez :
+
+- 📚 [INSTALLATION.md](docs/INSTALLATION.md) - Guide d'installation et configuration
+- 🏗️ [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture du projet
+- ✨ [FEATURES.md](docs/FEATURES.md) - Documentation détaillée de toutes les fonctionnalités
+- 📡 [API.md](docs/API.md) - Endpoints API et documentation
+- 🔧 [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Guide de développement
+- 🧩 [COMPONENTS.md](docs/COMPONENTS.md) - Guide des composants React
+- 🗄️ [DATABASE.md](docs/DATABASE.md) - Schéma et gestion de la base de données
 
 ## 👨‍💻 Auteur
 
@@ -306,4 +323,6 @@ Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
 ---
 
-**Note**: Ceci est un projet en développement. Certaines fonctionnalités sont encore en cours de développement.
+**Version**: 1.0.0  
+**Dernière mise à jour**: Février 2026  
+**Statut**: En développement actif

@@ -23,6 +23,7 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
   const [likeCount, setLikeCount] = useState<number>(post?._count?.likes ?? 0);
   const [reactions, setReactions] = useState<Array<{ id: string; emoji: string }>>([]);
   const [reactionsCount, setReactionsCount] = useState<number>(post?._count?.reactions ?? 0);
+  const [bookmarked, setBookmarked] = useState(!!post?.bookmarked);
   const images: string[] = post?.images ?? (post?.media ? post.media.filter((m: any) => m.type === 'image').map((m: any) => m.url) : []);
   const videos: string[] = post?.videos ?? (post?.media ? post.media.filter((m: any) => m.type === 'video').map((m: any) => m.url) : []);
   const allMedia: Array<{ type: 'image' | 'video'; url: string }> = [
@@ -126,6 +127,49 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
     if (newLiked) {
       onLike?.(post.id);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}/bookmark`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setBookmarked(!bookmarked);
+      }
+    } catch (err) {
+      console.error('[Viewer] Bookmark error', err);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/posts/${post.id}`;
+    
+    // Try native share API first
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post?.user?.fullName || 'Post',
+          text: post?.content || 'Découvrez ce post sur Unify',
+          url: url,
+        });
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('[Viewer] Share error', err);
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('[Viewer] Copy to clipboard error', err);
+      }
     }
   };
 
@@ -432,71 +476,120 @@ export default function UnifiedViewer({ post, initialIndex = 0, isOpen, onClose,
               <div className="mt-2 md:mt-3 text-xs text-gray-500">{likeCount || post._count?.likes || 0} j'aime • {post._count?.comments || 0} commentaires</div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-2 md:px-4 py-2 md:py-3 border-b">
-              <div className="grid grid-cols-4 gap-1 md:gap-2">
+            {/* Action Buttons - Facebook style with Unify colors */}
+            <div className="px-0 md:px-0 py-0 md:py-0 border-b">
+              <div className="flex items-center gap-0">
+                {/* Like Button */}
                 <button 
                   type="button"
-                  onClick={handleLike} 
-                  className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${liked ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                  onClick={handleLike}
+                  className={`flex-1 flex items-center justify-center gap-2 px-2 md:px-4 py-3 md:py-4 transition-all duration-200 font-semibold text-xs md:text-sm ${
+                    liked 
+                      ? 'text-primary-dark dark:text-accent-light' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-primary-dark dark:hover:text-accent-light'
+                  } hover:bg-gray-100 dark:hover:bg-gray-800/50`}
                   title="J'aime"
                 >
-                  <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> <span className="hidden md:inline">J'aime</span>
+                  <Heart 
+                    size={20} 
+                    fill={liked ? 'currentColor' : 'none'} 
+                    stroke={liked ? 'currentColor' : 'currentColor'}
+                    className={liked ? 'text-primary-dark dark:text-accent-light' : ''}
+                  />
+                  <span className="hidden sm:inline">J'aime</span>
                 </button>
+
+                {/* Comment Button */}
                 <button 
                   type="button"
-                  className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium"
+                  className="flex-1 flex items-center justify-center gap-2 px-2 md:px-4 py-3 md:py-4 transition-all duration-200 font-semibold text-xs md:text-sm text-gray-600 dark:text-gray-400 hover:text-primary-dark dark:hover:text-accent-light hover:bg-gray-100 dark:hover:bg-gray-800/50"
                   title="Commenter"
                 >
-                  <MessageCircle size={18} /> <span className="hidden md:inline">Commenter</span>
+                  <MessageCircle size={20} />
+                  <span className="hidden sm:inline">Commenter</span>
                 </button>
+
+                {/* Share Button */}
                 <button 
                   type="button"
-                  className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs md:text-sm font-medium"
-                  title="Partager"
+                  onClick={handleShare}
+                  className={`flex-1 flex items-center justify-center gap-2 px-2 md:px-4 py-3 md:py-4 transition-all duration-200 font-semibold text-xs md:text-sm ${
+                    copied 
+                      ? 'text-primary-dark dark:text-accent-light' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-primary-dark dark:hover:text-accent-light'
+                  } hover:bg-gray-100 dark:hover:bg-gray-800/50`}
+                  title={copied ? 'Lien copié!' : 'Partager'}
                 >
-                  <Share2 size={18} /> <span className="hidden md:inline">Partager</span>
+                  <Share2 size={20} />
+                  <span className="hidden sm:inline">{copied ? 'Copié!' : 'Partager'}</span>
                 </button>
-                <div className="relative flex items-stretch">
+
+                {/* Save/Bookmark Button */}
+                <button 
+                  type="button"
+                  onClick={handleBookmark}
+                  className={`flex-1 flex items-center justify-center gap-2 px-2 md:px-4 py-3 md:py-4 transition-all duration-200 font-semibold text-xs md:text-sm ${
+                    bookmarked 
+                      ? 'text-primary-dark dark:text-accent-light' 
+                      : 'text-gray-600 dark:text-gray-400 hover:text-primary-dark dark:hover:text-accent-light'
+                  } hover:bg-gray-100 dark:hover:bg-gray-800/50`}
+                  title={bookmarked ? 'Retirer des signets' : 'Ajouter aux signets'}
+                >
+                  <Bookmark 
+                    size={20} 
+                    fill={bookmarked ? 'currentColor' : 'none'} 
+                    stroke={bookmarked ? 'currentColor' : 'currentColor'}
+                    className={bookmarked ? 'text-primary-dark dark:text-accent-light' : ''}
+                  />
+                  <span className="hidden sm:inline">{bookmarked ? 'Enregistré' : 'Enregistrer'}</span>
+                </button>
+
+                {/* Reactions Button - with dropdown */}
+                <div className="flex-1 relative">
                   <button 
                     type="button"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-0.5 md:gap-2 px-1 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium ${showEmojiPicker ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEmojiPicker(!showEmojiPicker);
+                    }}
+                    className={`w-full flex items-center justify-center gap-2 px-2 md:px-4 py-3 md:py-4 transition-all duration-200 font-semibold text-xs md:text-sm ${
+                      showEmojiPicker
+                        ? 'text-primary-dark dark:text-accent-light bg-gray-100 dark:bg-gray-800/50'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-primary-dark dark:hover:text-accent-light hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                    }`}
                     title="Ajouter une réaction"
                   >
-                    <span className="text-base md:text-lg">😊</span> <span className="hidden md:inline">Réagir</span>
+                    <span className="text-lg">👍</span>
+                    <span className="hidden sm:inline">Réagir</span>
                   </button>
                   
-                  {/* Emoji Picker Card - Fixed positioning for mobile */}
+                  {/* Emoji Reactions Popup - Facebook style */}
                   {showEmojiPicker && (
                     <motion.div 
                       ref={emojiPickerRef}
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      initial={{ opacity: 0, scale: 0.75, y: 0 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      exit={{ opacity: 0, scale: 0.75, y: 0 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full right-0 md:right-auto md:left-0 mb-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 z-50 w-48 md:w-56"
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-2 z-50 flex items-center gap-1 md:gap-2"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Ajouter une réaction</div>
-                      <div className="grid grid-cols-6 gap-1">
-                        {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) => (
-                          <motion.button
-                            key={emoji}
-                            type="button"
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                              triggerReaction(emoji);
-                              setShowEmojiPicker(false);
-                            }}
-                            className="text-xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 transition-colors"
-                            title={`Réagir avec ${emoji}`}
-                          >
-                            {emoji}
-                          </motion.button>
-                        ))}
-                      </div>
+                      {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji, idx) => (
+                        <motion.button
+                          key={emoji}
+                          type="button"
+                          whileHover={{ scale: 1.3, y: -8 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            triggerReaction(emoji);
+                            setShowEmojiPicker(false);
+                          }}
+                          className="text-xl md:text-2xl hover:scale-125 transition-transform duration-100 p-2 rounded-full active:bg-gray-100 dark:active:bg-gray-700"
+                          title={`Réagir avec ${emoji}`}
+                        >
+                          {emoji}
+                        </motion.button>
+                      ))}
                     </motion.div>
                   )}
                 </div>

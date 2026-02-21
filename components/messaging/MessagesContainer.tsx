@@ -233,20 +233,20 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
           // Separate message requests from regular messages
           const allMessages: any[] = Array.isArray(data) ? data : [];
           
-          // Find pending message request - show if current user is the RECEIVER
-          // senderId is the one who sent the message request
-          // receiverId is the one who should accept/reject it
+          // Find pending message request from either direction
+          // Case 1: Current user is the RECEIVER (must accept/reject it)
+          // Case 2: Current user is the SENDER (waiting for recipient to accept/reject)
           const pendingMessageReq = allMessages.find((msg: any) => 
             msg.isMessageRequest && 
-            msg.messageRequestStatus === 'pending' && 
-            msg.receiverId === currentUserId &&  // Current user is the one who receives the message request
-            msg.senderId === recipientId  // From the other person in the conversation
+            msg.messageRequestStatus === 'pending'
           );
 
           if (pendingMessageReq) {
             setMessageRequest(pendingMessageReq);
-            // Open modal for recipient by default
-            setShowMessageRequestModal(true);
+            // Open modal only if current user is the RECEIVER of the request
+            if (pendingMessageReq.receiverId === currentUserId && pendingMessageReq.senderId === recipientId) {
+              setShowMessageRequestModal(true);
+            }
           } else {
             // Clear message request if no pending one exists
             setMessageRequest(null);
@@ -474,17 +474,17 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
     }
   };
 
-  // Filter messages based on search query and exclude all message requests
+  // Filter messages based on search query and display message requests + regular messages
   const filteredMessages = messages.filter(msg => {
-    // Exclude ALL message requests from normal message display (they're shown in MessageRequestBubble)
-    if (msg.isMessageRequest) {
-      return false;
-    }
-    
-    // Apply search filter
+    // Include ALL messages (requests and regular messages)
+    // Apply search filter only to content
     if (!searchQuery.trim()) return true;
     return msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
   });
+
+  // Separate message requests from regular messages for proper display
+  const messageRequests = filteredMessages.filter(msg => msg.isMessageRequest);
+  const regularMessages = filteredMessages.filter(msg => !msg.isMessageRequest);
 
   const handleAcceptMessageRequest = async (messageId: string) => {
     try {
@@ -695,30 +695,49 @@ export const MessagesContainer: React.FC<MessagesContainerProps> = ({
             </motion.div>
           ) : (
             <>
-              {/* Display message request if it exists */}
-              {messageRequest && (
-                <>
+              {/* Display message requests at the top */}
+              {messageRequests.length > 0 && messageRequests.map((msgReq) => {
+                // Convert Message type to MessageRequest type for display
+                const messageRequest: any = {
+                  id: msgReq.id,
+                  content: msgReq.content || '',
+                  sender: msgReq.sender || {
+                    id: msgReq.senderId,
+                    username: msgReq.senderId,
+                    fullName: msgReq.senderName,
+                    avatar: msgReq.senderAvatar,
+                  },
+                  createdAt: msgReq.timestamp instanceof Date 
+                    ? msgReq.timestamp.toISOString()
+                    : typeof msgReq.timestamp === 'string'
+                    ? msgReq.timestamp
+                    : new Date().toISOString(),
+                };
+                
+                return (
                   <MessageRequestBubble
+                    key={msgReq.id}
                     request={messageRequest}
-                    isLoading={messageRequestLoading}
+                    isLoading={messageRequestLoading && messageRequest?.id === msgReq.id}
                     onAccept={async (messageId: string) => handleAcceptMessageRequest(messageId)}
                     onReject={async (messageId: string) => handleRejectMessageRequest(messageId)}
                   />
-
-                  {showMessageRequestModal && (
-                    <MessageRequestModal
-                      request={messageRequest}
-                      isOpen={showMessageRequestModal}
-                      onClose={() => setShowMessageRequestModal(false)}
-                      onAccept={handleAcceptMessageRequest}
-                      onReject={handleRejectMessageRequest}
-                    />
-                  )}
-                </>
+                );
+              })}
+              
+              {/* Legacy message request modal - kept for backward compatibility */}
+              {messageRequest && showMessageRequestModal && messageRequest.receiverId === currentUserId && (
+                <MessageRequestModal
+                  request={messageRequest}
+                  isOpen={showMessageRequestModal}
+                  onClose={() => setShowMessageRequestModal(false)}
+                  onAccept={handleAcceptMessageRequest}
+                  onReject={handleRejectMessageRequest}
+                />
               )}
               
               {/* Display regular messages */}
-              {filteredMessages.map((message) => (
+              {regularMessages.map((message) => (
                 <MessageBubble
                   key={message.id}
                   message={message}

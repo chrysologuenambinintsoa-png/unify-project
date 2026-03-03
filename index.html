@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facebook Clone</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --fb-blue: #0B3D91;
+    --fb-blue-dark: #082B60;
+    --fb-bg: #F0F2F5;
+    --fb-white: #FFFFFF;
+    --fb-text: #050505;
+    --fb-text-secondary: #65676B;
+    --fb-border: #CED0D4;
+    --fb-hover: #F2F2F2;
+    --fb-green: #42B72A;
+    --fb-red: #FA383E;
+    --reaction-like: #0B3D91;
+    --reaction-love: #F33E58;
+    --reaction-haha: #F7B125;
+    --reaction-wow: #F7B125;
+    --reaction-sad: #F7B125;
+    --reaction-angry: #E9710F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--fb-bg); color: var(--fb-text); }
+
+  /* NAVBAR */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--fb-white); height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  }
+  .navbar-left { display: flex; align-items: center; gap: 8px; }
+  .navbar-logo { width: 40px; height: 40px; background: var(--fb-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; font-weight: 900; text-decoration: none; }
+  .search-box { position: relative; }
+  .search-box input { background: var(--fb-bg); border: none; border-radius: 50px; padding: 8px 16px 8px 36px; font-size: 15px; width: 240px; outline: none; }
+  .search-box .fa-search { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--fb-text-secondary); font-size: 14px; }
+  .navbar-center { display: flex; gap: 4px; }
+  .nav-tab { padding: 8px 32px; border-radius: 8px; cursor: pointer; color: var(--fb-text-secondary); font-size: 20px; transition: all .2s; position: relative; border: none; background: none; }
+  .nav-tab:hover { background: var(--fb-bg); color: var(--fb-blue); }
+  .nav-tab.active { color: var(--fb-blue); }
+  .nav-tab.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 3px; background: var(--fb-blue); border-radius: 2px; }
+  .navbar-right { display: flex; align-items: center; gap: 8px; }
+  .nav-icon-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--fb-bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--fb-text); position: relative; transition: background .2s; }
+  .nav-icon-btn:hover { background: var(--fb-border); }
+  .badge { position: absolute; top: -2px; right: -2px; background: var(--fb-red); color: white; font-size: 11px; font-weight: 700; border-radius: 10px; padding: 1px 5px; border: 2px solid white; }
+  .avatar-btn { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; cursor: pointer; border: none; padding: 0; }
+  .avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; cursor: pointer; }
+
+  /* DROPDOWN */
+  .dropdown { position: relative; }
+  .dropdown-menu {
+    position: absolute; right: 0; top: 48px; background: white;
+    border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    min-width: 360px; z-index: 200; display: none; padding: 8px;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-profile-card { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; cursor: pointer; }
+  .dropdown-profile-card:hover { background: var(--fb-bg); }
+  .dropdown-profile-info strong { font-size: 16px; display: block; }
+  .dropdown-profile-info span { font-size: 13px; color: var(--fb-blue); }
+  .dropdown-divider { height: 1px; background: var(--fb-bg); margin: 8px 0; }
+  .dropdown-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 15px; }
+  .dropdown-item:hover { background: var(--fb-bg); }
+  .dropdown-icon { width: 36px; height: 36px; background: var(--fb-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+  /* LAYOUT */
+  .main-layout { display: flex; max-width: 1400px; margin: 0 auto; padding-top: 72px; gap: 0; }
+  .left-sidebar { width: 280px; padding: 8px 8px; position: sticky; top: 72px; height: calc(100vh - 72px); overflow-y: auto; flex-shrink: 0; }
+  .left-sidebar::-webkit-scrollbar { display: none; }
+  .center-feed { flex: 1; max-width: 680px; margin: 0 auto; padding: 8px 16px; }
+  .right-sidebar { width: 280px; padding: 8px 8px; position: sticky; top: 72px; height: calc(100vh - 72px); overflow-y: auto; flex-shrink: 0; }
+  .right-sidebar::-webkit-scrollbar { display: none; }
+
+  /* SIDEBAR LINKS */
+  .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 8px 8px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 500; text-decoration: none; color: var(--fb-text); transition: background .15s; }
+  .sidebar-link:hover { background: var(--fb-hover); }
+  .sidebar-link .icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .sidebar-icon-blue { background: linear-gradient(135deg, #0B3D91, #082B60); color: white; }
+  .sidebar-icon-green { background: linear-gradient(135deg, #42B72A, #66BB6A); color: white; }
+  .sidebar-icon-red { background: linear-gradient(135deg, #FA383E, #FF6B6B); color: white; }
+  .sidebar-icon-purple { background: linear-gradient(135deg, #764ba2, #667eea); color: white; }
+  .sidebar-icon-orange { background: linear-gradient(135deg, #E9710F, #FFB74D); color: white; }
+  .sidebar-section-title { font-size: 17px; font-weight: 700; padding: 8px; color: var(--fb-text-secondary); }
+  .sidebar-see-more { color: var(--fb-text-secondary); font-size: 15px; font-weight: 500; }
+
+  /* CARD */
+  .card { background: var(--fb-white); border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.1); margin-bottom: 12px; overflow: hidden; }
+
+  /* STORIES */
+  .stories-row { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .stories-row::-webkit-scrollbar { height: 4px; }
+  .stories-row::-webkit-scrollbar-track { background: transparent; }
+  .stories-row::-webkit-scrollbar-thumb { background: var(--fb-border); border-radius: 4px; }
+  .story-card { min-width: 110px; height: 200px; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; flex-shrink: 0; }
+  .story-card-bg { width: 100%; height: 100%; object-fit: cover; }
+  .story-create { background: white; border: 1px solid var(--fb-border); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 12px; }
+  .story-create-icon { width: 40px; height: 40px; background: var(--fb-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-bottom: 8px; margin-top: auto; }
+  .story-create-top { width: 100%; height: 65%; background: var(--fb-bg); position: relative; display: flex; align-items: center; justify-content: center; }
+  .story-user-avatar { position: absolute; top: 8px; left: 8px; width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--fb-blue); overflow: hidden; }
+  .story-label { font-size: 13px; font-weight: 600; text-align: center; color: var(--fb-text); padding: 0 4px; }
+  .story-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+  .story-name { position: absolute; bottom: 8px; left: 8px; right: 8px; color: white; font-size: 13px; font-weight: 600; }
+
+  /* CREATE POST */
+  .create-post { padding: 12px 16px; }
+  .create-post-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .create-post-input { flex: 1; background: var(--fb-bg); border: none; border-radius: 50px; padding: 10px 16px; font-size: 16px; cursor: pointer; color: var(--fb-text-secondary); }
+  .create-post-input:hover { background: #E4E6E9; }
+  .create-post-divider { height: 1px; background: var(--fb-bg); margin: 0 -16px 4px; }
+  .create-post-actions { display: flex; justify-content: space-around; }
+  .create-post-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; border: none; background: none; color: var(--fb-text-secondary); transition: background .15s; }
+  .create-post-btn:hover { background: var(--fb-bg); }
+  .create-post-btn .fa-video { color: #F02849; }
+  .create-post-btn .fa-image { color: #45BD62; }
+  .create-post-btn .fa-face-smile { color: #F7B928; }
+
+  /* POST CARD */
+  .post-card { }
+  .post-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+  .post-author { display: flex; align-items: center; gap: 8px; }
+  .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+  .post-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: white; cursor: pointer; flex-shrink: 0; }
+  .post-author-info { display: flex; flex-direction: column; }
+  .post-author-name { font-size: 15px; font-weight: 600; cursor: pointer; }
+  .post-author-name:hover { text-decoration: underline; }
+  .post-meta { display: flex; align-items: center; gap: 4px; color: var(--fb-text-secondary); font-size: 13px; }
+  .post-actions-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--fb-text-secondary); font-size: 18px; transition: background .15s; }
+  .post-actions-btn:hover { background: var(--fb-hover); }
+  .post-content { padding: 0 16px 12px; font-size: 15px; line-height: 1.5; }
+  .post-image { width: 100%; max-height: 500px; object-fit: cover; cursor: pointer; }
+  .post-image-placeholder { width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; font-size: 48px; cursor: pointer; }
+
+  /* ENGAGEMENT BAR */
+  .engagement-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; }
+  .reactions-count { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--fb-text-secondary); font-size: 15px; }
+  .reactions-count:hover { text-decoration: underline; }
+  .reaction-icons { display: flex; }
+  .reaction-icon { width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; margin-left: -4px; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .reaction-icon:first-child { margin-left: 0; }
+  .engagement-right { display: flex; gap: 8px; color: var(--fb-text-secondary); font-size: 15px; }
+  .engagement-right span { cursor: pointer; }
+  .engagement-right span:hover { text-decoration: underline; }
+
+  /* ACTION BAR */
+  .action-bar { display: flex; border-top: 1px solid var(--fb-bg); margin: 0 16px; padding: 4px 0; }
+  .action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--fb-text-secondary); border: none; background: none; transition: background .15s; position: relative; }
+  .action-btn:hover { background: var(--fb-hover); }
+  .action-btn.liked { color: var(--fb-blue); }
+  .action-btn.liked .fa-thumbs-up { color: var(--fb-blue); }
+
+  /* REACTION PICKER */
+  .reaction-picker {
+    position: absolute; bottom: 44px; left: 0;
+    background: white; border-radius: 50px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+    padding: 6px 8px; display: flex; gap: 4px;
+    z-index: 50; display: none;
+    transform: scale(0); transform-origin: left bottom;
+    transition: transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .reaction-picker.visible { display: flex; transform: scale(1); }
+  .reaction-emoji { font-size: 28px; cursor: pointer; transition: transform .15s; padding: 2px; border-radius: 50%; }
+  .reaction-emoji:hover { transform: scale(1.4) translateY(-8px); }
+
+  /* COMMENTS SECTION */
+  .comments-section { padding: 0 16px 12px; display: none; }
+  .comments-section.open { display: block; }
+  .comment-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .comment-input { flex: 1; background: var(--fb-bg); border: none; border-radius: 50px; padding: 8px 12px; font-size: 15px; outline: none; }
+  .comment { display: flex; gap: 8px; margin-bottom: 8px; }
+  .comment-bubble { background: var(--fb-bg); border-radius: 18px; padding: 8px 12px; }
+  .comment-author { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .comment-text { font-size: 15px; }
+  .comment-actions { display: flex; gap: 12px; margin-top: 4px; padding-left: 52px; }
+  .comment-action { font-size: 12px; font-weight: 600; color: var(--fb-text-secondary); cursor: pointer; }
+  .comment-action:hover { text-decoration: underline; }
+  .comment-action.liked { color: var(--fb-blue); }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* PROFILE PAGE */
+  .profile-cover { height: 350px; background: linear-gradient(135deg, #1877F2, #42A5F5); position: relative; border-radius: 0 0 8px 8px; overflow: hidden; }
+  .profile-cover-actions { position: absolute; bottom: 16px; right: 16px; display: flex; gap: 8px; }
+  .profile-avatar-wrapper { position: relative; display: inline-block; }
+  .profile-avatar-large { width: 168px; height: 168px; border-radius: 50%; border: 4px solid white; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 64px; color: white; font-weight: 700; }
+  .profile-info-section { background: white; padding: 0 24px 16px; }
+  .profile-top { display: flex; align-items: flex-end; gap: 16px; margin-top: -84px; padding-bottom: 16px; }
+  .profile-name-area { flex: 1; }
+  .profile-name { font-size: 28px; font-weight: 700; margin-top: 8px; }
+  .profile-friends-count { color: var(--fb-text-secondary); font-size: 16px; }
+  .profile-action-btns { display: flex; gap: 8px; align-items: flex-end; padding-bottom: 4px; }
+  .btn-primary { background: var(--fb-blue); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-primary:hover { background: var(--fb-blue-dark); }
+  .btn-secondary { background: var(--fb-bg); color: var(--fb-text); border: none; border-radius: 6px; padding: 8px 16px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .btn-secondary:hover { background: var(--fb-border); }
+  .profile-tabs { display: flex; border-top: 1px solid var(--fb-border); margin-top: 8px; }
+  .profile-tab { padding: 16px 16px; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--fb-text-secondary); border-bottom: 3px solid transparent; transition: all .15s; }
+  .profile-tab:hover { background: var(--fb-bg); color: var(--fb-blue); }
+  .profile-tab.active { color: var(--fb-blue); border-bottom-color: var(--fb-blue); }
+  .profile-content { display: flex; gap: 16px; max-width: 900px; margin: 16px auto; padding: 0 24px; }
+  .profile-left { width: 340px; flex-shrink: 0; }
+  .profile-right { flex: 1; }
+  .info-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .info-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+  .info-item { display: flex; align-items: center; gap: 8px; color: var(--fb-text-secondary); font-size: 15px; margin-bottom: 8px; }
+  .info-item i { width: 20px; text-align: center; }
+  .photos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .photo-thumb { aspect-ratio: 1; border-radius: 4px; overflow: hidden; cursor: pointer; }
+  .photo-thumb-bg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+  /* SETTINGS PAGE */
+  .settings-layout { display: flex; max-width: 1000px; margin: 16px auto; gap: 0; padding: 0 16px; }
+  .settings-sidebar { width: 260px; background: white; border-radius: 8px; padding: 8px; flex-shrink: 0; height: fit-content; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .settings-sidebar h2 { font-size: 20px; font-weight: 700; padding: 8px; margin-bottom: 4px; }
+  .settings-nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 15px; transition: background .15s; }
+  .settings-nav-item:hover { background: var(--fb-bg); }
+  .settings-nav-item.active { background: #E7F3FF; color: var(--fb-blue); }
+  .settings-nav-icon { width: 36px; height: 36px; background: var(--fb-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .settings-nav-item.active .settings-nav-icon { background: var(--fb-blue); color: white; }
+  .settings-content { flex: 1; margin-left: 16px; }
+  .settings-section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .settings-section h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--fb-bg); }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item-info h4 { font-size: 15px; font-weight: 600; }
+  .settings-item-info p { font-size: 13px; color: var(--fb-text-secondary); margin-top: 2px; }
+  .toggle { width: 44px; height: 24px; background: var(--fb-border); border-radius: 12px; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
+  .toggle.on { background: var(--fb-blue); }
+  .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .toggle.on::after { left: 22px; }
+
+  /* NOTIFICATIONS DROPDOWN */
+  .notif-dropdown { min-width: 400px; }
+  .notif-header { display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 4px; }
+  .notif-header h3 { font-size: 20px; font-weight: 700; }
+  .notif-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; cursor: pointer; }
+  .notif-item:hover { background: var(--fb-bg); }
+  .notif-item.unread { background: #E7F3FF; }
+  .notif-item.unread:hover { background: #D0E8FF; }
+  .notif-avatar { position: relative; }
+  .notif-avatar .avatar-placeholder { width: 56px; height: 56px; font-size: 20px; }
+  .notif-icon { position: absolute; bottom: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .notif-icon.blue { background: var(--fb-blue); color: white; }
+  .notif-icon.red { background: var(--fb-red); color: white; }
+  .notif-icon.green { background: var(--fb-green); color: white; }
+  .notif-text { flex: 1; }
+  .notif-text p { font-size: 15px; line-height: 1.4; }
+  .notif-text p strong { font-weight: 600; }
+  .notif-text span { font-size: 13px; color: var(--fb-blue); font-weight: 600; }
+  .notif-dot { width: 12px; height: 12px; background: var(--fb-blue); border-radius: 50%; flex-shrink: 0; }
+
+  /* RIGHT SIDEBAR */
+  .sponsored-card { padding: 12px; }
+  .sponsored-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .ad-item { display: flex; gap: 12px; margin-bottom: 12px; cursor: pointer; border-radius: 8px; padding: 4px; transition: background .15s; }
+  .ad-item:hover { background: var(--fb-bg); }
+  .ad-image { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+  .ad-info h4 { font-size: 13px; font-weight: 600; }
+  .ad-info p { font-size: 12px; color: var(--fb-text-secondary); }
+  .ad-info .ad-link { font-size: 12px; color: var(--fb-text-secondary); margin-top: 4px; }
+  .contacts-section { padding: 12px; }
+  .contacts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .contacts-title { font-size: 17px; font-weight: 700; }
+  .contacts-icons { display: flex; gap: 4px; }
+  .contact-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background .15s; }
+  .contact-item:hover { background: var(--fb-bg); }
+  .contact-avatar { position: relative; }
+  .online-dot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background: #31A24C; border-radius: 50%; border: 2px solid white; }
+  .contact-name { font-size: 15px; font-weight: 500; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 300; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 8px; width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--fb-bg); }
+  .modal-header h2 { font-size: 20px; font-weight: 700; }
+  .modal-close { width: 36px; height: 36px; background: var(--fb-bg); border: none; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .modal-body { padding: 16px; }
+  .modal-author { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .post-textarea { width: 100%; border: none; outline: none; font-size: 22px; resize: none; min-height: 150px; font-family: inherit; color: var(--fb-text-secondary); }
+  .post-textarea:focus { color: var(--fb-text); }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid var(--fb-bg); }
+  .modal-add-to-post { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--fb-border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .modal-add-to-post span { font-size: 15px; font-weight: 600; }
+  .modal-add-icons { display: flex; gap: 4px; }
+  .modal-add-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: background .15s; }
+  .modal-add-icon:hover { background: var(--fb-bg); }
+  .btn-post { width: 100%; padding: 10px; background: var(--fb-blue); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn-post:hover { background: var(--fb-blue-dark); }
+  .btn-post:disabled { background: var(--fb-bg); color: var(--fb-border); cursor: not-allowed; }
+
+  /* STORY MODAL */
+  .story-modal { background: #1C1E21; border-radius: 8px; width: 95%; max-width: 500px; height: 80vh; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .story-modal-bg { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 80px; }
+  .story-modal-header { position: absolute; top: 0; left: 0; right: 0; padding: 16px; z-index: 10; }
+  .story-progress { height: 3px; background: rgba(255,255,255,.4); border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
+  .story-progress-fill { height: 100%; background: white; border-radius: 2px; animation: storyProgress 5s linear forwards; }
+  @keyframes storyProgress { from { width: 0; } to { width: 100%; } }
+  .story-user-info { display: flex; align-items: center; gap: 8px; color: white; }
+  .story-modal-close { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; background: rgba(255,255,255,.1); border: none; border-radius: 50%; cursor: pointer; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 20; }
+
+  /* DARK MODE */
+  body.dark { background: #18191A; color: #E4E6EB; }
+  body.dark .navbar, body.dark .card, body.dark .info-card, body.dark .settings-sidebar, body.dark .settings-section, body.dark .modal { background: #242526; }
+  body.dark .create-post-input, body.dark .comment-input, body.dark .nav-icon-btn, body.dark .post-image-placeholder, body.dark .action-btn:hover, body.dark .sidebar-link:hover, body.dark .settings-nav-item:hover, body.dark .dropdown-item:hover, body.dark .notif-item:hover, body.dark .contact-item:hover { background: #3A3B3C; color: #E4E6EB; }
+  body.dark .left-sidebar .sidebar-link, body.dark .nav-tab, body.dark .create-post-btn, body.dark .action-btn, body.dark .post-actions-btn { color: #B0B3B8; }
+  body.dark input[type=text], body.dark textarea { background: #3A3B3C; color: #E4E6EB; }
+  body.dark .search-box input { background: #3A3B3C; color: #E4E6EB; }
+  body.dark .engagement-bar, body.dark .profile-info-section { background: #242526; }
+  body.dark .dropdown-menu { background: #242526; }
+  body.dark .modal-overlay { background: rgba(0,0,0,.9); }
+  body.dark .notif-item.unread { background: #263951; }
+  body.dark .ad-item:hover { background: #3A3B3C; }
+  body.dark .create-post-divider, body.dark .action-bar { border-color: #3A3B3C; }
+  body.dark .fb-bg-el { background: #3A3B3C; }
+  body.dark .toggle { background: #3A3B3C; }
+  body.dark .settings-item { border-color: #3A3B3C; }
+  body.dark .profile-tabs { border-color: #3A3B3C; }
+  body.dark .modal-header, body.dark .modal-footer { border-color: #3A3B3C; }
+  body.dark .modal-add-to-post { border-color: #3A3B3C; }
+  body.dark .comment-bubble { background: #3A3B3C; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px) { .right-sidebar { display: none; } }
+  @media (max-width: 900px) { .left-sidebar { display: none; } .center-feed { max-width: 100%; } }
+  @media (max-width: 600px) { .navbar-center { display: none; } .search-box input { width: 160px; } }
+
+  /* ANIMATIONS */
+  @keyframes likeAnim { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
+  .like-anim { animation: likeAnim .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn .2s ease; }
+  .post-card { transition: box-shadow .15s; }
+  .post-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <a class="navbar-logo" href="#" onclick="showPage('feed')">f</a>
+    <div class="search-box">
+      <i class="fa fa-search"></i>
+      <input type="text" placeholder="Rechercher sur Facebook">
+    </div>
+  </div>
+  <div class="navbar-center">
+    <button class="nav-tab active" onclick="showPage('feed'); setActiveTab(this)" title="Accueil"><i class="fas fa-home"></i></button>
+    <button class="nav-tab" onclick="showPage('feed'); setActiveTab(this)" title="Amis"><i class="fas fa-user-friends"></i></button>
+    <button class="nav-tab" onclick="showPage('feed'); setActiveTab(this)" title="Vidéos"><i class="fas fa-tv"></i></button>
+    <button class="nav-tab" onclick="showPage('feed'); setActiveTab(this)" title="Marketplace"><i class="fas fa-store"></i></button>
+    <button class="nav-tab" onclick="showPage('feed'); setActiveTab(this)" title="Groupes"><i class="fas fa-users"></i></button>
+  </div>
+  <div class="navbar-right">
+    <div class="dropdown">
+      <button class="nav-icon-btn" onclick="toggleDropdown('menu-dropdown')"><i class="fas fa-th"></i></button>
+    </div>
+    <div class="dropdown">
+      <button class="nav-icon-btn" onclick="toggleDropdown('messenger-dropdown')"><i class="fab fa-facebook-messenger"></i></button>
+    </div>
+    <div class="dropdown">
+      <button class="nav-icon-btn" onclick="toggleDropdown('notif-dropdown')">
+        <i class="fas fa-bell"></i>
+        <span class="badge">8</span>
+      </button>
+      <div class="dropdown-menu notif-dropdown fade-in" id="notif-dropdown">
+        <div class="notif-header"><h3>Notifications</h3><button class="btn-secondary" style="font-size:13px;padding:6px 10px">Tout marquer comme lu</button></div>
+        <p style="padding:4px 8px;font-size:13px;font-weight:700;color:var(--fb-text-secondary)">Nouvelles</p>
+        <div class="notif-item unread">
+          <div class="notif-avatar"><div class="avatar-placeholder" style="background:linear-gradient(135deg,#667eea,#764ba2)">ML</div><span class="notif-icon blue"><i class="fas fa-thumbs-up"></i></span></div>
+          <div class="notif-text"><p><strong>Marie Laurent</strong> et 12 autres personnes ont aimé votre photo.</p><span>Il y a 5 min</span></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item unread">
+          <div class="notif-avatar"><div class="avatar-placeholder" style="background:linear-gradient(135deg,#f093fb,#f5576c)">TD</div><span class="notif-icon red"><i class="fas fa-heart"></i></span></div>
+          <div class="notif-text"><p><strong>Thomas Dubois</strong> a commenté votre publication.</p><span>Il y a 23 min</span></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-avatar"><div class="avatar-placeholder" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">SC</div><span class="notif-icon green"><i class="fas fa-user-plus"></i></span></div>
+          <div class="notif-text"><p><strong>Sophie Caron</strong> a accepté votre demande d'amis.</p><span>Il y a 1 h</span></div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-avatar"><div class="avatar-placeholder" style="background:linear-gradient(135deg,#fa709a,#fee140)">PB</div><span class="notif-icon blue"><i class="fas fa-birthday-cake"></i></span></div>
+          <div class="notif-text"><p><strong>Pierre Bernard</strong> célèbre son anniversaire aujourd'hui. Envoyez-lui vos vœux !</p><span>Il y a 2 h</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dropdown">
+      <div class="avatar-placeholder" onclick="toggleDropdown('profile-dropdown')" style="cursor:pointer">JD</div>
+      <div class="dropdown-menu fade-in" id="profile-dropdown">
+        <div class="dropdown-profile-card" onclick="showPage('profile');closeDropdowns()">
+          <div class="avatar-placeholder" style="width:60px;height:60px;font-size:22px">JD</div>
+          <div class="dropdown-profile-info"><strong>Jean Dupont</strong><span>Voir votre profil</span></div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item"><div class="dropdown-icon"><i class="fas fa-moon"></i></div><span>Mode sombre</span><div class="toggle" id="dark-toggle" onclick="toggleDark()" style="margin-left:auto"></div></div>
+        <div class="dropdown-item" onclick="showPage('settings');closeDropdowns()"><div class="dropdown-icon"><i class="fas fa-cog"></i></div><span>Paramètres et confidentialité</span><i class="fas fa-chevron-right" style="margin-left:auto;color:var(--fb-text-secondary)"></i></div>
+        <div class="dropdown-item"><div class="dropdown-icon"><i class="fas fa-question-circle"></i></div><span>Aide et assistance</span></div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item"><div class="dropdown-icon"><i class="fas fa-sign-out-alt"></i></div><span>Se déconnecter</span></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="left-sidebar">
+    <div class="sidebar-link" onclick="showPage('profile')">
+      <div class="avatar-placeholder icon">JD</div>
+      <span>Jean Dupont</span>
+    </div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-blue"><i class="fas fa-users"></i></div><span>Amis</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-orange"><i class="fas fa-store"></i></div><span>Marketplace</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-red"><i class="fas fa-play-circle"></i></div><span>Vidéos</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-purple"><i class="fas fa-calendar-alt"></i></div><span>Événements</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-blue"><i class="fas fa-user-friends"></i></div><span>Groupes</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-green"><i class="fas fa-bookmark"></i></div><span>Sauvegarde</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-purple"><i class="fas fa-history"></i></div><span>Souvenirs</span></div>
+    <div class="sidebar-link sidebar-see-more"><div class="icon" style="background:var(--fb-bg)"><i class="fas fa-chevron-down"></i></div><span>Voir plus</span></div>
+    <div class="sidebar-divider" style="height:1px;background:var(--fb-bg);margin:8px 0"></div>
+    <div class="sidebar-section-title">Raccourcis</div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-blue" style="border-radius:8px"><i class="fas fa-gamepad"></i></div><span>Jeux instantanés</span></div>
+    <div class="sidebar-link"><div class="icon sidebar-icon-green" style="border-radius:8px"><i class="fas fa-leaf"></i></div><span>Groupe Jardinage</span></div>
+    <div class="sidebar-section-title" style="margin-top:8px">Explorer</div>
+    <div class="sidebar-link"><div class="icon" style="background:var(--fb-bg)"><i class="fas fa-newspaper"></i></div><span>Actualités</span></div>
+    <div class="sidebar-link"><div class="icon" style="background:var(--fb-bg)"><i class="fas fa-tv"></i></div><span>Facebook Watch</span></div>
+    <div class="sidebar-link"><div class="icon" style="background:var(--fb-bg)"><i class="fas fa-hand-holding-heart"></i></div><span>Collectes de fonds</span></div>
+    <p style="font-size:12px;color:var(--fb-text-secondary);padding:8px;margin-top:8px">Confidentialité · Conditions · Publicité · Choix publicitaires · Cookies · Plus · Meta © 2024</p>
+  </aside>
+
+  <!-- CENTER FEED -->
+  <main class="center-feed">
+
+    <!-- FEED PAGE -->
+    <div id="page-feed" class="page active">
+
+      <!-- STORIES -->
+      <div class="card" style="padding:12px 16px;margin-bottom:12px">
+        <div class="stories-row">
+          <div class="story-card story-create" onclick="openStoryModal()">
+            <div class="story-create-top">
+              <div class="avatar-placeholder" style="width:42px;height:42px;font-size:16px;position:absolute;top:8px;left:8px;border:3px solid var(--fb-blue)">JD</div>
+            </div>
+            <div class="story-create-icon"><i class="fas fa-plus"></i></div>
+            <p class="story-label">Créer une story</p>
+          </div>
+          <div class="story-card" onclick="openStoryView('🌅','Marie Laurent','Il y a 2 h')" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+            <div class="story-user-avatar" style="position:absolute;top:8px;left:8px;border:3px solid var(--fb-blue);border-radius:50%;overflow:hidden;width:36px;height:36px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700">ML</div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px">🌅</div>
+            <div class="story-gradient"></div>
+            <p class="story-name">Marie Laurent</p>
+          </div>
+          <div class="story-card" onclick="openStoryView('🎉','Thomas Dubois','Il y a 4 h')" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
+            <div style="position:absolute;top:8px;left:8px;border:3px solid #f5576c;border-radius:50%;overflow:hidden;width:36px;height:36px;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;color:white;font-weight:700">TD</div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px">🎉</div>
+            <div class="story-gradient"></div>
+            <p class="story-name">Thomas Dubois</p>
+          </div>
+          <div class="story-card" onclick="openStoryView('🏖️','Sophie Caron','Il y a 6 h')" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
+            <div style="position:absolute;top:8px;left:8px;border:3px solid #4facfe;border-radius:50%;overflow:hidden;width:36px;height:36px;background:linear-gradient(135deg,#4facfe,#00f2fe);display:flex;align-items:center;justify-content:center;color:white;font-weight:700">SC</div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px">🏖️</div>
+            <div class="story-gradient"></div>
+            <p class="story-name">Sophie Caron</p>
+          </div>
+          <div class="story-card" onclick="openStoryView('🎵','Lucas Martin','Il y a 8 h')" style="background:linear-gradient(135deg,#fa709a,#fee140)">
+            <div style="position:absolute;top:8px;left:8px;border:3px solid #fa709a;border-radius:50%;overflow:hidden;width:36px;height:36px;background:linear-gradient(135deg,#fa709a,#fee140);display:flex;align-items:center;justify-content:center;color:white;font-weight:700">LM</div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px">🎵</div>
+            <div class="story-gradient"></div>
+            <p class="story-name">Lucas Martin</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREATE POST CARD -->
+      <div class="card create-post">
+        <div class="create-post-top">
+          <div class="avatar-placeholder" style="width:40px;height:40px;flex-shrink:0">JD</div>
+          <div class="create-post-input" onclick="openPostModal()">Quoi de neuf, Jean ?</div>
+        </div>
+        <div class="create-post-divider"></div>
+        <div class="create-post-actions">
+          <button class="create-post-btn"><i class="fas fa-video"></i> Vidéo en direct</button>
+          <button class="create-post-btn" onclick="openPostModal()"><i class="fas fa-image"></i> Photo/vidéo</button>
+          <button class="create-post-btn"><i class="fas fa-face-smile"></i> Activité</button>
+        </div>
+      </div>
+
+      <!-- POST CARDS -->
+      <div id="posts-container"></div>
+
+    </div><!-- end feed page -->
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="page">
+      <div class="card" style="margin-bottom:0;border-radius:8px 8px 0 0;overflow:visible">
+        <div class="profile-cover">
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1877F2 0%,#42A5F5 50%,#1877F2 100%);display:flex;align-items:center;justify-content:center;font-size:80px;opacity:.3">🌊</div>
+          <div class="profile-cover-actions">
+            <button class="btn-secondary" style="background:rgba(255,255,255,.9)"><i class="fas fa-camera"></i> Modifier la photo de couverture</button>
+          </div>
+        </div>
+        <div class="profile-info-section">
+          <div class="profile-top">
+            <div class="profile-avatar-wrapper">
+              <div class="profile-avatar-large">JD</div>
+              <div style="position:absolute;bottom:8px;right:8px;width:36px;height:36px;background:var(--fb-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid white"><i class="fas fa-camera" style="font-size:14px"></i></div>
+            </div>
+            <div class="profile-name-area">
+              <div class="profile-name">Jean Dupont</div>
+              <div class="profile-friends-count">2 843 amis · 1,2 K abonnés</div>
+              <div style="display:flex;margin-top:8px">
+                <div style="display:flex;margin-left:-8px">
+                  <div class="avatar-placeholder" style="width:32px;height:32px;font-size:12px;border:2px solid white;margin-left:-4px;background:linear-gradient(135deg,#667eea,#764ba2)">ML</div>
+                  <div class="avatar-placeholder" style="width:32px;height:32px;font-size:12px;border:2px solid white;margin-left:-8px;background:linear-gradient(135deg,#f093fb,#f5576c)">TD</div>
+                  <div class="avatar-placeholder" style="width:32px;height:32px;font-size:12px;border:2px solid white;margin-left:-8px;background:linear-gradient(135deg,#4facfe,#00f2fe)">SC</div>
+                  <div class="avatar-placeholder" style="width:32px;height:32px;font-size:12px;border:2px solid white;margin-left:-8px;background:linear-gradient(135deg,#fa709a,#fee140)">LM</div>
+                </div>
+                <span style="font-size:13px;color:var(--fb-text-secondary);margin-left:8px;line-height:32px">Marie, Thomas et 2 840 autres</span>
+              </div>
+            </div>
+            <div class="profile-action-btns">
+              <button class="btn-primary"><i class="fas fa-plus"></i> Ajouter à la story</button>
+              <button class="btn-secondary"><i class="fas fa-pen"></i> Modifier le profil</button>
+              <button class="btn-secondary" style="padding:8px 10px"><i class="fas fa-chevron-down"></i></button>
+            </div>
+          </div>
+          <div class="profile-tabs">
+            <div class="profile-tab active">Publications</div>
+            <div class="profile-tab">À propos</div>
+            <div class="profile-tab">Amis</div>
+            <div class="profile-tab">Photos</div>
+            <div class="profile-tab">Vidéos</div>
+            <div class="profile-tab">Plus</div>
+            <button class="btn-secondary" style="margin-left:auto;margin-bottom:4px;padding:6px 10px"><i class="fas fa-ellipsis-h"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-content">
+        <div class="profile-left">
+          <div class="info-card">
+            <h3>Infos</h3>
+            <div class="info-item"><i class="fas fa-briefcase"></i><span>Travaille chez <strong>Acme Corp</strong></span></div>
+            <div class="info-item"><i class="fas fa-graduation-cap"></i><span>A étudié à <strong>Université de Paris</strong></span></div>
+            <div class="info-item"><i class="fas fa-map-marker-alt"></i><span>Habite à <strong>Paris, France</strong></span></div>
+            <div class="info-item"><i class="fas fa-home"></i><span>Originaire de <strong>Lyon, France</strong></span></div>
+            <div class="info-item"><i class="fas fa-heart"></i><span><strong>En couple</strong></span></div>
+            <div class="info-item"><i class="fas fa-globe"></i><span>Membre depuis <strong>janvier 2010</strong></span></div>
+            <button class="btn-secondary" style="width:100%;justify-content:center;margin-top:8px">Modifier les infos</button>
+          </div>
+          <div class="info-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <h3 style="margin:0">Photos</h3><span style="color:var(--fb-blue);font-size:15px;cursor:pointer">Voir tout</span>
+            </div>
+            <div class="photos-grid">
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#667eea,#764ba2)">🏖️</div></div>
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#f093fb,#f5576c)">🌅</div></div>
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">🎉</div></div>
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#fa709a,#fee140)">🎵</div></div>
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">🌿</div></div>
+              <div class="photo-thumb"><div class="photo-thumb-bg" style="background:linear-gradient(135deg,#f5af19,#f12711)">🍕</div></div>
+            </div>
+          </div>
+          <div class="info-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <h3 style="margin:0">Amis <span style="font-size:15px;font-weight:400;color:var(--fb-text-secondary)">2 843</span></h3>
+              <span style="color:var(--fb-blue);font-size:15px;cursor:pointer">Voir tout</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div style="text-align:center;cursor:pointer">
+                <div style="width:100%;aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;font-weight:700;margin-bottom:4px">ML</div>
+                <span style="font-size:13px;font-weight:600">Marie Laurent</span>
+              </div>
+              <div style="text-align:center;cursor:pointer">
+                <div style="width:100%;aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;font-weight:700;margin-bottom:4px">TD</div>
+                <span style="font-size:13px;font-weight:600">Thomas Dubois</span>
+              </div>
+              <div style="text-align:center;cursor:pointer">
+                <div style="width:100%;aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#4facfe,#00f2fe);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;font-weight:700;margin-bottom:4px">SC</div>
+                <span style="font-size:13px;font-weight:600">Sophie Caron</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-right">
+          <div class="card create-post" style="margin-bottom:12px">
+            <div class="create-post-top">
+              <div class="avatar-placeholder" style="width:40px;height:40px;flex-shrink:0">JD</div>
+              <div class="create-post-input" onclick="openPostModal()">Quoi de neuf, Jean ?</div>
+            </div>
+            <div class="create-post-divider"></div>
+            <div class="create-post-actions">
+              <button class="create-post-btn"><i class="fas fa-video"></i> Vidéo en direct</button>
+              <button class="create-post-btn" onclick="openPostModal()"><i class="fas fa-image"></i> Photo/vidéo</button>
+              <button class="create-post-btn"><i class="fas fa-face-smile"></i> Activité</button>
+            </div>
+          </div>
+          <div id="profile-posts-container"></div>
+        </div>
+      </div>
+    </div><!-- end profile page -->
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <div class="settings-layout">
+        <div class="settings-sidebar">
+          <h2>Paramètres</h2>
+          <div class="settings-nav-item active" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-lock"></i></div><span>Confidentialité</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-user-circle"></i></div><span>Informations personnelles</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-shield-alt"></i></div><span>Sécurité et connexion</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-bell"></i></div><span>Notifications</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-ad"></i></div><span>Préférences publicitaires</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-users"></i></div><span>Profil et marquage</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-ban"></i></div><span>Blocage</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-language"></i></div><span>Langue et région</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-mobile-alt"></i></div><span>Appareils mobiles</span>
+          </div>
+          <div class="settings-nav-item" onclick="setActiveSettingsNav(this)">
+            <div class="settings-nav-icon"><i class="fas fa-download"></i></div><span>Vos informations Facebook</span>
+          </div>
+        </div>
+        <div class="settings-content">
+          <div class="settings-section">
+            <h3>Confidentialité du compte</h3>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Qui peut voir vos futures publications ?</h4>
+                <p>Public · Toutes les personnes sur ou en dehors de Facebook</p>
+              </div>
+              <button class="btn-secondary">Modifier</button>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Vérifier toutes vos publications</h4>
+                <p>Examinez vos publications et ce dans lequel vous êtes identifié</p>
+              </div>
+              <button class="btn-secondary">Vérifier</button>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Qui peut vous envoyer des demandes d'amis ?</h4>
+                <p>Tout le monde</p>
+              </div>
+              <button class="btn-secondary">Modifier</button>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Qui peut voir votre liste d'amis ?</h4>
+                <p>Amis</p>
+              </div>
+              <button class="btn-secondary">Modifier</button>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Notifications</h3>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>J'aime et réactions</h4>
+                <p>Recevoir des notifications quand quelqu'un réagit à vos publications</p>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Commentaires</h4>
+                <p>Recevoir des notifications pour les nouveaux commentaires</p>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Anniversaires</h4>
+                <p>Recevoir des rappels d'anniversaires d'amis</p>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Suggestions de groupes</h4>
+                <p>Recevoir des suggestions de groupes basées sur vos centres d'intérêt</p>
+              </div>
+              <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>E-mails marketing</h4>
+                <p>Recevoir des offres et promotions par e-mail</p>
+              </div>
+              <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Sécurité</h3>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Authentification à deux facteurs</h4>
+                <p>Protégez votre compte avec une vérification supplémentaire</p>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Alertes de connexion</h4>
+                <p>Recevoir des alertes lors de connexions depuis un nouvel appareil</p>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Changer le mot de passe</h4>
+                <p>Il est recommandé de le changer régulièrement</p>
+              </div>
+              <button class="btn-secondary">Modifier</button>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Sessions actives</h4>
+                <p>Gérez les appareils connectés à votre compte</p>
+              </div>
+              <button class="btn-secondary">Voir tout</button>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h3>Langue et affichage</h3>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Langue de Facebook</h4>
+                <p>Français (France)</p>
+              </div>
+              <button class="btn-secondary">Modifier</button>
+            </div>
+            <div class="settings-item">
+              <div class="settings-item-info">
+                <h4>Mode sombre</h4>
+                <p>Activez le thème sombre pour réduire la fatigue oculaire</p>
+              </div>
+              <div class="toggle" id="dark-toggle-2" onclick="toggleDark()"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end settings page -->
+
+  </main><!-- end center feed -->
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="right-sidebar">
+    <div class="card sponsored-card">
+      <div class="sponsored-title">Sponsorisé</div>
+      <div class="ad-item">
+        <div class="ad-image" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">🌿</div>
+        <div class="ad-info">
+          <h4>Nature & Bio – Produits naturels</h4>
+          <p>Découvrez notre gamme de produits 100% naturels et bio pour votre bien-être quotidien.</p>
+          <p class="ad-link">natureetbio.fr</p>
+        </div>
+      </div>
+      <div class="ad-item">
+        <div class="ad-image" style="background:linear-gradient(135deg,#667eea,#764ba2)">💻</div>
+        <div class="ad-info">
+          <h4>TechPro Academy – Formations en ligne</h4>
+          <p>Apprenez le développement web, l'IA et plus encore avec nos experts.</p>
+          <p class="ad-link">techproacademy.fr</p>
+        </div>
+      </div>
+      <div class="ad-item">
+        <div class="ad-image" style="background:linear-gradient(135deg,#f5af19,#f12711)">🍕</div>
+        <div class="ad-info">
+          <h4>Pizza Express – Livraison rapide</h4>
+          <p>Pizzas artisanales livrées en 30 min. Première commande -20%.</p>
+          <p class="ad-link">pizzaexpress.fr</p>
+        </div>
+      </div>
+    </div>
+    <div class="card contacts-section">
+      <div class="contacts-header">
+        <div class="contacts-title">Contacts</div>
+        <div class="contacts-icons">
+          <button class="nav-icon-btn" style="width:32px;height:32px;font-size:14px"><i class="fas fa-video"></i></button>
+          <button class="nav-icon-btn" style="width:32px;height:32px;font-size:14px"><i class="fas fa-search"></i></button>
+          <button class="nav-icon-btn" style="width:32px;height:32px;font-size:14px"><i class="fas fa-ellipsis-h"></i></button>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-avatar"><div class="avatar-placeholder" style="width:36px;height:36px;font-size:14px;background:linear-gradient(135deg,#667eea,#764ba2)">ML</div><div class="online-dot"></div></div>
+        <span class="contact-name">Marie Laurent</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-avatar"><div class="avatar-placeholder" style="width:36px;height:36px;font-size:14px;background:linear-gradient(135deg,#4facfe,#00f2fe)">SC</div><div class="online-dot"></div></div>
+        <span class="contact-name">Sophie Caron</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-avatar"><div class="avatar-placeholder" style="width:36px;height:36px;font-size:14px;background:linear-gradient(135deg,#43e97b,#38f9d7)">AB</div><div class="online-dot"></div></div>
+        <span class="contact-name">Alexandre Blanc</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-avatar"><div class="avatar-placeholder" style="width:36px;height:36px;font-size:14px;background:linear-gradient(135deg,#fa709a,#fee140)">CM</div></div>
+        <span class="contact-name">Camille Moreau</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--fb-text-secondary)">1 j</span>
+      </div>
+      <div class="contact-item">
+        <div class="contact-avatar"><div class="avatar-placeholder" style="width:36px;height:36px;font-size:14px;background:linear-gradient(135deg,#f093fb,#f5576c)">TD</div></div>
+        <span class="contact-name">Thomas Dubois</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--fb-text-secondary)">3 j</span>
+      </div>
+    </div>
+    <div class="card" style="padding:12px">
+      <div class="contacts-title" style="font-size:17px;font-weight:700;margin-bottom:12px">Conversations de groupe</div>
+      <div class="contact-item">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🎉</div>
+        <div><div style="font-size:15px;font-weight:500">Groupe des amis</div><div style="font-size:12px;color:var(--fb-text-secondary)">Sophie: Salut tout le monde!</div></div>
+      </div>
+      <div class="contact-item">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,#43e97b,#38f9d7);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🏢</div>
+        <div><div style="font-size:15px;font-weight:500">Équipe Projet</div><div style="font-size:12px;color:var(--fb-text-secondary)">Marie: La réunion est à...</div></div>
+      </div>
+    </div>
+  </aside>
+
+</div><!-- end main layout -->
+
+<!-- CREATE POST MODAL -->
+<div class="modal-overlay" id="post-modal" onclick="closeModalOverlay(event,'post-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div></div>
+      <h2>Créer une publication</h2>
+      <button class="modal-close" onclick="closeModal('post-modal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-author">
+        <div class="avatar-placeholder" style="width:40px;height:40px">JD</div>
+        <div>
+          <div style="font-weight:600;font-size:15px">Jean Dupont</div>
+          <div style="background:var(--fb-bg);border-radius:6px;padding:2px 8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px"><i class="fas fa-globe" style="font-size:11px"></i> Public <i class="fas fa-chevron-down" style="font-size:11px"></i></div>
+        </div>
+      </div>
+      <textarea class="post-textarea" id="post-input" placeholder="Quoi de neuf, Jean ?" oninput="checkPostBtn()"></textarea>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-add-to-post">
+        <span>Ajouter à votre publication</span>
+        <div class="modal-add-icons">
+          <div class="modal-add-icon" title="Photo/Vidéo" style="color:#45BD62"><i class="fas fa-image"></i></div>
+          <div class="modal-add-icon" title="Taguer des amis" style="color:#1877F2"><i class="fas fa-user-tag"></i></div>
+          <div class="modal-add-icon" title="Humeur/activité" style="color:#F7B928"><i class="fas fa-face-smile"></i></div>
+          <div class="modal-add-icon" title="Localisation" style="color:#F02849"><i class="fas fa-map-marker-alt"></i></div>
+          <div class="modal-add-icon" title="GIF" style="color:#02B2E4"><i class="fas fa-film"></i></div>
+        </div>
+      </div>
+      <button class="btn-post" id="post-btn" disabled onclick="submitPost()">Publier</button>
+    </div>
+  </div>
+</div>
+
+<!-- STORY MODAL -->
+<div class="modal-overlay" id="story-modal" onclick="closeModalOverlay(event,'story-modal')">
+  <div class="story-modal">
+    <div class="story-modal-header">
+      <div class="story-progress"><div class="story-progress-fill" id="story-progress-fill"></div></div>
+      <div class="story-user-info">
+        <div class="avatar-placeholder" style="width:40px;height:40px;font-size:14px" id="story-avatar">ML</div>
+        <div><div style="font-weight:600" id="story-name-display">Marie Laurent</div><div style="font-size:12px;opacity:.8" id="story-time-display">Il y a 2 h</div></div>
+      </div>
+    </div>
+    <button class="story-modal-close" onclick="closeModal('story-modal')"><i class="fas fa-times"></i></button>
+    <div class="story-modal-bg" id="story-bg">🌅</div>
+    <div style="padding:16px;background:rgba(0,0,0,.3)">
+      <div style="display:flex;background:rgba(255,255,255,.2);border-radius:50px;padding:8px 16px;align-items:center;gap:8px">
+        <input style="flex:1;background:none;border:none;color:white;font-size:15px;outline:none" placeholder="Envoyer un message..." type="text">
+        <i class="fas fa-paper-plane" style="color:white;cursor:pointer"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// DATA
+const postsData = [
+  {
+    id: 1,
+    author: 'Marie Laurent',
+    initials: 'ML',
+    color: 'linear-gradient(135deg,#667eea,#764ba2)',
+    date: 'Il y a 2 h',
+    privacy: 'globe',
+    content: 'Quelle magnifique journée ! J\'ai visité le Château de Versailles pour la première fois. Les jardins sont absolument époustouflants. 🌸✨ Je vous recommande vraiment cette visite si vous ne l\'avez pas encore faite !',
+    image: '🏰',
+    imageBg: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+    likes: 247,
+    comments: 38,
+    shares: 12,
+    reacted: false,
+    reaction: null,
+    commentsList: [
+      { author: 'Thomas Dubois', initials: 'TD', color: 'linear-gradient(135deg,#f093fb,#f5576c)', text: 'Trop beau ! Tu as de la chance 😍', likes: 5 },
+      { author: 'Sophie Caron', initials: 'SC', color: 'linear-gradient(135deg,#4facfe,#00f2fe)', text: 'J\'y suis allée l\'année dernière, c\'est magnifique !', likes: 3 }
+    ]
+  },
+  {
+    id: 2,
+    author: 'Thomas Dubois',
+    initials: 'TD',
+    color: 'linear-gradient(135deg,#f093fb,#f5576c)',
+    date: 'Il y a 4 h',
+    privacy: 'users',
+    content: 'Nouvelle étape dans ma carrière ! Je suis ravi d\'annoncer que j\'ai rejoint l\'équipe de Google France en tant qu\'ingénieur senior. Une aventure incroyable commence ! 🚀🎯 Merci à tous ceux qui m\'ont soutenu dans ce parcours.',
+    image: null,
+    likes: 523,
+    comments: 87,
+    shares: 34,
+    reacted: false,
+    reaction: null,
+    commentsList: [
+      { author: 'Marie Laurent', initials: 'ML', color: 'linear-gradient(135deg,#667eea,#764ba2)', text: 'Félicitations Thomas ! Tu le mérites vraiment ! 🎉', likes: 12 },
+      { author: 'Jean Dupont', initials: 'JD', color: 'linear-gradient(135deg,#1877F2,#42A5F5)', text: 'Bravo mon ami ! Tu vas tout déchirer chez Google !', likes: 8 }
+    ]
+  },
+  {
+    id: 3,
+    author: 'Sophie Caron',
+    initials: 'SC',
+    color: 'linear-gradient(135deg,#4facfe,#00f2fe)',
+    date: 'Hier à 18:30',
+    privacy: 'globe',
+    content: 'Week-end parfait à la plage avec les amis ! 🏖️☀️ La mer était divine, les tapas délicieuses et la compagnie incomparable. Ces moments de bonheur simples sont les plus précieux.',
+    image: '🏖️',
+    imageBg: 'linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)',
+    likes: 189,
+    comments: 24,
+    shares: 7,
+    reacted: false,
+    reaction: null,
+    commentsList: [
+      { author: 'Lucas Martin', initials: 'LM', color: 'linear-gradient(135deg,#fa709a,#fee140)', text: 'Ces photos sont magnifiques ! 😍🌊', likes: 6 }
+    ]
+  },
+  {
+    id: 4,
+    author: 'Lucas Martin',
+    initials: 'LM',
+    color: 'linear-gradient(135deg,#fa709a,#fee140)',
+    date: 'Lundi 14:00',
+    privacy: 'globe',
+    content: 'Je viens de terminer ma première marathon ! 42,195 km en 3h47min. Je n\'aurais jamais pensé être capable de faire ça il y a un an. La persévérance paie toujours. 💪🏃‍♂️ Merci à ma famille pour le soutien !',
+    image: '🏃',
+    imageBg: 'linear-gradient(135deg,#fa709a 0%,#fee140 100%)',
+    likes: 412,
+    comments: 65,
+    shares: 28,
+    reacted: false,
+    reaction: null,
+    commentsList: [
+      { author: 'Sophie Caron', initials: 'SC', color: 'linear-gradient(135deg,#4facfe,#00f2fe)', text: 'Impressionnant Lucas ! Quelle performance ! 👏', likes: 15 },
+      { author: 'Marie Laurent', initials: 'ML', color: 'linear-gradient(135deg,#667eea,#764ba2)', text: 'Tu es mon héros ! Bravo bravo bravo ! 🎉', likes: 9 }
+    ]
+  }
+];
+
+const reactions = [
+  { emoji: '👍', name: 'like', color: '#1877F2' },
+  { emoji: '❤️', name: 'love', color: '#F33E58' },
+  { emoji: '😂', name: 'haha', color: '#F7B125' },
+  { emoji: '😮', name: 'wow', color: '#F7B125' },
+  { emoji: '😢', name: 'sad', color: '#F7B125' },
+  { emoji: '😡', name: 'angry', color: '#E9710F' }
+];
+
+function renderPost(post, containerId) {
+  const container = document.getElementById(containerId);
+  const postEl = document.createElement('div');
+  postEl.className = 'card post-card';
+  postEl.id = 'post-' + post.id;
+
+  const reactionsHTML = reactions.map(r =>
+    `<span class="reaction-emoji" title="${r.name}" onclick="setReaction(${post.id}, '${r.emoji}', '${r.name}', '${r.color}')">${r.emoji}</span>`
+  ).join('');
+
+  const commentsHTML = post.commentsList.map((c, i) => `
+    <div class="comment">
+      <div class="avatar-placeholder post-avatar-placeholder" style="background:${c.color};width:32px;height:32px;font-size:12px;flex-shrink:0">${c.initials}</div>
+      <div style="flex:1">
+        <div class="comment-bubble">
+          <div class="comment-author">${c.author}</div>
+          <div class="comment-text">${c.text}</div>
+        </div>
+        <div class="comment-actions">
+          <span class="comment-action">J'aime</span>
+          <span class="comment-action">Répondre</span>
+          <span style="font-size:12px;color:var(--fb-text-secondary)">${c.likes} J'aime</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  postEl.innerHTML = `
+    <div class="post-header">
+      <div class="post-author">
+        <div class="avatar-placeholder post-avatar-placeholder" style="background:${post.color}">${post.initials}</div>
+        <div class="post-author-info">
+          <span class="post-author-name">${post.author}</span>
+          <div class="post-meta">
+            <span>${post.date}</span>
+            <span>·</span>
+            <i class="fas fa-${post.privacy}" style="font-size:12px"></i>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="post-actions-btn"><i class="fas fa-ellipsis-h"></i></button>
+        <button class="post-actions-btn"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="post-content">${post.content}</div>
+    ${post.image ? `<div class="post-image-placeholder" style="background:${post.imageBg}">${post.image}</div>` : ''}
+    <div class="engagement-bar">
+      <div class="reactions-count" id="reactions-count-${post.id}">
+        <div class="reaction-icons">
+          <div class="reaction-icon" style="background:#1877F2;font-size:10px">👍</div>
+          <div class="reaction-icon" style="background:#F33E58;font-size:10px">❤️</div>
+          <div class="reaction-icon" style="background:#F7B125;font-size:10px">😂</div>
+        </div>
+        <span id="like-count-${post.id}">${post.likes}</span>
+      </div>
+      <div class="engagement-right">
+        <span onclick="toggleComments(${post.id})">${post.comments} commentaires</span>
+        <span>${post.shares} partages</span>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="action-btn" id="like-btn-${post.id}" onmouseenter="showReactionPicker(${post.id})" onmouseleave="hideReactionPicker(${post.id})" onclick="quickLike(${post.id})">
+        <div class="reaction-picker" id="reaction-picker-${post.id}" onmouseenter="keepPicker(${post.id})" onmouseleave="hideReactionPicker(${post.id})">
+          ${reactionsHTML}
+        </div>
+        <i class="fas fa-thumbs-up"></i><span id="like-label-${post.id}">J'aime</span>
+      </button>
+      <button class="action-btn" onclick="toggleComments(${post.id})"><i class="fas fa-comment-alt"></i> Commenter</button>
+      <button class="action-btn"><i class="fas fa-share"></i> Partager</button>
+    </div>
+    <div class="comments-section" id="comments-${post.id}">
+      <div class="comment-input-row">
+        <div class="avatar-placeholder" style="width:32px;height:32px;font-size:12px;flex-shrink:0">JD</div>
+        <input class="comment-input" placeholder="Écrire un commentaire..." onkeypress="addComment(event, ${post.id})">
+      </div>
+      <div id="comments-list-${post.id}">${commentsHTML}</div>
+    </div>
+  `;
+  container.appendChild(postEl);
+}
+
+// Render posts
+window.addEventListener('DOMContentLoaded', () => {
+  postsData.forEach(p => {
+    renderPost(p, 'posts-container');
+    renderPost({...p, id: p.id + 100}, 'profile-posts-container');
+  });
+});
+
+// REACTIONS
+let pickerTimers = {};
+function showReactionPicker(id) {
+  clearTimeout(pickerTimers[id]);
+  const picker = document.getElementById('reaction-picker-' + id);
+  picker.classList.add('visible');
+}
+function hideReactionPicker(id) {
+  pickerTimers[id] = setTimeout(() => {
+    const picker = document.getElementById('reaction-picker-' + id);
+    if (picker) picker.classList.remove('visible');
+  }, 300);
+}
+function keepPicker(id) { clearTimeout(pickerTimers[id]); }
+
+function quickLike(id) {
+  const btn = document.getElementById('like-btn-' + id);
+  const label = document.getElementById('like-label-' + id);
+  const countEl = document.getElementById('like-count-' + id);
+  const post = postsData.find(p => p.id === id) || postsData.find(p => p.id === id - 100);
+  if (!post) return;
+
+  if (!btn.classList.contains('liked')) {
+    btn.classList.add('liked', 'like-anim');
+    label.textContent = "J'aime";
+    label.style.color = '#1877F2';
+    countEl.textContent = parseInt(countEl.textContent) + 1;
+    setTimeout(() => btn.classList.remove('like-anim'), 300);
+  } else {
+    btn.classList.remove('liked');
+    label.textContent = "J'aime";
+    label.style.color = '';
+    countEl.textContent = parseInt(countEl.textContent) - 1;
+  }
+  hideReactionPicker(id);
+}
+
+function setReaction(id, emoji, name, color) {
+  const btn = document.getElementById('like-btn-' + id);
+  const label = document.getElementById('like-label-' + id);
+  const countEl = document.getElementById('like-count-' + id);
+  btn.classList.add('liked');
+  label.innerHTML = emoji + ' ' + name.charAt(0).toUpperCase() + name.slice(1);
+  label.style.color = color;
+  if (!btn.dataset.reacted) { countEl.textContent = parseInt(countEl.textContent) + 1; btn.dataset.reacted = '1'; }
+  hideReactionPicker(id);
+}
+
+function toggleComments(id) {
+  const section = document.getElementById('comments-' + id);
+  section.classList.toggle('open');
+}
+
+function addComment(e, id) {
+  if (e.key === 'Enter') {
+    const input = e.target;
+    if (!input.value.trim()) return;
+    const list = document.getElementById('comments-list-' + id);
+    const div = document.createElement('div');
+    div.className = 'comment';
+    div.innerHTML = `
+      <div class="avatar-placeholder post-avatar-placeholder" style="background:linear-gradient(135deg,#1877F2,#42A5F5);width:32px;height:32px;font-size:12px;flex-shrink:0">JD</div>
+      <div style="flex:1">
+        <div class="comment-bubble">
+          <div class="comment-author">Jean Dupont</div>
+          <div class="comment-text">${input.value}</div>
+        </div>
+        <div class="comment-actions">
+          <span class="comment-action">J'aime</span>
+          <span class="comment-action">Répondre</span>
+          <span style="font-size:12px;color:var(--fb-text-secondary)">0 J'aime</span>
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
+    input.value = '';
+  }
+}
+
+// PAGES
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+function setActiveTab(btn) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setActiveSettingsNav(el) {
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// DROPDOWNS
+function toggleDropdown(id) {
+  const el = document.getElementById(id);
+  const isOpen = el.classList.contains('open');
+  closeDropdowns();
+  if (!isOpen) el.classList.add('open');
+}
+function closeDropdowns() {
+  document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown') && !e.target.closest('.navbar-right')) closeDropdowns();
+});
+
+// DARK MODE
+let darkMode = false;
+function toggleDark() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('dark', darkMode);
+  ['dark-toggle','dark-toggle-2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', darkMode);
+  });
+}
+
+// MODALS
+function openPostModal() { document.getElementById('post-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOverlay(e, id) { if (e.target.id === id) closeModal(id); }
+
+function checkPostBtn() {
+  const input = document.getElementById('post-input').value.trim();
+  document.getElementById('post-btn').disabled = !input;
+}
+
+function submitPost() {
+  const input = document.getElementById('post-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const newPost = {
+    id: Date.now(),
+    author: 'Jean Dupont',
+    initials: 'JD',
+    color: 'linear-gradient(135deg,#1877F2,#42A5F5)',
+    date: 'À l\'instant',
+    privacy: 'globe',
+    content: text,
+    image: null,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    reacted: false,
+    reaction: null,
+    commentsList: []
+  };
+
+  const container = document.getElementById('posts-container');
+  const tempDiv = document.createElement('div');
+  container.insertBefore(tempDiv, container.firstChild);
+  renderPost(newPost, 'posts-container');
+  container.insertBefore(document.getElementById('post-' + newPost.id), container.firstChild);
+  tempDiv.remove();
+
+  input.value = '';
+  document.getElementById('post-btn').disabled = true;
+  closeModal('post-modal');
+}
+
+// STORY
+function openStoryView(emoji, name, time) {
+  document.getElementById('story-bg').textContent = emoji;
+  document.getElementById('story-name-display').textContent = name;
+  document.getElementById('story-time-display').textContent = time;
+  document.getElementById('story-avatar').textContent = name.split(' ').map(w => w[0]).join('');
+  const fill = document.getElementById('story-progress-fill');
+  fill.style.animation = 'none';
+  fill.offsetHeight;
+  fill.style.animation = 'storyProgress 5s linear forwards';
+  document.getElementById('story-modal').classList.add('open');
+}
+
+function openStoryModal() {
+  alert('Fonctionnalité de création de story ! Dans une vraie app, cela ouvrirait la caméra.');
+}
+</script>
+</body>
+</html>

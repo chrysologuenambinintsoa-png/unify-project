@@ -1,0 +1,12 @@
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/_document": "pages/_document.js",
+  "/": "pages/index.js",
+  "/api/notifications": "pages/api/notifications.js",
+  "/api/stories": "pages/api/stories.js",
+  "/api/items": "pages/api/items.js",
+  "/api/groupes": "pages/api/groupes.js",
+  "/api/amis": "pages/api/amis.js",
+  "/api/messages": "pages/api/messages.js"
+}

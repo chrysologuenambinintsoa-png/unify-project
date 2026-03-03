@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Item {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  image     String?
+  likes     Int      @default(0)
+  shares    Int      @default(0)
+  createdAt DateTime @default(now())
+  comments  Comment[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  post      Item     @relation(fields: [postId], references: [id])
+  author    String
+  text      String
+  parentId  Int?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  participants String // JSON array of userIds or emails
+  title     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id            Int       @id @default(autoincrement())
+  conversationId String
+  conversation  Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderEmail   String
+  senderName    String
+  text          String
+  attachments   String?   // JSON array of attachment URLs
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  passwordHash   String
+  prenom         String?
+  nom            String?
+  nomUtilisateur String?  @unique
+  phone          String?
+  dateNaissance  DateTime?
+  genre          String?
+  photos         String?  // JSON array
+  avatar         String?
+  avatarUrl      String?
+  settings       Json?    // stored preferences
+  friendsOf      Friendship[] @relation("userFriends")
+  friendsWith    Friendship[] @relation("friendUser")
+  stories        Story[]      @relation("userStories")
+  createdAt      DateTime @default(now())
+}
+
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation("userFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friendId  Int
+  friend    User     @relation("friendUser", fields: [friendId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, friendId])
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  authorId  Int
+  author    User     @relation("userStories", fields: [authorId], references: [id], onDelete: Cascade)
+  content   String?
+  image     String?
+  visibility String? @default("public") // public, friends, close
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  coverIcon   String?
+  cover       String?
+  members     Int      @default(0)
+  membersList String?  // JSON string of user emails who joined
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

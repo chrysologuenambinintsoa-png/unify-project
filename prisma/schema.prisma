@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Item {
@@ -68,7 +68,7 @@ model User {
   photos         String?  // JSON array
   avatar         String?
   avatarUrl      String?
-  settings       Json?    // stored preferences
+  settings       String?  // stored preferences (JSON string)
   friendsOf      Friendship[] @relation("userFriends")
   friendsWith    Friendship[] @relation("friendUser")
   stories        Story[]      @relation("userStories")
